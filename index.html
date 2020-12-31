@@ -168,14 +168,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-11-23 14:53:19" itemprop="dateCreated datePublished" datetime="2020-11-23T14:53:19+00:00">2020-11-23</time>
+              <time title="Created: 2020-11-23 22:53:19" itemprop="dateCreated datePublished" datetime="2020-11-23T22:53:19+00:00">2020-11-23</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-12-31 06:01:36" itemprop="dateModified" datetime="2020-12-31T06:01:36+00:00">2020-12-31</time>
+                <time title="Modified: 2020-12-31 22:22:08" itemprop="dateModified" datetime="2020-12-31T22:22:08+00:00">2020-12-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -203,12 +203,23 @@
 <h2 id="net-Listen"><a href="#net-Listen" class="headerlink" title="net.Listen"></a>net.Listen</h2><img src="/2020/11/23/go/net/net_Listen.jpeg" class="">
 
 <ol>
-<li>epollcreate1创建全局唯一epfd（若没有初始化，使用sync.Once全局仅执行一次，初始化epoll实例）</li>
-<li>net.Listen最终调用epollctl将listener fd注册到epoll实例</li>
+<li><code>net.Listen</code>通过 <code>netFD.init</code> -&gt; <code>FD.Init</code> -&gt; <code>pollDesc.init</code> -&gt; 最终调用 <code>epollcreate1</code> 创建全局唯一 <strong>epfd</strong>，然后调用 <code>epollctl</code> 将 <strong>listener fd</strong>注册到epoll实例的事件队列</li>
+<li>通过 <code>var serverInit sync.Once</code> 保证epollcreate1只在Listen时执行一次，后续Accept调用复用 <code>FD.Init</code> 时不会执行</li>
 </ol>
 <h2 id="net-Accept"><a href="#net-Accept" class="headerlink" title="net.Accept"></a>net.Accept</h2><img src="/2020/11/23/go/net/net_Accept.jpeg" class="">
-<p>222</p>
-<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p><a href="https://zhuanlan.zhihu.com/p/299047984" target="_blank" rel="noopener">epoll</a></p>
+
+<ol>
+<li><code>pollDesc.waitRead</code> 循环检测上层netFD的FD是否有 <strong>pdReady</strong> I/O事件，如果有I/O发生则返回，否则park当前goroutine直到对应FD可读或可写后返回。</li>
+<li><code>FD.Accept</code> 返回后，调用 <code>newFD</code> 创建这个新的socket对应的 <strong>netFD</strong>， 然后调用 <code>netFD.init</code> 完成初始化，调用链同Listen，最终将 <strong>socket fd</strong> 注册到 <strong>listener fd</strong> 的epoll实例的事件队列中</li>
+<li>被park的goroutine在 <code>func netpoll(delay int64) gList</code> 中调用 <code>epollwait</code> 处理可读/可写的事件fd，生成g链表返回。 <code>netpoll</code> 函数在proc的GPM逻辑中被调用</li>
+</ol>
+<h2 id="Conn-Read-Conn-Write"><a href="#Conn-Read-Conn-Write" class="headerlink" title="Conn.Read/Conn.Write"></a>Conn.Read/Conn.Write</h2><h2 id="net-flow"><a href="#net-flow" class="headerlink" title="net flow"></a>net flow</h2><ul>
+<li>Listen创建epoll实例</li>
+<li>client连接server，Listener调用Accept接收conn，每个conn开启一个goroutine处理，所有信息注册到epoll实例的事件队列</li>
+<li>conn调用Read/Write时被park当前goroutine，在GPM逻辑中调用netpoll唤醒goroutine响应I/O事件</li>
+</ul>
+<p>epoll本质为系统内核顺序I/O，通过结合goroutine的GPM框架，解耦内核I/O和用户I/O，达到高并发I/O的设计</p>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p><a href="https://zhuanlan.zhihu.com/p/299047984" target="_blank" rel="noopener">Go netpoller 网络模型之源码全面解析</a></p>
 
       
     </div>
