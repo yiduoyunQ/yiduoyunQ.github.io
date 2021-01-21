@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="runtime&#x2F;HACKING.md  总结 一个goroutine是一个g对象，main也是一个g p数量默认为cpu核线程数，通过GOMAXPROCS调整 m数量一般比p多一点，最大10000个 goroutine入口newproc，m入口mstart getg()获取g，g.m关联的m，g.m.p关联的p 一般getg顺序为本地pop&#x2F;全局拿最多32个&#x2F;其他p偷一半(timer)&#x2F;netw">
+<meta property="og:type" content="article">
+<meta property="og:title" content="goroutine">
+<meta property="og:url" content="https://yiduoyunq.github.io/2020/05/11/go/goroutine/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="runtime&#x2F;HACKING.md  总结 一个goroutine是一个g对象，main也是一个g p数量默认为cpu核线程数，通过GOMAXPROCS调整 m数量一般比p多一点，最大10000个 goroutine入口newproc，m入口mstart getg()获取g，g.m关联的m，g.m.p关联的p 一般getg顺序为本地pop&#x2F;全局拿最多32个&#x2F;其他p偷一半(timer)&#x2F;netw">
+<meta property="article:published_time" content="2020-05-11T05:39:23.000Z">
+<meta property="article:modified_time" content="2020-06-06T14:16:33.482Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2020/05/11/go/goroutine/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>goroutine | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/05/11/go/goroutine/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          goroutine
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-05-11 05:39:23" itemprop="dateCreated datePublished" datetime="2020-05-11T05:39:23+00:00">2020-05-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>runtime/HACKING.md</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>一个goroutine是一个g对象，main也是一个g</li>
+<li>p数量默认为cpu核线程数，通过<code>GOMAXPROCS</code>调整</li>
+<li>m数量一般比p多一点，最大10000个</li>
+<li>goroutine入口<code>newproc</code>，m入口<code>mstart</code></li>
+<li>getg()获取g，g.m关联的m，g.m.p关联的p</li>
+<li>一般getg顺序为本地pop/全局拿最多32个/其他p偷一半(timer)/network</li>
+<li>m通过<code>schedule</code>/<code>findrunnable</code>不断找活干，处于<strong>spinning</strong>状态。如果已经没活，退出spinning状态，调用<code>stopm</code>进入全局midle，同时释放p进入全局pidle</li>
+<li><code>newproc</code>中的g不会直接分配给m，而是由spinning的m自己找g处理。当有idle的p和非spinning的m，则将全局midle设置为<strong>spinning</strong>，然后找g处理。若m不足使用newm新创建m(比如程序刚开始启动时)</li>
+<li><code>sysmon</code>在main方法中注册，每个10ms检查g(初始20us逐渐增加到10ms，发生抢占后重置)，设置g.stackguard0=stackPreempt，在g运行过程中分配新stack时进行判断，将g放回全局runnable g队列，并调用一次schedule。每2分钟如果没有gc过，执行gc。若开启了strace，在sysmon中输出debug信息</li>
+<li>gc根据上一次gc动态调整</li>
+</ul>
+<h2 id="g状态"><a href="#g状态" class="headerlink" title="g状态"></a>g状态</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">    _Gidle = <span class="literal">iota</span> <span class="comment">// 0 newg默认值为iota</span></span><br><span class="line">    _Grunnable <span class="comment">// 1 分配到runq</span></span><br><span class="line">    _Grunning <span class="comment">// 2 从runq等取出，与mp绑定执行go代码</span></span><br><span class="line">    _Gsyscall <span class="comment">// 3 执行系统调用，只与m绑定</span></span><br><span class="line">    _Gwaiting <span class="comment">// 4 阻塞等待io/gc/channel等，不在runq中</span></span><br><span class="line">    _Gmoribund_unused <span class="comment">// 5 保留</span></span><br><span class="line">    _Gdead <span class="comment">// 6 未使用状态，可能在本地或全局gFree，可能有stack或nostack</span></span><br><span class="line">    _Genqueue_unused <span class="comment">// 7 保留</span></span><br><span class="line">    _Gcopystack <span class="comment">// 8 running-&gt;copystack-&gt;running，避免stack拷贝过程中被gc</span></span><br><span class="line">    _Gpreempted <span class="comment">// 9 标示竞争</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 用于标示gc</span></span><br><span class="line">    _Gscan          = <span class="number">0x1000</span></span><br><span class="line">    _Gscanrunnable  = _Gscan + _Grunnable  <span class="comment">// 0x1001</span></span><br><span class="line">    _Gscanrunning   = _Gscan + _Grunning   <span class="comment">// 0x1002</span></span><br><span class="line">    _Gscansyscall   = _Gscan + _Gsyscall   <span class="comment">// 0x1003</span></span><br><span class="line">    _Gscanwaiting   = _Gscan + _Gwaiting   <span class="comment">// 0x1004</span></span><br><span class="line">    _Gscanpreempted = _Gscan + _Gpreempted <span class="comment">// 0x1009</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="入口"><a href="#入口" class="headerlink" title="入口"></a>入口</h2><blockquote>
+<p>平台不同对应汇编文件不同</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// rt0_linux_arm64.s</span></span><br><span class="line">TEXT main(SB),NOSPLIT|NOFRAME,$<span class="number">0</span></span><br><span class="line">    MOVD    $runtime·rt0_go(SB), R2</span><br><span class="line">    BL    (R2)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// asm_arm64.s</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 启动顺序:</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//    call osinit</span></span><br><span class="line"><span class="comment">//    call schedinit</span></span><br><span class="line"><span class="comment">//    make &amp; queue new G</span></span><br><span class="line"><span class="comment">//    call runtime·mstart</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// The new G calls runtime·main.</span></span><br><span class="line">TEXT runtime·rt0_go(SB),NOSPLIT,$<span class="number">0</span></span><br><span class="line">    <span class="comment">// 初始化g0，m0</span></span><br><span class="line"></span><br><span class="line">    CALL    runtime·args(SB)</span><br><span class="line">    CALL    runtime·osinit(SB)</span><br><span class="line">    CALL    runtime·schedinit(SB)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// create a new goroutine to start program</span></span><br><span class="line">    MOVD    $runtime·mainPC(SB), R0        <span class="comment">// mainPC是main的入口</span></span><br><span class="line">    MOVD    RSP, R7</span><br><span class="line">    MOVD.W    $<span class="number">0</span>, <span class="number">-8</span>(R7)</span><br><span class="line">    MOVD.W    R0, <span class="number">-8</span>(R7)</span><br><span class="line">    MOVD.W    $<span class="number">0</span>, <span class="number">-8</span>(R7)</span><br><span class="line">    MOVD.W    $<span class="number">0</span>, <span class="number">-8</span>(R7)</span><br><span class="line">    MOVD    R7, RSP</span><br><span class="line">    BL    runtime·newproc(SB) <span class="comment">// 调用newproc为mainPC创建goroutine</span></span><br><span class="line">    ADD    $<span class="number">32</span>, RSP</span><br><span class="line"></span><br><span class="line">    <span class="comment">// start this M</span></span><br><span class="line">    BL    runtime·mstart(SB) <span class="comment">// m的入口</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// mstart() =&gt; schedule() =&gt; execute() =&gt; xxx() =&gt; goexit()</span></span><br><span class="line">TEXT runtime·goexit(SB),NOSPLIT,$<span class="number">0</span><span class="number">-0</span></span><br><span class="line">    BYTE    $<span class="number">0x90</span>    <span class="comment">// NOP</span></span><br><span class="line">    CALL    runtime·goexit1(SB)    <span class="comment">// does not return</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>schedinit使用cpu线程数或环境变量<code>GOMAXPROCS</code>初始化全局allp</p>
+</blockquote>
+<ol>
+<li>allp不够大的话进行扩容和拷贝旧p</li>
+<li>增加procs时，对增量p初始化，当前g的p复用</li>
+<li>减少procs且当前p比新值小时，释放当前p，使用allp[0]</li>
+<li>调小procs时，释放nprocs～old的p资源</li>
+<li>关联有g的p和空闲m，空g的p放入全局空p对象，并返回第一个可用p</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">schedinit</span><span class="params">()</span></span> &#123;</span><br><span class="line">    sched.maxmcount = <span class="number">10000</span> <span class="comment">// m最大10000个，一般比p多一点</span></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// cpu线程数或环境变量GOMAXPROCS设置p数量</span></span><br><span class="line">    procs := ncpu</span><br><span class="line">    <span class="keyword">if</span> n, ok := atoi32(gogetenv(<span class="string">"GOMAXPROCS"</span>)); ok &amp;&amp; n &gt; <span class="number">0</span> &#123;</span><br><span class="line">        procs = n</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> procresize(procs) != <span class="literal">nil</span> &#123;</span><br><span class="line">        throw(<span class="string">"unknown runnable goroutine during bootstrap"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">procresize</span><span class="params">(nprocs <span class="keyword">int32</span>)</span> *<span class="title">p</span></span> &#123;</span><br><span class="line">    old := gomaxprocs</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. Grow allp if necessary.</span></span><br><span class="line">    <span class="keyword">if</span> nprocs &gt; <span class="keyword">int32</span>(<span class="built_in">len</span>(allp)) &#123;</span><br><span class="line">        <span class="comment">// Synchronize with retake, which could be running</span></span><br><span class="line">        <span class="comment">// concurrently since it doesn't run on a P.</span></span><br><span class="line">        lock(&amp;allpLock)</span><br><span class="line">        <span class="keyword">if</span> nprocs &lt;= <span class="keyword">int32</span>(<span class="built_in">cap</span>(allp)) &#123;</span><br><span class="line">            allp = allp[:nprocs]</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            nallp := <span class="built_in">make</span>([]*p, nprocs)</span><br><span class="line">            <span class="comment">// Copy everything up to allp's cap so we</span></span><br><span class="line">            <span class="comment">// never lose old allocated Ps.</span></span><br><span class="line">            <span class="built_in">copy</span>(nallp, allp[:<span class="built_in">cap</span>(allp)])</span><br><span class="line">            allp = nallp</span><br><span class="line">        &#125;</span><br><span class="line">        unlock(&amp;allpLock)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. initialize new P's</span></span><br><span class="line">    <span class="keyword">for</span> i := old; i &lt; nprocs; i++ &#123;</span><br><span class="line">        pp := allp[i]</span><br><span class="line">        <span class="keyword">if</span> pp == <span class="literal">nil</span> &#123;</span><br><span class="line">            pp = <span class="built_in">new</span>(p)</span><br><span class="line">        &#125;</span><br><span class="line">        pp.init(i)</span><br><span class="line">        atomicstorep(unsafe.Pointer(&amp;allp[i]), unsafe.Pointer(pp))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _g_ := getg()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 增加procs，复用g的p</span></span><br><span class="line">    <span class="keyword">if</span> _g_.m.p != <span class="number">0</span> &amp;&amp; _g_.m.p.ptr().id &lt; nprocs &#123;</span><br><span class="line">        <span class="comment">// continue to use the current P</span></span><br><span class="line">        _g_.m.p.ptr().status = _Prunning</span><br><span class="line">        _g_.m.p.ptr().mcache.prepareForSweep()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 减少procs且当前g的p比新值小，释放当前g的p，使用allp[0]</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> _g_.m.p != <span class="number">0</span> &#123;</span><br><span class="line">            _g_.m.p.ptr().m = <span class="number">0</span></span><br><span class="line">        &#125;</span><br><span class="line">        _g_.m.p = <span class="number">0</span></span><br><span class="line">        _g_.m.mcache = <span class="literal">nil</span></span><br><span class="line">        p := allp[<span class="number">0</span>]</span><br><span class="line">        p.m = <span class="number">0</span></span><br><span class="line">        p.status = _Pidle</span><br><span class="line">        acquirep(p)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 调小procs，释放nprocs～old的p资源</span></span><br><span class="line">    <span class="keyword">for</span> i := nprocs; i &lt; old; i++ &#123;</span><br><span class="line">        p := allp[i]</span><br><span class="line">        p.destroy()</span><br><span class="line">        <span class="comment">// can't free P itself because it can be referenced by an M in syscall</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Trim allp.</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">int32</span>(<span class="built_in">len</span>(allp)) != nprocs &#123;</span><br><span class="line">        lock(&amp;allpLock)</span><br><span class="line">        allp = allp[:nprocs]</span><br><span class="line">        unlock(&amp;allpLock)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 关联有g的p和空闲m，空g的p放入全局空p对象，并返回第一个可用p</span></span><br><span class="line">    <span class="keyword">var</span> runnablePs *p</span><br><span class="line">    <span class="keyword">for</span> i := nprocs - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i-- &#123;</span><br><span class="line">        p := allp[i]</span><br><span class="line">        <span class="keyword">if</span> _g_.m.p.ptr() == p &#123;</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        p.status = _Pidle</span><br><span class="line">        <span class="keyword">if</span> runqempty(p) &#123;</span><br><span class="line">            pidleput(p)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            p.m.set(mget())</span><br><span class="line">            p.link.set(runnablePs)</span><br><span class="line">            runnablePs = p</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    stealOrder.reset(<span class="keyword">uint32</span>(nprocs))</span><br><span class="line">    <span class="keyword">var</span> int32p *<span class="keyword">int32</span> = &amp;gomaxprocs <span class="comment">// make compiler check that gomaxprocs is an int32</span></span><br><span class="line">    atomic.Store((*<span class="keyword">uint32</span>)(unsafe.Pointer(int32p)), <span class="keyword">uint32</span>(nprocs))</span><br><span class="line">    <span class="keyword">return</span> runnablePs</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="newproc"><a href="#newproc" class="headerlink" title="newproc"></a>newproc</h3><blockquote>
+<p>newproc是goroutine入口(main也是goroutine)</p>
+</blockquote>
+<ol>
+<li>获取free g<br> 1.1 本地free g队列获取g<br> 1.2 若本地free g队列空，全局free g队列获取最多32个g到本地，优先取有栈g<br> 1.3 若全局free g队列空，创建新g，默认stack为2k，状态默认idle-&gt;dead，避免gc</li>
+<li>栈信息拷贝</li>
+<li>状态dead-&gt;runnable</li>
+<li>从goidcache设置goid，采用了预分配id段，预分配加解锁一次，设置无需锁</li>
+<li>保存g到p<br> 5.1 保存g到runnext，旧的runnext排到本地runnable g队列尾(大小固定256)<br> 5.2 若本地runnable g队列满，取一半放到全局runnable g队列</li>
+<li>有空闲p，并且没有spinning状态m，调用wakep消化g。 main函数也是一个goroutine，通过mainStarted过滤，无需执行wakep<br> 6.1 wakep调用startm，首先查看有无全局midle，若有直接绑定gpm，若没有newm创建一个spinning的m，由m调用mstart找g处理</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newproc</span><span class="params">(siz <span class="keyword">int32</span>, fn *funcval)</span></span> &#123;</span><br><span class="line">    argp := add(unsafe.Pointer(&amp;fn), sys.PtrSize)</span><br><span class="line">    gp := getg() <span class="comment">// debug trace用</span></span><br><span class="line">    pc := getcallerpc()</span><br><span class="line">    systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        newproc1(fn, argp, siz, gp, pc)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newproc1</span><span class="params">(fn *funcval, argp unsafe.Pointer, narg <span class="keyword">int32</span>, callergp *g, callerpc <span class="keyword">uintptr</span>)</span></span> &#123;</span><br><span class="line">    _g_ := getg()</span><br><span class="line"></span><br><span class="line">    acquirem()</span><br><span class="line"></span><br><span class="line">    _p_ := _g_.m.p.ptr()</span><br><span class="line"></span><br><span class="line">    newg := gfget(_p_) <span class="comment">// 1. 获取free g</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果本地g和全局g都用完，创建新g，newg=new(g)</span></span><br><span class="line">    <span class="comment">// _StackMin=2048，因此默认创建出来的g栈大小为2k</span></span><br><span class="line">    <span class="keyword">if</span> newg == <span class="literal">nil</span> &#123;</span><br><span class="line">        newg = malg(_StackMin)</span><br><span class="line">        casgstatus(newg, _Gidle, _Gdead) <span class="comment">// 状态_Gidle -&gt; _Gdead</span></span><br><span class="line">        allgadd(newg) <span class="comment">// publishes with a g-&gt;status of Gdead so GC scanner doesn't look at uninitialized stack.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 拷贝栈信息</span></span><br><span class="line"></span><br><span class="line">    newg.ancestors = saveAncestors(callergp) <span class="comment">// 用于go trace</span></span><br><span class="line"></span><br><span class="line">    casgstatus(newg, _Gdead, _Grunnable) <span class="comment">// 3. 状态_Gdead -&gt; _Grunnable</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 防止每次访问全局计数器goidgen，采用预分配id段方式</span></span><br><span class="line">    <span class="keyword">if</span> _p_.goidcache == _p_.goidcacheend &#123;</span><br><span class="line">        _p_.goidcache = atomic.Xadd64(&amp;sched.goidgen, _GoidCacheBatch)</span><br><span class="line">        _p_.goidcache -= _GoidCacheBatch - <span class="number">1</span></span><br><span class="line">        _p_.goidcacheend = _p_.goidcache + _GoidCacheBatch</span><br><span class="line">    &#125;</span><br><span class="line">    newg.goid = <span class="keyword">int64</span>(_p_.goidcache)</span><br><span class="line">    _p_.goidcache++</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 保存g到p</span></span><br><span class="line">    runqput(_p_, newg, <span class="literal">true</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 有空闲p，并且没有spinning状态m，重新唤醒p。 main函数也是一个goroutine，通过mainStarted过滤，无需执行wakep</span></span><br><span class="line">    <span class="keyword">if</span> atomic.Load(&amp;sched.npidle) != <span class="number">0</span> &amp;&amp; atomic.Load(&amp;sched.nmspinning) == <span class="number">0</span> &amp;&amp; mainStarted &#123;</span><br><span class="line">        wakep()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    releasem(_g_.m)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="p-runnext测试"><a href="#p-runnext测试" class="headerlink" title="p.runnext测试"></a>p.runnext测试</h4><p>单cpu下每次输出都为9012345678，9是runnext，0-8是本地runnable g队列</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    runtime.GOMAXPROCS(<span class="number">1</span>) <span class="comment">// 如果设置为多核，不同核间顺序随机</span></span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">        <span class="keyword">go</span> fmt.Print(i, <span class="string">" "</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    runtime.Gosched()</span><br><span class="line">    time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="number">9</span> <span class="number">0</span> <span class="number">1</span> <span class="number">2</span> <span class="number">3</span> <span class="number">4</span> <span class="number">5</span> <span class="number">6</span> <span class="number">7</span> <span class="number">8</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="mstart"><a href="#mstart" class="headerlink" title="mstart"></a>mstart</h3><blockquote>
+<p>mstart是m的入口，调用顺序mstart-&gt;schedule-&gt;execute</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mstart</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    mstart1()</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    mexit(osStack)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mstart1</span><span class="params">()</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    schedule()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>schedule是单次调度的公共函数，找一个g放m上执行，调用excute</p>
+</blockquote>
+<ol>
+<li>有locked g，直接在上面跑execute</li>
+<li>61轮一次从全局runnable g取 (增加循环间隔，避免全局g被某几个goroutine占有)</li>
+<li>从本地runnable g取，优先取runnext</li>
+<li>调用findrunnable()获取runnable g，直到取到1个g为止</li>
+<li>若当前m处于spinning，取消spinning</li>
+<li>获取的g已有lockedm，绑定g和lockedm，从2.重新判断</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">schedule</span><span class="params">()</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. 有locked g，直接在上面跑execute</span></span><br><span class="line">    <span class="keyword">if</span> _g_.m.lockedg != <span class="number">0</span> &#123;</span><br><span class="line">        stoplockedm()</span><br><span class="line">        execute(_g_.m.lockedg.ptr(), <span class="literal">false</span>) <span class="comment">// Never returns.</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">top:</span><br><span class="line">    pp := _g_.m.p.ptr()</span><br><span class="line">    pp.preempt = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> sched.gcwaiting != <span class="number">0</span> &#123;</span><br><span class="line">        gcstopm()</span><br><span class="line">        <span class="keyword">goto</span> top</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> gp *g</span><br><span class="line">    <span class="keyword">var</span> inheritTime <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 61轮一次从全局runnable g取</span></span><br><span class="line">    <span class="keyword">if</span> gp == <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="comment">// Check the global runnable queue once in a while to ensure fairness.</span></span><br><span class="line">        <span class="comment">// Otherwise two goroutines can completely occupy the local runqueue</span></span><br><span class="line">        <span class="comment">// by constantly respawning each other.</span></span><br><span class="line">        <span class="keyword">if</span> _g_.m.p.ptr().schedtick%<span class="number">61</span> == <span class="number">0</span> &amp;&amp; sched.runqsize &gt; <span class="number">0</span> &#123;</span><br><span class="line">            lock(&amp;sched.lock)</span><br><span class="line">            gp = globrunqget(_g_.m.p.ptr(), <span class="number">1</span>)</span><br><span class="line">            unlock(&amp;sched.lock)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 从本地runnable g取，优先取runnext</span></span><br><span class="line">    <span class="keyword">if</span> gp == <span class="literal">nil</span> &#123;</span><br><span class="line">        gp, inheritTime = runqget(_g_.m.p.ptr())</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 4. 调用findrunnable()获取runnable g，直到取到1个g为止</span></span><br><span class="line">    <span class="keyword">if</span> gp == <span class="literal">nil</span> &#123;</span><br><span class="line">        gp, inheritTime = findrunnable() <span class="comment">// blocks until work is available</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 若当前m处于spinning，取消spinning</span></span><br><span class="line">    <span class="keyword">if</span> _g_.m.spinning &#123;</span><br><span class="line">        resetspinning()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6. 获取的g已有lockedm，绑定g和lockedm，从2.重新判断</span></span><br><span class="line">    <span class="keyword">if</span> gp.lockedm != <span class="number">0</span> &#123;</span><br><span class="line">        <span class="comment">// Hands off own p to the locked m,</span></span><br><span class="line">        <span class="comment">// then blocks waiting for a new p.</span></span><br><span class="line">        startlockedm(gp)</span><br><span class="line">        <span class="keyword">goto</span> top</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    execute(gp, inheritTime)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>findrunnable()尝试从本地g/全局g/net poll/其他p偷取g或timer g/执行gc 各种途径find a work</p>
+</blockquote>
+<ol>
+<li>再尝试从本地runnable g取</li>
+<li>从全局runnable g取</li>
+<li>从net poll取g</li>
+<li>大量m已处于spinning，而非idle的p数量少，通常为代码并发度低，跳过5.</li>
+<li>从其他p偷取一半本地runnable g，尝试4次，最后一次会尝试偷取runNext和p2的到期timer g<br> 5.1 若有timer，可能有timer g结束入队，重新从1.开始判断</li>
+<li>gc阶段，查看有无gc工作可做</li>
+<li>再尝试从全局runnable g取</li>
+<li>释放p，放回全局pidle<br> 8.1 m状态变为非spinning，nmspinning计数-1</li>
+<li>从allp重新获取idle的p，并设置spinning和nmspinning+1，重新从1.开始判断</li>
+<li>处于gc阶段，重新从6.开始判断</li>
+<li>再次从net poll取g</li>
+<li>将m放入全局idle m，并与当前g关联，重新从1.开始判断</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findrunnable</span><span class="params">()</span> <span class="params">(gp *g, inheritTime <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    _g_ := getg()</span><br><span class="line"></span><br><span class="line">top:</span><br><span class="line">    _p_ := _g_.m.p.ptr()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 1. 再尝试从本地runnable g取</span></span><br><span class="line">    <span class="keyword">if</span> gp, inheritTime := runqget(_p_); gp != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> gp, inheritTime</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 从全局runnable g取</span></span><br><span class="line">    <span class="keyword">if</span> sched.runqsize != <span class="number">0</span> &#123;</span><br><span class="line">        lock(&amp;sched.lock)</span><br><span class="line">        gp := globrunqget(_p_, <span class="number">0</span>)</span><br><span class="line">        unlock(&amp;sched.lock)</span><br><span class="line">        <span class="keyword">if</span> gp != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> gp, <span class="literal">false</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 从net poll取g</span></span><br><span class="line"></span><br><span class="line">    procs := <span class="keyword">uint32</span>(gomaxprocs)</span><br><span class="line">    ranTimer := <span class="literal">false</span></span><br><span class="line">    <span class="comment">// If number of spinning M's &gt;= number of busy P's, block.</span></span><br><span class="line">    <span class="comment">// 4. 大量m已处于spinning，而非idle的p数量少，通常为代码并发度低</span></span><br><span class="line">    <span class="keyword">if</span> !_g_.m.spinning &amp;&amp; <span class="number">2</span>*atomic.Load(&amp;sched.nmspinning) &gt;= procs-atomic.Load(&amp;sched.npidle) &#123;</span><br><span class="line">        <span class="keyword">goto</span> stop</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !_g_.m.spinning &#123;</span><br><span class="line">        _g_.m.spinning = <span class="literal">true</span> <span class="comment">// 设置为spinning</span></span><br><span class="line">        atomic.Xadd(&amp;sched.nmspinning, <span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 从其他p偷取一半本地runnable g，尝试4次，最后一次会尝试偷取runNext和p2的到期timer g</span></span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">4</span>; i++ &#123;</span><br><span class="line">        <span class="keyword">for</span> enum := stealOrder.start(fastrand()); !enum.done(); enum.next() &#123;</span><br><span class="line">            <span class="keyword">if</span> sched.gcwaiting != <span class="number">0</span> &#123;</span><br><span class="line">                <span class="keyword">goto</span> top</span><br><span class="line">            &#125;</span><br><span class="line">            stealRunNextG := i &gt; <span class="number">2</span> <span class="comment">// first look for ready queues with more than 1 g</span></span><br><span class="line">            p2 := allp[enum.position()]</span><br><span class="line">            <span class="keyword">if</span> _p_ == p2 &#123;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> gp := runqsteal(_p_, p2, stealRunNextG); gp != <span class="literal">nil</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> gp, <span class="literal">false</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 偷取p2的timer g</span></span><br><span class="line">            <span class="keyword">if</span> i &gt; <span class="number">2</span> &amp;&amp; shouldStealTimers(p2) &#123;</span><br><span class="line">                tnow, w, ran := checkTimers(p2, now)</span><br><span class="line">                now = tnow</span><br><span class="line">                <span class="keyword">if</span> w != <span class="number">0</span> &amp;&amp; (pollUntil == <span class="number">0</span> || w &lt; pollUntil) &#123;</span><br><span class="line">                    pollUntil = w</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> ran &#123;</span><br><span class="line">                    <span class="comment">// p2的timer g入队，可以偷取</span></span><br><span class="line">                    <span class="keyword">if</span> gp, inheritTime := runqget(_p_); gp != <span class="literal">nil</span> &#123;</span><br><span class="line">                        <span class="keyword">return</span> gp, inheritTime</span><br><span class="line">                    &#125;</span><br><span class="line">                    ranTimer = <span class="literal">true</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 若有timer，可能有timer g结束入队，重新从1.开始判断</span></span><br><span class="line">    <span class="keyword">if</span> ranTimer &#123;</span><br><span class="line">        <span class="comment">// Running a timer may have made some goroutine ready.</span></span><br><span class="line">        <span class="keyword">goto</span> top</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">stop:</span><br><span class="line">    <span class="comment">// 6. gc阶段，查看有无gc工作可做</span></span><br><span class="line">    <span class="keyword">if</span> gcBlackenEnabled != <span class="number">0</span> &amp;&amp; _p_.gcBgMarkWorker != <span class="number">0</span> &amp;&amp; gcMarkWorkAvailable(_p_) &#123;</span><br><span class="line">        _p_.gcMarkWorkerMode = gcMarkWorkerIdleMode</span><br><span class="line">        gp := _p_.gcBgMarkWorker.ptr()</span><br><span class="line">        casgstatus(gp, _Gwaiting, _Grunnable)</span><br><span class="line">        <span class="keyword">if</span> trace.enabled &#123;</span><br><span class="line">            traceGoUnpark(gp, <span class="number">0</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> gp, <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 7. 再尝试从全局runnable g取</span></span><br><span class="line">    <span class="keyword">if</span> sched.runqsize != <span class="number">0</span> &#123;</span><br><span class="line">        gp := globrunqget(_p_, <span class="number">0</span>)</span><br><span class="line">        unlock(&amp;sched.lock)</span><br><span class="line">        <span class="keyword">return</span> gp, <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 8. 释放m的p，放回全局pidle</span></span><br><span class="line">    <span class="keyword">if</span> releasep() != _p_ &#123;</span><br><span class="line">        throw(<span class="string">"findrunnable: wrong p"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    pidleput(_p_)</span><br><span class="line">    unlock(&amp;sched.lock)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 8.1 m状态变为非spinning，nmspinning-1</span></span><br><span class="line">    wasSpinning := _g_.m.spinning</span><br><span class="line">    <span class="keyword">if</span> _g_.m.spinning &#123;</span><br><span class="line">        _g_.m.spinning = <span class="literal">false</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">int32</span>(atomic.Xadd(&amp;sched.nmspinning, <span class="number">-1</span>)) &lt; <span class="number">0</span> &#123;</span><br><span class="line">            throw(<span class="string">"findrunnable: negative nmspinning"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 9. 从allp重新获取idle的p，并设置spinning和nmspinning+1，重新从1.开始判断</span></span><br><span class="line">    <span class="keyword">for</span> _, _p_ := <span class="keyword">range</span> allpSnapshot &#123;</span><br><span class="line">        <span class="keyword">if</span> !runqempty(_p_) &#123;</span><br><span class="line">            lock(&amp;sched.lock)</span><br><span class="line">            _p_ = pidleget()</span><br><span class="line">            unlock(&amp;sched.lock)</span><br><span class="line">            <span class="keyword">if</span> _p_ != <span class="literal">nil</span> &#123;</span><br><span class="line">                acquirep(_p_)</span><br><span class="line">                <span class="keyword">if</span> wasSpinning &#123;</span><br><span class="line">                    _g_.m.spinning = <span class="literal">true</span></span><br><span class="line">                    atomic.Xadd(&amp;sched.nmspinning, <span class="number">1</span>)</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">goto</span> top</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 10. 处于gc阶段，重新从6.开始判断</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 11. 再次从net poll取g</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 12. 将m放入全局idle m，并与当前g关联，重新从1.开始判断</span></span><br><span class="line">    stopm()</span><br><span class="line">    <span class="keyword">goto</span> top</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>execute设置g状态为running，并执行g</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">execute</span><span class="params">(gp *g, inheritTime <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    _g_ := getg()</span><br><span class="line"></span><br><span class="line">    _g_.m.curg = gp</span><br><span class="line">    gp.m = _g_.m</span><br><span class="line">    casgstatus(gp, _Grunnable, _Grunning)</span><br><span class="line">    <span class="keyword">if</span> !inheritTime &#123;</span><br><span class="line">        _g_.m.p.ptr().schedtick++</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    gogo(&amp;gp.sched) <span class="comment">// gp.sched在newproc中设置，调用asm_arm64.s汇编函数gogo执行g代码</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="抢占"><a href="#抢占" class="headerlink" title="抢占"></a>抢占</h2><blockquote>
+<p><code>runtime/proc.go</code>的main函数中注册了sysmon</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    g := getg()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Max stack size is 1 GB on 64-bit, 250 MB on 32-bit.</span></span><br><span class="line">    <span class="keyword">if</span> sys.PtrSize == <span class="number">8</span> &#123;</span><br><span class="line">        maxstacksize = <span class="number">1000000000</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        maxstacksize = <span class="number">250000000</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Allow newproc to start new Ms.</span></span><br><span class="line">    mainStarted = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> GOARCH != <span class="string">"wasm"</span> &#123; <span class="comment">// no threads on wasm yet, so no sysmon</span></span><br><span class="line">        systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">            newm(sysmon, <span class="literal">nil</span>)</span><br><span class="line">        &#125;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fn := main_main <span class="comment">// go:linkname main_main main.main</span></span><br><span class="line">    fn()</span><br><span class="line"></span><br><span class="line">    exit(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> x *<span class="keyword">int32</span></span><br><span class="line">        *x = <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>sysmon</code>为死循环，调用<code>retake</code>来调度长时间执行的g；调用<code>gcTrigger.test</code>方法判断2分钟没执行过gc；如果设置strace，根据设置间隔输出debug信息</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">sysmon</span><span class="params">()</span></span> &#123;</span><br><span class="line">    lock(&amp;sched.lock)</span><br><span class="line">    sched.nmsys++</span><br><span class="line">    checkdead()</span><br><span class="line">    unlock(&amp;sched.lock)</span><br><span class="line"></span><br><span class="line">    lasttrace := <span class="keyword">int64</span>(<span class="number">0</span>)</span><br><span class="line">    idle := <span class="number">0</span></span><br><span class="line">    delay := <span class="keyword">uint32</span>(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> idle == <span class="number">0</span> &#123; <span class="comment">// start with 20us sleep...</span></span><br><span class="line">            delay = <span class="number">20</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> idle &gt; <span class="number">50</span> &#123; <span class="comment">// start doubling the sleep after 1ms...</span></span><br><span class="line">            delay *= <span class="number">2</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> delay &gt; <span class="number">10</span>*<span class="number">1000</span> &#123; <span class="comment">// up to 10ms</span></span><br><span class="line">            delay = <span class="number">10</span> * <span class="number">1000</span></span><br><span class="line">        &#125;</span><br><span class="line">        usleep(delay)</span><br><span class="line">        now := nanotime()</span><br><span class="line">        <span class="comment">// retake P's blocked in syscalls</span></span><br><span class="line">        <span class="comment">// and preempt long running G's</span></span><br><span class="line">        <span class="keyword">if</span> retake(now) != <span class="number">0</span> &#123;</span><br><span class="line">            idle = <span class="number">0</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            idle++</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// check if we need to force a GC，判断在t.test()中</span></span><br><span class="line">        <span class="keyword">if</span> t := (gcTrigger&#123;kind: gcTriggerTime, now: now&#125;); t.test() &amp;&amp; atomic.Load(&amp;forcegc.idle) != <span class="number">0</span> &#123;</span><br><span class="line">            lock(&amp;forcegc.lock)</span><br><span class="line">            forcegc.idle = <span class="number">0</span></span><br><span class="line">            <span class="keyword">var</span> list gList</span><br><span class="line">            list.push(forcegc.g)</span><br><span class="line">            injectglist(&amp;list)</span><br><span class="line">            unlock(&amp;forcegc.lock)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> debug.schedtrace &gt; <span class="number">0</span> &amp;&amp; lasttrace+<span class="keyword">int64</span>(debug.schedtrace)*<span class="number">1000000</span> &lt;= now &#123;</span><br><span class="line">            lasttrace = now</span><br><span class="line">            schedtrace(debug.scheddetail &gt; <span class="number">0</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>retake</code>遍历allp判断执行超过10ms的p，传给<code>preemptone</code></p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> forcePreemptNS = <span class="number">10</span> * <span class="number">1000</span> * <span class="number">1000</span> <span class="comment">// 10ms</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">retake</span><span class="params">(now <span class="keyword">int64</span>)</span> <span class="title">uint32</span></span> &#123;</span><br><span class="line">    n := <span class="number">0</span></span><br><span class="line">    lock(&amp;allpLock)</span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(allp); i++ &#123;</span><br><span class="line">        _p_ := allp[i]</span><br><span class="line">        <span class="keyword">if</span> _p_ == <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="comment">// 在procresize代码中，还没初始化</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        pd := &amp;_p_.sysmontick</span><br><span class="line">        s := _p_.status</span><br><span class="line">        sysretake := <span class="literal">false</span></span><br><span class="line">        <span class="keyword">if</span> s == _Prunning || s == _Psyscall &#123;</span><br><span class="line">            <span class="comment">// Preempt G if it's running for too long.</span></span><br><span class="line">            t := <span class="keyword">int64</span>(_p_.schedtick)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">int64</span>(pd.schedtick) != t &#123;</span><br><span class="line">                pd.schedtick = <span class="keyword">uint32</span>(t)</span><br><span class="line">                pd.schedwhen = now</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> pd.schedwhen+forcePreemptNS &lt;= now &#123;</span><br><span class="line">                preemptone(_p_)</span><br><span class="line">                sysretake = <span class="literal">true</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    unlock(&amp;allpLock)</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">uint32</span>(n)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>preemptone</code>设置g.stackguard0=stackPreempt。<br>创建新g后stack默认2k，之后根据代码执行不断调整stack大小。<br>调用汇编函数<code>morestack</code>，CALL <code>newstack</code>时检查<strong>stackPreempt</strong>，将g放回全局runnable g队列，并调用schedule</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">preemptone</span><span class="params">(_p_ *p)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">    mp := _p_.m.ptr()</span><br><span class="line">    gp := mp.curg</span><br><span class="line">    gp.preempt = <span class="literal">true</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Every call in a go routine checks for stack overflow by</span></span><br><span class="line">    <span class="comment">// comparing the current stack pointer to gp-&gt;stackguard0.</span></span><br><span class="line">    <span class="comment">// Setting gp-&gt;stackguard0 to StackPreempt folds</span></span><br><span class="line">    <span class="comment">// preemption into the normal stack overflow check.</span></span><br><span class="line">    gp.stackguard0 = stackPreempt</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// stack.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newstack</span><span class="params">()</span></span> &#123;</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    preempt := atomic.Loaduintptr(&amp;gp.stackguard0) == stackPreempt</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> preempt &#123;</span><br><span class="line">        <span class="keyword">if</span> !canPreemptM(thisg.m) &#123;</span><br><span class="line">            <span class="comment">// Let the goroutine keep running for now.</span></span><br><span class="line">            <span class="comment">// gp-&gt;preempt is set, so it will be preempted next time.</span></span><br><span class="line">            gp.stackguard0 = gp.stack.lo + _StackGuard</span><br><span class="line">            gogo(&amp;gp.sched) <span class="comment">// never return</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> preempt &#123;</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 将g放回全局runnable g队列，调用schedule</span></span><br><span class="line">        gopreempt_m(gp)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="schedtrace"><a href="#schedtrace" class="headerlink" title="schedtrace"></a>schedtrace</h2><ul>
+<li>gomaxprocs:      p数量</li>
+<li>idleprocs:       idle p数量</li>
+<li>threads:         m数量</li>
+<li>spinningthreads: spinning状态的m</li>
+<li>nmidle:          idle m数量</li>
+<li>runqueue:        全局runnable g队列长度</li>
+<li>[x, y, z..]:     per p的本地runnable g队列长度</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">schedtrace</span><span class="params">(detailed <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"SCHED "</span>, (now-starttime)/<span class="number">1e6</span>, <span class="string">"ms: gomaxprocs="</span>, gomaxprocs, <span class="string">" idleprocs="</span>, sched.npidle, <span class="string">" threads="</span>, mcount(), <span class="string">" spinningthreads="</span>, sched.nmspinning, <span class="string">" idlethreads="</span>, sched.nmidle, <span class="string">" runqueue="</span>, sched.runqsize)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="gc"><a href="#gc" class="headerlink" title="gc"></a>gc</h2><p>runtime/mgc.go</p>
+<p>通过<code>gcSetTriggerRatio</code>动态调整gc速度，略</p>
+<h2 id="tool"><a href="#tool" class="headerlink" title="tool"></a>tool</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> GODEBUG=schedtrace=1000 godoc -http=:6060</span></span><br><span class="line">SCHED 0ms: gomaxprocs=4 idleprocs=3 threads=3 spinningthreads=0 idlethreads=0 runqueue=0 [0 0 0 0]</span><br><span class="line">using module mode; GOMOD=/PATHTO/go.mod</span><br><span class="line">SCHED 0ms: gomaxprocs=4 idleprocs=1 threads=4 spinningthreads=1 idlethreads=0 runqueue=0 [1 0 0 0]</span><br><span class="line">SCHED 1005ms: gomaxprocs=4 idleprocs=4 threads=20 spinningthreads=0 idlethreads=15 runqueue=0 [0 0 0 0]</span><br><span class="line">SCHED 2013ms: gomaxprocs=4 idleprocs=4 threads=20 spinningthreads=0 idlethreads=16 runqueue=0 [0 0 0 0]</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/07/go/interface/" rel="prev" title="go inferface">
+      <i class="fa fa-chevron-left"></i> go inferface
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/11/go/sync.pool/" rel="next" title="go sync.pool">
+      go sync.pool <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">1.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#g状态"><span class="nav-number">2.</span> <span class="nav-text">g状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#入口"><span class="nav-number">3.</span> <span class="nav-text">入口</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#newproc"><span class="nav-number">3.1.</span> <span class="nav-text">newproc</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#p-runnext测试"><span class="nav-number">3.1.1.</span> <span class="nav-text">p.runnext测试</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mstart"><span class="nav-number">3.2.</span> <span class="nav-text">mstart</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#抢占"><span class="nav-number">4.</span> <span class="nav-text">抢占</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#schedtrace"><span class="nav-number">5.</span> <span class="nav-text">schedtrace</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gc"><span class="nav-number">6.</span> <span class="nav-text">gc</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tool"><span class="nav-number">7.</span> <span class="nav-text">tool</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

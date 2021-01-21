@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="NIOServerCnxn &#x2F; NettyServerCnxn 调用ZooKeeperServer.processPacket，内部会调用submitRequest，最后submitRequest会将Request派发到firstProcessor  配置ProcessorsFollower节点配置ProcessorsFollower节点配置Processors详见FollowerZooKeepe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="zookeeper源码-5.客户端响应请求">
+<meta property="og:url" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="NIOServerCnxn &#x2F; NettyServerCnxn 调用ZooKeeperServer.processPacket，内部会调用submitRequest，最后submitRequest会将Request派发到firstProcessor  配置ProcessorsFollower节点配置ProcessorsFollower节点配置Processors详见FollowerZooKeepe">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/follower_processors.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/leader_processors.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/proposal_seq.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/proposal_ack.png">
+<meta property="article:published_time" content="2020-04-29T06:23:17.000Z">
+<meta property="article:modified_time" content="2020-06-06T14:16:33.279Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/follower_processors.png">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>zookeeper源码-5.客户端响应请求 | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_processPacket/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          zookeeper源码-5.客户端响应请求
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-29 06:23:17" itemprop="dateCreated datePublished" datetime="2020-04-29T06:23:17+00:00">2020-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/zookeeper/" itemprop="url" rel="index"><span itemprop="name">zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>NIOServerCnxn / NettyServerCnxn 调用ZooKeeperServer.processPacket，内部会调用submitRequest，最后submitRequest会将Request派发到firstProcessor</p>
+<hr>
+<h2 id="配置Processors"><a href="#配置Processors" class="headerlink" title="配置Processors"></a>配置Processors</h2><h3 id="Follower节点配置Processors"><a href="#Follower节点配置Processors" class="headerlink" title="Follower节点配置Processors"></a>Follower节点配置Processors</h3><p>Follower节点配置Processors详见FollowerZooKeeperServer.setupRequestProcessors, 链表结构如下:</p>
+<img src="/2020/04/29/zk/zkSrc_processPacket/follower_processors.png" class="">
+
+<h3 id="Leader节点配置Processors"><a href="#Leader节点配置Processors" class="headerlink" title="Leader节点配置Processors"></a>Leader节点配置Processors</h3><p>Leader节点配置Processors详见LeaderZooKeeperServer.setupRequestProcessors, 链表结构如下:</p>
+<img src="/2020/04/29/zk/zkSrc_processPacket/leader_processors.png" class="">
+
+<h3 id="客户端请求处理"><a href="#客户端请求处理" class="headerlink" title="客户端请求处理"></a>客户端请求处理</h3><p>Zookeeper将客户端的请求实际上分为两种类型:</p>
+<ul>
+<li>第一种类型的请求可以叫做读请求，如getData，getChildren等。<br>这种类型的请求不会修改zookeeper数据库的内容，因为zookeeper每个节点的数据库内容是一致的(不同的节点之间由于同步的时间不一致，可能会导致数据有不一致)，所以读请求只用在本地节点的数据库即可。</li>
+<li>第二种节点会修改数据库内容，如create,delete等。<br>非Leader节点接收到此种请求，会先转发到Leader节点，Leader会按照先Proposal，后Commit的方式将请求同步到所有节点。</li>
+</ul>
+<h2 id="处理请求流程"><a href="#处理请求流程" class="headerlink" title="处理请求流程"></a>处理请求流程</h2><h3 id="Leader处理请求流程"><a href="#Leader处理请求流程" class="headerlink" title="Leader处理请求流程"></a>Leader处理请求流程</h3><h4 id="LeaderRequestProcessor"><a href="#LeaderRequestProcessor" class="headerlink" title="LeaderRequestProcessor"></a>LeaderRequestProcessor</h4><ul>
+<li>如果是LocalSession，并且用户请求为创建临时节点（Session关闭时节点会删除），则升级Session到GlobalSession，并且创建一条createSession请求（upgradeRequest）。</li>
+<li>如果createSession请求不为null，转发到PrepRequestProcessor。</li>
+<li>转发用户请求到PrepRequestProcessor</li>
+</ul>
+<h4 id="PrepRequestProcessor"><a href="#PrepRequestProcessor" class="headerlink" title="PrepRequestProcessor"></a>PrepRequestProcessor</h4><p>PrepRequestProcessor设置Request的transcation信息，该Processor运行于独立的线程中。对于会改写zookeeper数据库的操作，该Processor会添加transcation信息，并且增加TxnHeader。对于读操作，则只检查session合法性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">pRequest2Txn</span><span class="params">(<span class="keyword">int</span> type, <span class="keyword">long</span> zxid, Request request, Record record, <span class="keyword">boolean</span> deserialize)</span> <span class="keyword">throws</span> KeeperException, IOException, RequestProcessorException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (request.getHdr() == <span class="keyword">null</span>) &#123;</span><br><span class="line">        request.setHdr(<span class="keyword">new</span> TxnHeader(request.sessionId, request.cxid, zxid,</span><br><span class="line">                Time.currentWallTime(), type));</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setTxnDigest</span><span class="params">(Request request, PrecalculatedDigest preCalculatedDigest)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (preCalculatedDigest == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    request.setTxnDigest(<span class="keyword">new</span> TxnDigest(digestCalculator.getDigestVersion(), preCalculatedDigest.treeDigest));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="ProposalRequestProcessor"><a href="#ProposalRequestProcessor" class="headerlink" title="ProposalRequestProcessor"></a>ProposalRequestProcessor</h4><ul>
+<li>ProposalRequestProcessor会先将请求派发给CommitProcessor</li>
+<li>随后ProposalRequestProcessor检查哪些请求被添加了transcation信息，如果被添加了transcation信息，则会发送Proposal包给集群内所有节点。发送Proposal的时序图如下:</li>
+</ul>
+<img src="/2020/04/29/zk/zkSrc_processPacket/proposal_seq.png" class="">
+
+<ul>
+<li>发送完Proposal之后，再将该请求发送到SyncRequestProcessor。</li>
+</ul>
+<h4 id="SyncRequestProcessor"><a href="#SyncRequestProcessor" class="headerlink" title="SyncRequestProcessor"></a>SyncRequestProcessor</h4><p>SyncRequestProcessor用于存储请求Transcation日志以及数据库的Snapshot日志到文件，存储的逻辑详见run函数：</p>
+<ul>
+<li>通过snapCount和snapSizeInBytes控制多少次请求或多大log生成一个新的Transcation日志文件和保存Snapshot文件。</li>
+<li>为了防止不同的节点都在相同的时间点进行snap，每次生成新的随机数，随机打散每个zk节点的snap时间点</li>
+<li>Transcation日志格式以及Snapshot文件格式详见数据库格式。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (zks.getZKDatabase().append(si)) &#123;</span><br><span class="line">    <span class="keyword">if</span> (shouldSnapshot()) &#123;</span><br><span class="line">        resetSnapshotStats();</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resetSnapshotStats</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    randRoll = ThreadLocalRandom.current().nextInt(snapCount / <span class="number">2</span>);</span><br><span class="line">    randSize = Math.abs(ThreadLocalRandom.current().nextLong() % (snapSizeInBytes / <span class="number">2</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="AckRequestProcessor"><a href="#AckRequestProcessor" class="headerlink" title="AckRequestProcessor"></a>AckRequestProcessor</h4><p>在SyncRequestProcessor flush后，AckRequestProcessor仅仅是发送一个正在处理请求的ACK到Leader自己，用来模拟收到Leader节点的ACK。</p>
+<h4 id="Leader-Proposal-ACK管理"><a href="#Leader-Proposal-ACK管理" class="headerlink" title="Leader Proposal ACK管理"></a>Leader Proposal ACK管理</h4><p>LearnerHandler在完成选举之后，会调用startSendingPackets来启动发送Packet的线程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Start thread that blast packets in the queue to learner</span></span><br><span class="line">startSendingPackets();</span><br></pre></td></tr></table></figure>
+
+<p>同时进入接收该节点返回数据的循环。 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    qp = <span class="keyword">new</span> QuorumPacket();</span><br><span class="line">    ia.readRecord(qp, <span class="string">"packet"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在收到Proposal Packet的ACK后，LearnerHandler处理流程为：</p>
+<img src="/2020/04/29/zk/zkSrc_processPacket/proposal_ack.png" class="">
+
+<ul>
+<li>接收到节点所发的Proposal ACK数据，调用Leader.processAck</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> Leader.ACK:</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.learnerType == LearnerType.OBSERVER) &#123;</span><br><span class="line">        LOG.debug(<span class="string">"Received ACK from Observer &#123;&#125;"</span>, <span class="keyword">this</span>.sid);</span><br><span class="line">    &#125;</span><br><span class="line">    syncLimitCheck.updateAck(qp.getZxid());</span><br><span class="line">    learnerMaster.processAck(<span class="keyword">this</span>.sid, qp.getZxid(), sock.getLocalSocketAddress());</span><br><span class="line">    <span class="keyword">break</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>将ACK的节点id添加到Proposal数据中，调用tryToCommit,尝试Commit该Request。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Proposal p = outstandingProposals.get(zxid);</span><br><span class="line">...</span><br><span class="line">p.addAck(sid);</span><br><span class="line"><span class="keyword">boolean</span> hasCommitted = tryToCommit(p, zxid, followerAddr);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>调用Proposal.hasAllQuorums检查ACK的节点是否超过集群数量一半(包括Leader本身)，若超过，则向所有Follower发送Commit。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">commit(zxid);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Create a commit packet and send it to all the members of the quorum</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> zxid</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">commit</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">        lastCommitted = zxid;</span><br><span class="line">    &#125;</span><br><span class="line">    QuorumPacket qp = <span class="keyword">new</span> QuorumPacket(Leader.COMMIT, zxid, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">    sendPacket(qp);</span><br><span class="line">    ServerMetrics.getMetrics().COMMIT_COUNT.add(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>向所有Observer节点发送Inform。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">inform(p);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Create an inform packet and send it to all observers.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">inform</span><span class="params">(Proposal proposal)</span> </span>&#123;</span><br><span class="line">    QuorumPacket qp = <span class="keyword">new</span> QuorumPacket(Leader.INFORM, proposal.request.zxid, proposal.packet.getData(), <span class="keyword">null</span>);</span><br><span class="line">    sendObserverPacket(qp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>通知CommitProcessor该请求已Commit。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zk.commitProcessor.commit(p.request);</span><br></pre></td></tr></table></figure>
+
+<h4 id="CommitProcessor"><a href="#CommitProcessor" class="headerlink" title="CommitProcessor"></a>CommitProcessor</h4><p>CommitProcessor用于管理Session需要Commit的请求，该Processor Leader和Follower节点共用，CommitProcessor有自己的运行线程。</p>
+<ul>
+<li>接收到Request后，若该Request需要Commit，或者该Session中存在pendingRequest,则将该Request添加到对应Session的pendingRequest中。否则，直接将Request发送给下一个Processor。该处理方法能保证同一个Session 处理Request的顺序，例如该Session先发送了一个修改数据库的操作，又发送一个读数据库的操作，读的操作肯定会在写操作之后。</li>
+<li>CommitProcessor收到某个Request已经Commit之后，（如上，Leader将Commit发送给Follower之后，或者Follower接收到Leader发送的Commit），将Commit的请求转发给下一个Processor。Follower和Leader都有两种Commit的请求。<ul>
+<li>Follower Commit请求类型<ul>
+<li>自己节点上的Session发送的修改数据库的请求。此种情况下，该Session对应的pendingReqeust的第一个Request肯定是Commit请求；</li>
+<li>或者是Leader发送的其他节点接收到的修改数据库的请求，此种情况无对应的pendingRequest，触发入口来自Follower.processPacket。</li>
+</ul>
+</li>
+<li>Leader Commit请求类型<ul>
+<li>自己节点上Session发送的修改数据库请求。</li>
+<li>Follower节点转发的，但是处理流程和自己节点上接收到的一样，触发入口来自LearnerHander.run调用LeaderZooKeeperServer.submitLearnerRequest。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>CommitProcessor将已经Commit的Request发送给下一个Processor，并且将该Session上pendingRequest随后的读请求转发给下一个Processor。</li>
+</ul>
+<h4 id="Leader-TobeAppliedRequestProcessor"><a href="#Leader-TobeAppliedRequestProcessor" class="headerlink" title="Leader.TobeAppliedRequestProcessor"></a>Leader.TobeAppliedRequestProcessor</h4><p>在Commit Request之前，Leader会记录已Commit但未修改到数据库的写操作Proposal，该记录用于Follower和Leader选举之后的同步数据。本Processor的作用就是在操作数据库之前清除保存的Proposal信息。</p>
+<h4 id="FinalRequestProcessor"><a href="#FinalRequestProcessor" class="headerlink" title="FinalRequestProcessor"></a>FinalRequestProcessor</h4><p>FinalRequestProcessor是操作数据库来响应对应的读或写操作。</p>
+<h3 id="Follower处理请求流程"><a href="#Follower处理请求流程" class="headerlink" title="Follower处理请求流程"></a>Follower处理请求流程</h3><p>CommitProcessor和FinalRequestProcessor前面已说明，所以此处只用介绍FollowerRequestProcessor。</p>
+<h4 id="FollowerRequestProcessor"><a href="#FollowerRequestProcessor" class="headerlink" title="FollowerRequestProcessor"></a>FollowerRequestProcessor</h4><p>FollowerRequestProcessor运行于独立的线程中。主要工作如下:</p>
+<ul>
+<li>提交Request时，如果Request是local session，且创建了临时节点，则升级session到Global类型，并且插入一个createSession request。</li>
+<li>将Request转发到CommitProcessor。</li>
+<li>如果为写请求，转发到Leader。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/29/zk/zkSrc_serverCnxn/" rel="prev" title="zookeeper源码-4.客户端连接管理">
+      <i class="fa fa-chevron-left"></i> zookeeper源码-4.客户端连接管理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/29/zk/zkSrc_db/" rel="next" title="zookeeper源码-6.数据库和日志">
+      zookeeper源码-6.数据库和日志 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置Processors"><span class="nav-number">1.</span> <span class="nav-text">配置Processors</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Follower节点配置Processors"><span class="nav-number">1.1.</span> <span class="nav-text">Follower节点配置Processors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader节点配置Processors"><span class="nav-number">1.2.</span> <span class="nav-text">Leader节点配置Processors</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#客户端请求处理"><span class="nav-number">1.3.</span> <span class="nav-text">客户端请求处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#处理请求流程"><span class="nav-number">2.</span> <span class="nav-text">处理请求流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader处理请求流程"><span class="nav-number">2.1.</span> <span class="nav-text">Leader处理请求流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LeaderRequestProcessor"><span class="nav-number">2.1.1.</span> <span class="nav-text">LeaderRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#PrepRequestProcessor"><span class="nav-number">2.1.2.</span> <span class="nav-text">PrepRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ProposalRequestProcessor"><span class="nav-number">2.1.3.</span> <span class="nav-text">ProposalRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SyncRequestProcessor"><span class="nav-number">2.1.4.</span> <span class="nav-text">SyncRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AckRequestProcessor"><span class="nav-number">2.1.5.</span> <span class="nav-text">AckRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader-Proposal-ACK管理"><span class="nav-number">2.1.6.</span> <span class="nav-text">Leader Proposal ACK管理</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CommitProcessor"><span class="nav-number">2.1.7.</span> <span class="nav-text">CommitProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader-TobeAppliedRequestProcessor"><span class="nav-number">2.1.8.</span> <span class="nav-text">Leader.TobeAppliedRequestProcessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#FinalRequestProcessor"><span class="nav-number">2.1.9.</span> <span class="nav-text">FinalRequestProcessor</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Follower处理请求流程"><span class="nav-number">2.2.</span> <span class="nav-text">Follower处理请求流程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FollowerRequestProcessor"><span class="nav-number">2.2.1.</span> <span class="nav-text">FollowerRequestProcessor</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

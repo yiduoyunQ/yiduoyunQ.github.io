@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="栈内存 栈帧布局与函数跳转 函数调用栈    内存对齐 32位对齐：4 64位对齐：8  1234567891011121314151617181920212223242526272829type T1 struct &amp;#123;    a bool  &#x2F;&#x2F; 占1B    b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B    c int8    d int64">
+<meta property="og:type" content="article">
+<meta property="og:title" content="go 内存分配和对齐">
+<meta property="og:url" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="栈内存 栈帧布局与函数跳转 函数调用栈    内存对齐 32位对齐：4 64位对齐：8  1234567891011121314151617181920212223242526272829type T1 struct &amp;#123;    a bool  &#x2F;&#x2F; 占1B    b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B    c int8    d int64">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E7%A4%BA%E4%BE%8B.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/go-memory-detail.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/mspan_gc.jpg">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0.jpg">
+<meta property="article:published_time" content="2020-06-02T03:04:35.000Z">
+<meta property="article:modified_time" content="2020-07-18T15:01:23.952Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E7%A4%BA%E4%BE%8B.png">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>go 内存分配和对齐 | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          go 内存分配和对齐
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-02 03:04:35" itemprop="dateCreated datePublished" datetime="2020-06-02T03:04:35+00:00">2020-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-07-18 15:01:23" itemprop="dateModified" datetime="2020-07-18T15:01:23+00:00">2020-07-18</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="栈内存"><a href="#栈内存" class="headerlink" title="栈内存"></a>栈内存</h2><ul>
+<li><a href="https://www.bilibili.com/video/BV1WZ4y1p7JT" title="" target="">栈帧布局与函数跳转</a></li>
+<li><a href="https://www.bilibili.com/video/BV1tZ4y1p7Rv" title="" target="">函数调用栈</a>
+
+</li>
+</ul>
+<h2 id="内存对齐"><a href="#内存对齐" class="headerlink" title="内存对齐"></a>内存对齐</h2><ul>
+<li>32位对齐：4</li>
+<li>64位对齐：8</li>
+</ul>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> T1 <span class="keyword">struct</span> &#123;</span><br><span class="line">    a <span class="keyword">bool</span>  <span class="comment">// 占1B</span></span><br><span class="line">    b <span class="keyword">int32</span> <span class="comment">// 对齐为4，a后面需要3B padding，从第5B开始占4B</span></span><br><span class="line">    c <span class="keyword">int8</span></span><br><span class="line">    d <span class="keyword">int64</span></span><br><span class="line">    e <span class="keyword">byte</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> T2 <span class="keyword">struct</span> &#123;</span><br><span class="line">    e <span class="keyword">byte</span> <span class="comment">// 占1B</span></span><br><span class="line">    c <span class="keyword">int8</span> <span class="comment">// 占1B</span></span><br><span class="line">    a <span class="keyword">bool</span> <span class="comment">// 占1B</span></span><br><span class="line">    b <span class="keyword">int32</span> <span class="comment">// 对齐为4，a后面需1B padding，从第5B开始占4B</span></span><br><span class="line">    d <span class="keyword">int64</span> <span class="comment">// 对齐为8，无需padding，占8B</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    fmt.Printf(<span class="string">"bool size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="keyword">bool</span>(<span class="literal">true</span>)), unsafe.Alignof(<span class="keyword">bool</span>(<span class="literal">true</span>)))</span><br><span class="line">    fmt.Printf(<span class="string">"int32 size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="keyword">int32</span>(<span class="number">0</span>)), unsafe.Alignof(<span class="keyword">int32</span>(<span class="number">0</span>)))</span><br><span class="line">    fmt.Printf(<span class="string">"int8 size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="keyword">int8</span>(<span class="number">0</span>)), unsafe.Alignof(<span class="keyword">int8</span>(<span class="number">0</span>)))</span><br><span class="line">    fmt.Printf(<span class="string">"int64 size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="keyword">int64</span>(<span class="number">0</span>)), unsafe.Alignof(<span class="keyword">int64</span>(<span class="number">0</span>)))</span><br><span class="line">    fmt.Printf(<span class="string">"byte size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="keyword">byte</span>(<span class="number">0</span>)), unsafe.Alignof(<span class="keyword">byte</span>(<span class="number">0</span>)))</span><br><span class="line">    fmt.Printf(<span class="string">"string size: %d, align: %d\n"</span>, unsafe.Sizeof(<span class="string">"EDDYCJY"</span>), unsafe.Alignof(<span class="string">"ABCD"</span>))</span><br><span class="line"></span><br><span class="line">    t1 := T1&#123;&#125;</span><br><span class="line">    t2 := T2&#123;&#125;</span><br><span class="line">    fmt.Printf(<span class="string">"T size: %d, align: %d\n"</span>, unsafe.Sizeof(t1), unsafe.Alignof(t1))</span><br><span class="line">    fmt.Printf(<span class="string">"T size: %d, align: %d\n"</span>, unsafe.Sizeof(t2), unsafe.Alignof(t2))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">bool size: 1, align: 1</span><br><span class="line">int32 size: 4, align: 4</span><br><span class="line">int8 size: 1, align: 1</span><br><span class="line">int64 size: 8, align: 8</span><br><span class="line">byte size: 1, align: 1</span><br><span class="line">string size: 16, align: 8</span><br><span class="line">T size: 32, align: 8</span><br><span class="line">T size: 16, align: 8</span><br></pre></td></tr></table></figure>
+
+<h3 id="gctrace"><a href="#gctrace" class="headerlink" title="gctrace"></a>gctrace</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> GODEBUG=gctrace=1 go run <span class="built_in">test</span></span></span><br><span class="line">package test is not in GOROOT (/usr/local/Cellar/go/1.14/libexec/src/test)</span><br><span class="line">qiujirongdeMacBook-Air:test qiujirong$ GODEBUG=gctrace=1 go run test.go </span><br><span class="line">gc 1 @0.044s 5%: 0.020+3.8+0.070 ms clock, 0.083+7.0/3.6/0+0.28 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 2 @0.112s 2%: 0.070+0.49+0.034 ms clock, 0.28+0.21/0.38/0.38+0.13 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 3 @0.201s 1%: 0.026+1.0+0.038 ms clock, 0.10+0/0.42/1.7+0.15 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 4 @0.311s 1%: 0.050+0.47+0.003 ms clock, 0.20+0.17/0.28/0.77+0.013 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 5 @0.455s 0%: 0.070+4.2+0.009 ms clock, 0.28+0.85/3.6/1.3+0.036 ms cpu, 4-&gt;4-&gt;1 MB, 5 MB goal, 4 P</span><br><span class="line">gc 6 @0.496s 0%: 0.030+0.85+0.005 ms clock, 0.12+0/0.64/0.85+0.020 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 7 @0.571s 0%: 0.025+0.87+0.022 ms clock, 0.10+0.86/0.62/0.58+0.091 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line">gc 8 @0.590s 0%: 0.047+0.67+0.004 ms clock, 0.18+0.28/0.46/1.1+0.016 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P</span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">command</span>-line-arguments</span></span><br><span class="line">gc 1 @0.031s 4%: 0.035+12+0.29 ms clock, 0.14+0.44/5.4/19+1.1 ms cpu, 4-&gt;5-&gt;4 MB, 5 MB goal, 4 P</span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">command</span>-line-arguments</span></span><br><span class="line">gc 1 @0.002s 15%: 0.009+8.3+0.013 ms clock, 0.039+1.5/4.9/0.53+0.052 ms cpu, 5-&gt;6-&gt;6 MB, 6 MB goal, 4 P</span><br><span class="line">gc 2 @0.199s 1%: 0.007+8.6+0.039 ms clock, 0.029+0/6.8/13+0.15 ms cpu, 11-&gt;11-&gt;10 MB, 12 MB goal, 4 P</span><br><span class="line">gc 3 @0.447s 1%: 0.007+12+0.023 ms clock, 0.028+1.9/11/25+0.093 ms cpu, 22-&gt;22-&gt;20 MB, 23 MB goal, 4 P</span><br><span class="line">bool size: 1, align: 1</span><br><span class="line">int32 size: 4, align: 4</span><br><span class="line">int8 size: 1, align: 1</span><br><span class="line">int64 size: 8, align: 8</span><br><span class="line">byte size: 1, align: 1</span><br><span class="line">string size: 16, align: 8</span><br><span class="line">T size: 32, align: 8</span><br><span class="line">T size: 16, align: 8</span><br></pre></td></tr></table></figure>
+
+<h2 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h2><h3 id="总线寻址"><a href="#总线寻址" class="headerlink" title="总线寻址"></a>总线寻址</h3><p>32位总线寻址范围最大 = 2的32次方 = 支持最大4G内存寻址<br>64为总线寻址范围最大 = 2的64次方</p>
+<p>虚拟内存VMA(virtual memory address) -&gt; 物理地址(liner address)<br>虚拟内存划分为page，一般为4KB</p>
+<p>内存碎片示例：</p>
+<img src="/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E7%A4%BA%E4%BE%8B.png" class="">
+<p>即使有足够内存页，由于不连续，无法满足p4内存分配，导致内存碎片</p>
+<h3 id="内存结构"><a href="#内存结构" class="headerlink" title="内存结构"></a>内存结构</h3><p>go基于TCMalloc，将页划分为67个等级，页最小单位8K，定义在sizeclasses.go，大小从0～32K。通过定义常量数组，将内存分配时大小转换的时间复杂度降为O(1)<br>mspan是某个class页的集合，包含页起始地址、页数、页等级、已分配对象数等。mspan是一个双向链表。<br>每个P保存本地mcache，mcache是由2*67个mspan组成的数组，每个等级分为scan和noscan两种类型。为0～32K大小对象分配内存直接使用mcache池。<br>noscan类型的mspan上分配不包含指针的对象，在GC时这些对象无需遍历确认，可以直接释放回收。<br>mcentral是mspan的包装，每个mcentral包含1个mspan双向空链表和1个mspan双向非空链表，不同P请求同一个mcentral需要竞争锁。空链表包含没有空闲对象的mspan或缓存在mcache中的mspan，当mspan被释放时放进非空链表，非空链表包含至少有1个空闲对象的mspan。通过mcentral请求新mspan时，从非空链表取出mspan放入空链表。<br>arena结构是mspan的位图，目的是高效分配内存。1个arean大小为heapArenaBytes=64MB<br>mheap是全局内存对象，保存67个页等级的mcentral数组，每个级别的mcentral有自己的锁，因此P1申请2K的mspan和P2申请16K的mspan可以并行执行。</p>
+<img src="/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/go-memory-detail.png" class="">
+
+<p>每个class的mspan含有的page数不同，具体见sizeclasses.go，比如：</p>
+<ul>
+<li>class 43的mspan用来分配4K大小的对象，含有1个8K page，共可以分配2个对象，全分配后内存可以全部用完</li>
+<li>class 44的mspan用来分配4864B大小的对象，含有3个8K page，共可以分配5个对象，全分配后尾部有256B浪费</li>
+</ul>
+<p>mspan和mheap中的sweepgen用于标示span状态 TODO</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sweep generation:</span></span><br><span class="line"><span class="comment">// if sweepgen == h-&gt;sweepgen - 2, the span needs sweeping</span></span><br><span class="line"><span class="comment">// if sweepgen == h-&gt;sweepgen - 1, the span is currently being swept</span></span><br><span class="line"><span class="comment">// if sweepgen == h-&gt;sweepgen, the span is swept and ready to use</span></span><br><span class="line"><span class="comment">// if sweepgen == h-&gt;sweepgen + 1, the span was cached before sweep began and is still cached, and needs sweeping</span></span><br><span class="line"><span class="comment">// if sweepgen == h-&gt;sweepgen + 3, the span was swept and then cached and is still cached</span></span><br><span class="line"><span class="comment">// h-&gt;sweepgen is incremented by 2 after every GC</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> mSpanList <span class="keyword">struct</span> &#123;</span><br><span class="line">    first *mspan <span class="comment">// first span in list, or nil if none</span></span><br><span class="line">    last  *mspan <span class="comment">// last span in list, or nil if none</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> mspan <span class="keyword">struct</span> &#123;</span><br><span class="line">    next *mspan     <span class="comment">// next span in list, or nil if none</span></span><br><span class="line">    prev *mspan     <span class="comment">// previous span in list, or nil if none</span></span><br><span class="line">    startAddr <span class="keyword">uintptr</span> <span class="comment">// address of first byte of span aka s.base()</span></span><br><span class="line">    npages    <span class="keyword">uintptr</span> <span class="comment">// number of pages in span</span></span><br><span class="line">    allocCount  <span class="keyword">uint16</span>        <span class="comment">// number of allocated objects</span></span><br><span class="line">    sweepgen    <span class="keyword">uint32</span></span><br><span class="line">    spanclass   spanClass     <span class="comment">// size class and noscan (uint8)</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> mcentral <span class="keyword">struct</span> &#123;</span><br><span class="line">    lock      mutex</span><br><span class="line">    spanclass spanClass</span><br><span class="line">    nonempty  mSpanList <span class="comment">// list of spans with a free object, ie a nonempty free list</span></span><br><span class="line">    empty     mSpanList <span class="comment">// list of spans with no free objects (or cached in an mcache)</span></span><br><span class="line"></span><br><span class="line">    nmalloc <span class="keyword">uint64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> mheap <span class="keyword">struct</span> &#123;</span><br><span class="line">    lock      mutex</span><br><span class="line">    pages     pageAlloc <span class="comment">// page allocation data structure</span></span><br><span class="line">    sweepgen  <span class="keyword">uint32</span></span><br><span class="line">    allspans []*mspan <span class="comment">// 所有2*67个mspan对象，通过锁实现并发</span></span><br><span class="line">    <span class="comment">// 67个mcentral</span></span><br><span class="line">    central [numSpanClasses]<span class="keyword">struct</span> &#123;</span><br><span class="line">        mcentral mcentral</span><br><span class="line">        pad      [cpu.CacheLinePadSize - unsafe.Sizeof(mcentral&#123;&#125;)%cpu.CacheLinePadSize]<span class="keyword">byte</span></span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="对象分配流程"><a href="#对象分配流程" class="headerlink" title="对象分配流程"></a>对象分配流程</h3><p>0值对象返回zerobase指针<br>小对象分配顺序：per-P本地mcache -&gt; mcentral -&gt; mheap -&gt; OS底层调用mmp<br>tiny对象优先从mspan.tiny分配<br>大对象直接从mheap分配</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mallocgc</span><span class="params">(size <span class="keyword">uintptr</span>, typ *_type, needzero <span class="keyword">bool</span>)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> size == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.Pointer(&amp;zerobase)</span><br><span class="line">    &#125;</span><br><span class="line">    c := getg().m.mcache</span><br><span class="line">    noscan := typ == <span class="literal">nil</span> || typ.ptrdata == <span class="number">0</span></span><br><span class="line">    <span class="keyword">var</span> x unsafe.Pointer</span><br><span class="line">    <span class="keyword">if</span> size &lt;= maxSmallSize &#123;</span><br><span class="line">        <span class="keyword">if</span> noscan &amp;&amp; size &lt; maxTinySize &#123;</span><br><span class="line">            <span class="comment">// &lt;16B，Tiny allocator</span></span><br><span class="line">            <span class="keyword">if</span> off+size &lt;= maxTinySize &amp;&amp; c.tiny != <span class="number">0</span> &#123;</span><br><span class="line">                <span class="comment">// The object fits into existing tiny block.</span></span><br><span class="line">                x = unsafe.Pointer(c.tiny + off)]</span><br><span class="line">                <span class="keyword">return</span> x</span><br><span class="line">            &#125;</span><br><span class="line">            span := c.alloc[tinySpanClass]</span><br><span class="line">            v := nextFreeFast(span)</span><br><span class="line">            <span class="keyword">if</span> v == <span class="number">0</span> &#123;</span><br><span class="line">                v, _, shouldhelpgc = c.nextFree(tinySpanClass)</span><br><span class="line">            &#125;</span><br><span class="line">            x = unsafe.Pointer(v)</span><br><span class="line">            <span class="keyword">if</span> size &lt; c.tinyoffset || c.tiny == <span class="number">0</span> &#123;</span><br><span class="line">                c.tiny = <span class="keyword">uintptr</span>(x)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 16B~32K之间</span></span><br><span class="line">            spc := makeSpanClass(sizeclass, noscan)</span><br><span class="line">            span := c.alloc[spc]</span><br><span class="line">            v := nextFreeFast(span)</span><br><span class="line">            <span class="keyword">if</span> v == <span class="number">0</span> &#123;</span><br><span class="line">                v, span, shouldhelpgc = c.nextFree(spc)</span><br><span class="line">            &#125;</span><br><span class="line">            x = unsafe.Pointer(v)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// &gt; 32K，大对象</span></span><br><span class="line">        <span class="keyword">var</span> s *mspan</span><br><span class="line">        systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">            s = largeAlloc(size, needzero, noscan)</span><br><span class="line">        &#125;)</span><br><span class="line">        x = unsafe.Pointer(s.base())</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> x</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>从per-P的本地mcache，根据class和是否有指针分配对象</li>
+<li>若本地相应class的mcache对象已满，调用mspan.refill从mheap相应class的central申请，需加解锁<br>2.1 从非空链表(至少有一个空闲对象)取出mspan，插入空链表，若该mspan需要sweep执行sweep<br>2.2 从空链表(没有空闲对象或在mcache中)取出状态为需sweep的mspan并执行sweep</li>
+<li>若相应class的central满，调用central.grow从mheap获取mspan，放入空链表，从中分配对象</li>
+<li>若mheap内存满，调用mheap.grow，从os申请内存，底层调用mmp</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *mcache)</span> <span class="title">nextFree</span><span class="params">(spc spanClass)</span> <span class="params">(v gclinkptr, s *mspan, shouldhelpgc <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">    s = c.alloc[spc]</span><br><span class="line">    freeIndex := s.nextFreeIndex()</span><br><span class="line">    <span class="keyword">if</span> freeIndex == s.nelems &#123;</span><br><span class="line">        <span class="comment">// The span is full.</span></span><br><span class="line">        c.refill(spc)</span><br><span class="line">        s = c.alloc[spc]</span><br><span class="line">    &#125;</span><br><span class="line">    s.allocCount++</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *mcache)</span> <span class="title">refill</span><span class="params">(spc spanClass)</span></span> &#123;</span><br><span class="line">    s := c.alloc[spc]</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> s != &amp;emptymspan &#123;</span><br><span class="line">        <span class="comment">// Mark this span as no longer cached.</span></span><br><span class="line">        atomic.Store(&amp;s.sweepgen, mheap_.sweepgen)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Get a new cached span from the central lists.</span></span><br><span class="line">    s = mheap_.central[spc].mcentral.cacheSpan()</span><br><span class="line">    <span class="keyword">if</span> s == <span class="literal">nil</span> &#123;</span><br><span class="line">        throw(<span class="string">"out of memory"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Indicate that this span is cached and prevent asynchronous</span></span><br><span class="line">    <span class="comment">// sweeping in the next sweep phase.</span></span><br><span class="line">    s.sweepgen = mheap_.sweepgen + <span class="number">3</span></span><br><span class="line"></span><br><span class="line">    c.alloc[spc] = s</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Allocate a span to use in an mcache.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *mcentral)</span> <span class="title">cacheSpan</span><span class="params">()</span> *<span class="title">mspan</span></span> &#123;</span><br><span class="line">    lock(&amp;c.lock)</span><br><span class="line">    sg := mheap_.sweepgen</span><br><span class="line">retry:</span><br><span class="line">    <span class="keyword">var</span> s *mspan</span><br><span class="line">    <span class="keyword">for</span> s = c.nonempty.first; s != <span class="literal">nil</span>; s = s.next &#123;</span><br><span class="line">        <span class="keyword">if</span> s.sweepgen == sg<span class="number">-2</span> &amp;&amp; atomic.Cas(&amp;s.sweepgen, sg<span class="number">-2</span>, sg<span class="number">-1</span>) &#123;</span><br><span class="line">            c.nonempty.remove(s)</span><br><span class="line">            c.empty.insertBack(s)</span><br><span class="line">            unlock(&amp;c.lock)</span><br><span class="line">            s.sweep(<span class="literal">true</span>)</span><br><span class="line">            <span class="keyword">goto</span> havespan</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> s.sweepgen == sg<span class="number">-1</span> &#123;</span><br><span class="line">            <span class="comment">// the span is being swept by background sweeper, skip</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// we have a nonempty span that does not require sweeping, allocate from it</span></span><br><span class="line">        c.nonempty.remove(s)</span><br><span class="line">        c.empty.insertBack(s)</span><br><span class="line">        unlock(&amp;c.lock)</span><br><span class="line">        <span class="keyword">goto</span> havespan</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> s = c.empty.first; s != <span class="literal">nil</span>; s = s.next &#123;</span><br><span class="line">        <span class="keyword">if</span> s.sweepgen == sg<span class="number">-2</span> &amp;&amp; atomic.Cas(&amp;s.sweepgen, sg<span class="number">-2</span>, sg<span class="number">-1</span>) &#123;</span><br><span class="line">            <span class="comment">// we have an empty span that requires sweeping,</span></span><br><span class="line">            <span class="comment">// sweep it and see if we can free some space in it</span></span><br><span class="line">            c.empty.remove(s)</span><br><span class="line">            <span class="comment">// swept spans are at the end of the list</span></span><br><span class="line">            c.empty.insertBack(s)</span><br><span class="line">            unlock(&amp;c.lock)</span><br><span class="line">            s.sweep(<span class="literal">true</span>)</span><br><span class="line">            freeIndex := s.nextFreeIndex()</span><br><span class="line">            <span class="keyword">if</span> freeIndex != s.nelems &#123;</span><br><span class="line">                s.freeindex = freeIndex</span><br><span class="line">                <span class="keyword">goto</span> havespan</span><br><span class="line">            &#125;</span><br><span class="line">            lock(&amp;c.lock)</span><br><span class="line">            <span class="comment">// the span is still empty after sweep</span></span><br><span class="line">            <span class="comment">// it is already in the empty list, so just retry</span></span><br><span class="line">            <span class="keyword">goto</span> retry</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> s.sweepgen == sg<span class="number">-1</span> &#123;</span><br><span class="line">            <span class="comment">// the span is being swept by background sweeper, skip</span></span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// already swept empty span,</span></span><br><span class="line">        <span class="comment">// all subsequent ones must also be either swept or in process of sweeping</span></span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    &#125;</span><br><span class="line">    unlock(&amp;c.lock)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Replenish central list if empty.</span></span><br><span class="line">    s = c.grow()</span><br><span class="line">    <span class="keyword">if</span> s == <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    lock(&amp;c.lock)</span><br><span class="line">    c.empty.insertBack(s)</span><br><span class="line">    unlock(&amp;c.lock)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// At this point s is a non-empty span, queued at the end of the empty list,</span></span><br><span class="line">havespan:</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> s</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="对象回收流程"><a href="#对象回收流程" class="headerlink" title="对象回收流程"></a>对象回收流程</h3><ol>
+<li>大对象的mspan中对象全部释放时，mspan归还给mheap</li>
+<li>小对象的mspan从空链表移到非空链表，供mcentral.cacheSpan中获取mspan；如果mspan中对象全部释放，直接归还到mheap</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *mspan)</span> <span class="title">sweep</span><span class="params">(preserve <span class="keyword">bool</span>)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">    <span class="comment">// 有对象释放&amp;&amp;小对象</span></span><br><span class="line">    <span class="keyword">if</span> nfreed &gt; <span class="number">0</span> &amp;&amp; spc.sizeclass() != <span class="number">0</span> &#123;</span><br><span class="line">        res = mheap_.central[spc].mcentral.freeSpan(s, preserve, wasempty)</span><br><span class="line">        <span class="comment">// 大对象&amp;&amp;全部释放</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> freeToHeap &#123;</span><br><span class="line">        <span class="comment">// Free large span to heap</span></span><br><span class="line">        mheap_.freeSpan(s)</span><br><span class="line">        res = <span class="literal">true</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> !res &#123;</span><br><span class="line">        <span class="comment">// The span has been swept and is still in-use, so put it on the swept in-use list.</span></span><br><span class="line">        mheap_.sweepSpans[sweepgen/<span class="number">2</span>%<span class="number">2</span>].push(s)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *mcentral)</span> <span class="title">freeSpan</span><span class="params">(s *mspan, preserve <span class="keyword">bool</span>, wasempty <span class="keyword">bool</span>)</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">    lock(&amp;c.lock)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> wasempty &#123;</span><br><span class="line">        c.empty.remove(s)</span><br><span class="line">        c.nonempty.insert(s)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    atomic.Store(&amp;s.sweepgen, mheap_.sweepgen)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> s.allocCount != <span class="number">0</span> &#123;</span><br><span class="line">        unlock(&amp;c.lock)</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    c.nonempty.remove(s)</span><br><span class="line">    unlock(&amp;c.lock)</span><br><span class="line">    mheap_.freeSpan(s)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="GC"><a href="#GC" class="headerlink" title="GC"></a>GC</h3><p><strong>gcpercent</strong>通过环境变量<code>GOGC</code>设置，用于控制GC速度，若无环境变量默认100%，若环境变量为”off”，会关闭2分钟1次的强制GC<br>函数<code>gcSetTriggerRatio</code>根据当次GC的速度调整下一次GC的速度，初始速度7/8，最小0.6，最大0.95。计算方式如下：</p>
+<blockquote>
+<p>mark phase阈值： float64(memstats.heap_marked) * (1 + triggerRatio)，如果有p正在sweep需求更大内存，自动上调<br>next GC阈值： memstats.heap_marked + memstats.heap_marked*uint64(gcpercent)/100，内存扩大一倍启动GC，若小于mark phase阈值自动上调</p>
+</blockquote>
+<p>GC通过以下逻辑触发：</p>
+<ol>
+<li>heap上涨触发了GC，每次分配对象需要新申请mspan，触发sweep后，最后会调用<strong>test</strong>判断是到达heap阈值否需要GC</li>
+<li>在sysmon的每一次调度中，都会调用<strong>test</strong>判断距离上一次GC是否超过2分钟达到强制GC阈值</li>
+<li><code>gcTriggerCycle</code>为runtime.GC()手动调用GC case</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(t gcTrigger)</span> <span class="title">test</span><span class="params">()</span> <span class="title">bool</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> !memstats.enablegc || panicking != <span class="number">0</span> || gcphase != _GCoff &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">switch</span> t.kind &#123;</span><br><span class="line">    <span class="keyword">case</span> gcTriggerHeap:</span><br><span class="line">        <span class="keyword">return</span> memstats.heap_live &gt;= memstats.gc_trigger</span><br><span class="line">    <span class="keyword">case</span> gcTriggerTime:</span><br><span class="line">        <span class="keyword">if</span> gcpercent &lt; <span class="number">0</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">        &#125;</span><br><span class="line">        lastgc := <span class="keyword">int64</span>(atomic.Load64(&amp;memstats.last_gc_nanotime))</span><br><span class="line">        <span class="keyword">return</span> lastgc != <span class="number">0</span> &amp;&amp; t.now-lastgc &gt; forcegcperiod</span><br><span class="line">    <span class="keyword">case</span> gcTriggerCycle:</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">int32</span>(t.n-work.cycles) &gt; <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>三色标记法：</p>
+<ul>
+<li>灰色：对象已标记，但这个对象包含的子对象未标记</li>
+<li>黑色：对象已标记，且这个对象包含的子对象也已标记，gcmarkBits对应的位为1（该对象不会在本次GC中被清理）</li>
+<li>白色：对象未标记，gcmarkBits对应的位为0（该对象将会在本次GC中被清理）</li>
+</ul>
+<img src="/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/mspan_gc.jpg" class="">
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> mspan <span class="keyword">struct</span> &#123;</span><br><span class="line">    allocBits  *gcBits</span><br><span class="line">    gcmarkBits *gcBits</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第一阶段：</p>
+<ol>
+<li>每个P启动一个goroutine，进入park，用于第二阶段调用gcDrain消费gcw</li>
+<li>初始reset为白色，stop the world，完成未完成的sweep</li>
+<li>启动gc write barriers，初始化root节点的扫描工作任务，在第二阶段中循环所有root节点执行<code>markroot</code></li>
+<li>对p.mcache和p.tiny标记灰色</li>
+<li>start the world</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">gcStart</span><span class="params">(trigger gcTrigger)</span></span> &#123;</span><br><span class="line">    gcBgMarkStartWorkers() <span class="comment">// 每个P启动一个goroutine，进入park，用于第二阶段调用gcDrain消费gcw</span></span><br><span class="line"></span><br><span class="line">    systemstack(gcResetMarkState) <span class="comment">// 初始reset为白色</span></span><br><span class="line"></span><br><span class="line">    systemstack(stopTheWorldWithSema) <span class="comment">// stop the world</span></span><br><span class="line">    systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        finishsweep_m()</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    setGCPhase(_GCmark) <span class="comment">// 启动gc write barriers</span></span><br><span class="line"></span><br><span class="line">    gcBgMarkPrepare() <span class="comment">// Must happen before assist enable.</span></span><br><span class="line">    gcMarkRootPrepare() <span class="comment">// 计算work.markrootJobs</span></span><br><span class="line"></span><br><span class="line">    gcMarkTinyAllocs() <span class="comment">// 对p.mcache和p.tiny标记灰色</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// Concurrent mark.</span></span><br><span class="line">    systemstack(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">        now = startTheWorldWithSema(trace.enabled) <span class="comment">// start the world</span></span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第二阶段：</p>
+<ol>
+<li><code>markroot</code>对所有root节点做标记，包含几个特殊任务随机分配给p执行，比如：释放全局<code>sched.gFree.stack</code>的栈，该队列保存有栈的dead G，释放栈后放入全局<code>sched.gFree.noStack</code><br>1.1 默认每个p扫描自己的栈上引用对象，包括栈上的defer链表。若为noscan对象直接标记黑色，否则根据对象引用进行标记。</li>
+</ol>
+<p>第三阶段：</p>
+<p><code>gcMarkDone</code>先stop the world，将写屏障记录的所有修改的指针加入到标记队列，完成后start the world</p>
+<p>第四阶段：</p>
+<p><code>gcSweep</code>释放内存</p>
+<p>GC停顿时间主要在第一阶段和第三阶段，第二阶段为和用户代码并行执行。第一次停顿用于扫描root节点，第二次停顿用于追加写屏障中记录。GC停顿时间主要消耗为root节点数量，和heap总大小无直接关系。</p>
+<p>举个栗子：</p>
+<img src="/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0.jpg" class="">
+
+<ol>
+<li>初始状态下所有对象都是白色的。</li>
+<li>接着开始扫描根对象a、b; 由于根对象引用了对象A、B,那么A、B变为灰色对象，接下来就开始分析灰色对象，分析A时，A没有引用其他对象很快就转入黑色，B引用了D，则B转入黑色的同时还需要将D转为灰色，进行接下来的分析。</li>
+<li>灰色对象只有D，由于D没有引用其他对象，所以D转入黑色。标记过程结束</li>
+<li>最终，黑色的对象会被保留下来，白色对象会被回收掉。</li>
+</ol>
+<p>每个p有写屏障buf，用于避免第二阶段中用户代码修改引用导致gc漏标记。</p>
+<h2 id="TODO-版本差异"><a href="#TODO-版本差异" class="headerlink" title="TODO 版本差异"></a>TODO 版本差异</h2><h2 id="TODO-JAVA"><a href="#TODO-JAVA" class="headerlink" title="TODO JAVA"></a>TODO JAVA</h2><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://tonybai.com/2020/02/20/a-visual-guide-to-golang-memory-allocator-from-ground-up/" title="" target="">图解Go内存分配器</a>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/27/go/mutex/" rel="prev" title="go mutex">
+      <i class="fa fa-chevron-left"></i> go mutex
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/08/go/channel/" rel="next" title="go channel">
+      go channel <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#栈内存"><span class="nav-number">1.</span> <span class="nav-text">栈内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存对齐"><span class="nav-number">2.</span> <span class="nav-text">内存对齐</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gctrace"><span class="nav-number">2.1.</span> <span class="nav-text">gctrace</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存分配"><span class="nav-number">3.</span> <span class="nav-text">内存分配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#总线寻址"><span class="nav-number">3.1.</span> <span class="nav-text">总线寻址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内存结构"><span class="nav-number">3.2.</span> <span class="nav-text">内存结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对象分配流程"><span class="nav-number">3.3.</span> <span class="nav-text">对象分配流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对象回收流程"><span class="nav-number">3.4.</span> <span class="nav-text">对象回收流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GC"><span class="nav-number">3.5.</span> <span class="nav-text">GC</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TODO-版本差异"><span class="nav-number">4.</span> <span class="nav-text">TODO 版本差异</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TODO-JAVA"><span class="nav-number">5.</span> <span class="nav-text">TODO JAVA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考"><span class="nav-number">6.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start()2.1 loadDataBase() 载入当前节点的数据库2.2 startServerCnxnFactory() 启动客户端连接监听2.3 startLeaderElection() 开始选举2.4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用Ser">
+<meta property="og:type" content="article">
+<meta property="og:title" content="zookeeper源码-2.启动和选举">
+<meta property="og:url" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start()2.1 loadDataBase() 载入当前节点的数据库2.2 startServerCnxnFactory() 启动客户端连接监听2.3 startLeaderElection() 开始选举2.4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用Ser">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/peer_state.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/election_class.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/fast_election_class.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/fast_election_flow.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/send_flow.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/send_seq.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/listen_seq.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/recv_flow.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/recv_seq.png">
+<meta property="article:published_time" content="2020-04-29T05:55:27.000Z">
+<meta property="article:modified_time" content="2020-06-06T14:16:33.294Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/peer_state.png">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>zookeeper源码-2.启动和选举 | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          zookeeper源码-2.启动和选举
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-04-29 05:55:27" itemprop="dateCreated datePublished" datetime="2020-04-29T05:55:27+00:00">2020-04-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/zookeeper/" itemprop="url" rel="index"><span itemprop="name">zookeeper</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h2><ol>
+<li>QuorumPeerMain读取config</li>
+<li>调用QuorumPeer.start()<br>2.1 loadDataBase() 载入当前节点的数据库<br>2.2 startServerCnxnFactory() 启动客户端连接监听<br>2.3 startLeaderElection() 开始选举<br>2.4 调用run() 获取选举结果并执行响应</li>
+</ol>
+<h2 id="载入数据库"><a href="#载入数据库" class="headerlink" title="载入数据库"></a>载入数据库</h2><h2 id="启动客户端连接监听"><a href="#启动客户端连接监听" class="headerlink" title="启动客户端连接监听"></a>启动客户端连接监听</h2><p>监听分为两种模式，默认使用ServerCnxnFactory的NioServerCnxnFactory</p>
+<ul>
+<li>ServerCnxnFactory cnxnFactory<ul>
+<li>NioServerCnxnFactory</li>
+<li>NettyServerCnxnFactory</li>
+</ul>
+</li>
+<li>ServerCnxnFactory secureCnxnFactory</li>
+</ul>
+<h2 id="选举"><a href="#选举" class="headerlink" title="选举"></a>选举</h2><p>节点启动时，节点状态初始化为ServerState.LOOKING，此时ZK会获取当前的Leader或者会发起一个选举。</p>
+<img src="/2020/04/29/zk/zkSrc_election/peer_state.png" class="">
+
+<p>ZooKeeper实现了四种选举模式，默认选用FastLeaderElection</p>
+<ol>
+<li>LeaderElection</li>
+<li>AuthFastLeaderElection with authenticate disabled</li>
+<li>AuthFastLeaderElection with authenticate enabled</li>
+<li>FastLeaderElection</li>
+</ol>
+<img src="/2020/04/29/zk/zkSrc_election/election_class.png" class="">
+
+<h3 id="相关类"><a href="#相关类" class="headerlink" title="相关类"></a>相关类</h3><p>QuorumVerifier用于检查一个服务器列表能否构成一个可用的服务器集群。实现类有</p>
+<ul>
+<li>QuorumMaj 简单过半投票，默认策略</li>
+<li>QuorumHierarchical 基于权重投票策略</li>
+</ul>
+<p>QuorumMaj 主要接口如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; allMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; votingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; observingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>containsQuorum 选举的结果是否超过集群半数节点。</li>
+<li>getAllMembers 获取集群中所有的节点。</li>
+<li>getVotingMembers 获取集群中参与选举的节点。</li>
+<li>getObservingMembers 获取集群中Observer节点。</li>
+</ul>
+<p>SyncedLearnerTracker用于FastLeaderElection中，保存集群和选举的映射关系。主要接口如下:</p>
+<ul>
+<li>addQuorumVerifier 添加集群信息</li>
+<li>addAck 添加选举响应</li>
+<li>hasAllQuorums 调用QuorumVerifier.containsQuorum()判断集群中参与选举的节点是否超过集群半数节点。</li>
+</ul>
+<p>节点中维护了两个QuorumVerifier的实例，分别是QuorumPeer类中的如下两个:</p>
+<ul>
+<li>quorumVerifier 最后Commit的节点的Verifier</li>
+<li>lastSeenQuorumVerifier 最后Proposed节点的Verifier</li>
+</ul>
+<h3 id="FastLeaderElection实现"><a href="#FastLeaderElection实现" class="headerlink" title="FastLeaderElection实现"></a>FastLeaderElection实现</h3><img src="/2020/04/29/zk/zkSrc_election/fast_election_class.png" class="">
+
+<p>Election为选举基类，lookForLeader()会循环阻塞在LOOKING状态，一直到成功获取Leader节点。</p>
+<ol>
+<li>节点首先更新Proposed为自己，广播通知，并循环获取<code>recvqueue</code>队列通知</li>
+<li>超时，重新广播通知</li>
+<li>忽略不在自己members中的通知和OBSERVING的通知</li>
+<li>收到LOOKING的通知<br>4.1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知<br>4.2 选举轮次落后自己，忽略<br>4.3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知<br>4.4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
+<li>收到FOLLOWING和LEADING的通知<br>5.1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举<br>5.2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));</span><br></pre></td></tr></table></figure>
+
+<p>QuorumCnxManager负责选举中的连接管理，该类包含三个inner class。</p>
+<ul>
+<li>Listener 负责监接收新连接，并且管理连接，在单独的线程运行。</li>
+<li>SendWorker 负责发送数据到其他节点，所发送的数据由FastLeaderElection提供，在单独的线程运行。</li>
+<li>RecvWorker 负责从其他节点接收数据，并且将数据发送给FastLeaderElection，在单独的线程运行。</li>
+</ul>
+<p>FastLeaderElection负责选举的算法处理，该类包含如下主要inner class。</p>
+<ul>
+<li>Messenger 发送和接收数据的管理类。注意，此处的发送和接收数据更关注的是打包和解包相关的逻辑，而不和网络相关，网络相关的部分由QuorumCnxManager负责。</li>
+<li>WorkerSender 负责打包选举数据，发送到其他节点，在单独的线程运行。</li>
+<li>WorkerReceiver 负责解析接收到数据，并根据结果反馈对应的ACK，在单独的线程运行。</li>
+</ul>
+<blockquote>
+<p>WorkerSender和WorkerReceiver为守护线程</p>
+</blockquote>
+<p><strong>选举启动流程:</strong>  </p>
+<img src="/2020/04/29/zk/zkSrc_election/fast_election_flow.png" class="">
+
+<p>FastLeader启动后：  </p>
+<ul>
+<li>创建QuorumCnxManager实例，并且开始监听其他节点新建的连接。</li>
+<li>创建FastLeaderElection实例，并且开启发送和接收数据的线程。(Messenger类会启动WorkerSender和WorkReceiver的线程)</li>
+</ul>
+<p><strong>触发选举:</strong></p>
+<p>新启动节点的状态为LOOKING，在节点主线程启动后(QuorumPeer.run)，调用Election的lookForLeader方法获取Leader信息。</p>
+<p>发送数据到其他节点的数据流向：</p>
+<img src="/2020/04/29/zk/zkSrc_election/send_flow.png" class="">
+
+<p>详细时序图：</p>
+<img src="/2020/04/29/zk/zkSrc_election/send_seq.png" class="">
+
+<p>当FastLeaderElection要发送数据时，会通过向sendqueue发送数据来异步调用 WorkerSender.process。<br>在QuorumCnxManager.toSend的实现中，若到发送目标节点的连接不存在，则会主动建立连接。<br>QuorumCnxManager调用connectOne通过将数据添加到发送列表来异步调用SendWorker.send。</p>
+<p>在发送端建立连接时，首先会发送一个头信息，包括：</p>
+<ul>
+<li>版本信息</li>
+<li>前节点的server id</li>
+<li>ip地址信息</li>
+</ul>
+<p>详细信息详见QuorumCnxManager.initiateConnection</p>
+<p>接收方收到连接的时序图：</p>
+<img src="/2020/04/29/zk/zkSrc_election/listen_seq.png" class="">
+
+<p>在接收端收到新连接时，首先会解析发送方发送的头信息。为了保证两个节点之间只有一个连接（即不会出现A建立连接到B，同时B也建立连接到A），zk会检查建立连接的节点的id。若发起连接的节点id小于当前节点，zk会断开这连接，并且主动建立一个到对方节点的连接。</p>
+<p>接收数据的流向为:</p>
+<img src="/2020/04/29/zk/zkSrc_election/recv_flow.png" class="">
+
+<p>详细时序图：</p>
+<img src="/2020/04/29/zk/zkSrc_election/recv_seq.png" class="">
+
+<p>RecvWorker在收到数据后，调用addToRecvQueue将数据添加到队列，WorkerReceiver从队列取数据处理。WorkerReceiver处理逻辑如下:</p>
+<ul>
+<li>检查对方节点是否参与选举，不参与选举的话直接返回当前节点的结果。</li>
+<li>若当前节点也在LOOKING状态，则将对方节点选举的结果添加到接收队列。若对方节点处于LOOKING状态，且electionEpoch落后于当前节点logicalclock，则发送当前节点的proposed选举信息到对方节点。</li>
+<li>若当前节点处于选举成功状态(不是LOOKING状态)，则发送当前节点的选举结果到对方节点。</li>
+</ul>
+<h2 id="zxid以及ElectionEpoch"><a href="#zxid以及ElectionEpoch" class="headerlink" title="zxid以及ElectionEpoch"></a>zxid以及ElectionEpoch</h2><h3 id="zxid"><a href="#zxid" class="headerlink" title="zxid"></a>zxid</h3><p>选举中会使用到数据库中最新的事务id(ZKDatabase.getDataTreeLastProcessedZxid()), 事务id由两部分组成，高32位表示Epoch，每次有新的节点当选会+1(Leader.lead())；后32位为事务id，有新的节点当选，该部分会从0重新开始。当数据库有写操作时，整个事务id会+1（参考ZooKeeperServer.getNextZxid()的引用）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ZxidUtils</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getEpochFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &gt;&gt; <span class="number">32L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getCounterFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &amp; <span class="number">0xffffffffL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">makeZxid</span><span class="params">(<span class="keyword">long</span> epoch, <span class="keyword">long</span> counter)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 前32位表示Epoch，后32位表示当前Epoch的事务号，新Leader节点lead()函数epoch+1，count从0开始</span></span><br><span class="line">        <span class="keyword">return</span> (epoch &lt;&lt; <span class="number">32L</span>) | (counter &amp; <span class="number">0xffffffffL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">zxidToString</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Long.toHexString(zxid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ElectionEpoch"><a href="#ElectionEpoch" class="headerlink" title="ElectionEpoch"></a>ElectionEpoch</h3><p>当前节点的ElectionEpoch定义于FastLeaderElection.logicalclock中，每发起一次新选举，该值会自+1。若其他节点选举信息中的ElectionEpoch大于当前节点，则会设置当前节点的值为接收到的值。</p>
+<hr>
+<h2 id="ZOOKEEPER-1732"><a href="#ZOOKEEPER-1732" class="headerlink" title="ZOOKEEPER-1732"></a>ZOOKEEPER-1732</h2><p>QuorumPeer.updateElectionVote<br>Vote.equals</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/29/zk/zkSrc_arch/" rel="prev" title="zookeeper源码-1.架构">
+      <i class="fa fa-chevron-left"></i> zookeeper源码-1.架构
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/29/zk/zkSrc_state/" rel="next" title="zookeeper源码-3.状态转换">
+      zookeeper源码-3.状态转换 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#启动流程"><span class="nav-number">1.</span> <span class="nav-text">启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#载入数据库"><span class="nav-number">2.</span> <span class="nav-text">载入数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动客户端连接监听"><span class="nav-number">3.</span> <span class="nav-text">启动客户端连接监听</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选举"><span class="nav-number">4.</span> <span class="nav-text">选举</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#相关类"><span class="nav-number">4.1.</span> <span class="nav-text">相关类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FastLeaderElection实现"><span class="nav-number">4.2.</span> <span class="nav-text">FastLeaderElection实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zxid以及ElectionEpoch"><span class="nav-number">5.</span> <span class="nav-text">zxid以及ElectionEpoch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#zxid"><span class="nav-number">5.1.</span> <span class="nav-text">zxid</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ElectionEpoch"><span class="nav-number">5.2.</span> <span class="nav-text">ElectionEpoch</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZOOKEEPER-1732"><span class="nav-number">6.</span> <span class="nav-text">ZOOKEEPER-1732</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

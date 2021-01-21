@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同 1 同时lock库中所有表READ锁，使库变为只读 2 show create table + select * from table， 导出 3 unlock tables  123452020-11-01T16:02:01.44163">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysqldump">
+<meta property="og:url" content="https://yiduoyunq.github.io/2020/07/20/mysql/mysqldump/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同 1 同时lock库中所有表READ锁，使库变为只读 2 show create table + select * from table， 导出 3 unlock tables  123452020-11-01T16:02:01.44163">
+<meta property="article:published_time" content="2020-07-20T16:54:09.000Z">
+<meta property="article:modified_time" content="2020-12-31T22:24:14.644Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2020/07/20/mysql/mysqldump/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>mysqldump | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/20/mysql/mysqldump/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          mysqldump
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-20 16:54:09" itemprop="dateCreated datePublished" datetime="2020-07-20T16:54:09+00:00">2020-07-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-12-31 22:24:14" itemprop="dateModified" datetime="2020-12-31T22:24:14+00:00">2020-12-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致"><a href="#默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致" class="headerlink" title="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致"></a>默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</h2><ol>
+<li>获取gtid或file postion</li>
+<li>顺序逻辑备份每个库，不同库之间备份时间点不同</li>
+<li>1 同时lock库中所有表READ锁，使库变为只读</li>
+<li>2 show create table + select * from table， 导出</li>
+<li>3 unlock tables</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:02:01.441631Z	   18 Query	SHOW CREATE DATABASE IF NOT EXISTS &#96;test&#96;</span><br><span class="line">2020-11-01T16:02:01.441820Z	   18 Query	show tables</span><br><span class="line">2020-11-01T16:02:01.442210Z	   18 Query	LOCK TABLES &#96;employees&#96; READ &#x2F;*!32311 LOCAL *&#x2F;,&#96;t1&#96; READ &#x2F;*!32311 LOCAL *&#x2F;,&#96;test&#96; READ &#x2F;*!32311 LOCAL *&#x2F;,&#96;test_auto&#96; READ &#x2F;*!32311 LOCAL *&#x2F;</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:02:04.181862Z	   18 Query	UNLOCK TABLES</span><br></pre></td></tr></table></figure>
+
+<h2 id="–lock-all-tables-所有库备份点一致"><a href="#–lock-all-tables-所有库备份点一致" class="headerlink" title="–lock-all-tables  所有库备份点一致"></a>–lock-all-tables  所有库备份点一致</h2><p>整个数据库变为只读</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:16:57.678240Z	   21 Query	FLUSH TABLES</span><br><span class="line">2020-11-01T16:16:58.204729Z	   21 Query	FLUSH TABLES WITH READ LOCK</span><br></pre></td></tr></table></figure>
+
+<h2 id="–single-transaction-所有innodb表备份点一致"><a href="#–single-transaction-所有innodb表备份点一致" class="headerlink" title="–single-transaction  所有innodb表备份点一致"></a>–single-transaction  所有innodb表备份点一致</h2><ol>
+<li>设置会话隔离级别为RR</li>
+<li>开启一个MVCC会话，START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */ ，开启会话时自带一次select保证备份点之后的读一致性</li>
+<li>创建SAVEPOINT开始表备份，在ROLLBACK TO SAVEPOINT前对表的DDL阻塞</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:20:35.440889Z	   22 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ</span><br><span class="line">2020-11-01T16:20:35.441080Z	   22 Query	START TRANSACTION &#x2F;*!40100 WITH CONSISTENT SNAPSHOT *&#x2F;</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.451846Z	   22 Query	UNLOCK TABLES</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.471418Z	   22 Query	SHOW CREATE DATABASE IF NOT EXISTS &#96;test&#96;</span><br><span class="line">2020-11-01T16:20:35.471499Z	   22 Query	SAVEPOINT sp</span><br><span class="line">2020-11-01T16:20:35.478244Z	   22 Query	show tables</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.484877Z	   22 Query	show create table &#96;t1&#96;</span><br><span class="line">2020-11-01T16:20:35.486464Z	   22 Query	SELECT &#x2F;*!40001 SQL_NO_CACHE *&#x2F; * FROM &#96;t1&#96;</span><br><span class="line">2020-11-01T16:20:35.488296Z	   22 Query	ROLLBACK TO SAVEPOINT sp</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.489280Z	   22 Query	show create table &#96;test&#96;</span><br><span class="line">2020-11-01T16:20:35.497826Z	   22 Query	SELECT &#x2F;*!40001 SQL_NO_CACHE *&#x2F; * FROM &#96;test&#96;</span><br><span class="line">2020-11-01T16:20:38.400419Z	   22 Query	ROLLBACK TO SAVEPOINT sp</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:38.403299Z	   22 Query	RELEASE SAVEPOINT sp</span><br></pre></td></tr></table></figure>
+
+<h2 id="–single-transaction-–master-data-2-需2次flush关表"><a href="#–single-transaction-–master-data-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
+<ol>
+<li>flush tables + FTWRL 整个数据库达到一致</li>
+<li>设置RR，开启一致读会话</li>
+<li>通过show master status获取binlog位点</li>
+<li>UNLOCK TABLES</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:47:40.165353Z	   23 Query	FLUSH &#x2F;*!40101 LOCAL *&#x2F; TABLES</span><br><span class="line">2020-11-01T16:47:40.190316Z	   23 Query	FLUSH TABLES WITH READ LOCK</span><br><span class="line">2020-11-01T16:47:40.190471Z	   23 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ</span><br><span class="line">2020-11-01T16:47:40.190537Z	   23 Query	START TRANSACTION &#x2F;*!40100 WITH CONSISTENT SNAPSHOT *&#x2F;</span><br><span class="line">2020-11-01T16:47:40.190744Z	   23 Query	SHOW VARIABLES LIKE &#39;gtid\_mode&#39;</span><br><span class="line">2020-11-01T16:47:40.202013Z	   23 Query	SHOW MASTER STATUS</span><br><span class="line">2020-11-01T16:47:40.204813Z	   23 Query	UNLOCK TABLES</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>mysql –max-allowed-packet=16MB -BNe “SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN (‘mysql’, ‘performance_schema’, ‘information_schema’, ‘sys’)” | tr ‘\n’ ‘ ‘ &gt; dbs.sql<br>mysqldump  –opt –add-drop-database –add-drop-table –complete-insert –default-character-set=utf8 –hex-blob –master-data=2 –quote-names –single-transaction –events –routines –triggers –databases $(cat dbs.sql) &gt; full_dump.sql</p>
+<ul>
+<li><p>-q, –quick   Don’t buffer query, dump directly to stdout. (Defaults to on; use –skip-quick to disable.)</p>
+</li>
+<li><p>–opt : Shorthand for –add-drop-table –add-locks –create-options –extended-insert –lock-tables –quick –set-charset</p>
+</li>
+<li><p>–lock-tables Lock all tables before dumping them</p>
+</li>
+<li><p>–single-transaction Issue a BEGIN SQL statement before dumping data from server</p>
+</li>
+<li><p>–hex-blob Dump binary columns using hexadecimal notation (for example, ‘abc’ becomes 0x616263)</p>
+</li>
+<li><p>–master-data=2 Write the binary log file name and position to the output as an SQL comment</p>
+</li>
+<li><p>–max-allowed-packet Maximum packet length to send to or receive from server</p>
+</li>
+<li><p>–events</p>
+</li>
+<li><p>–routines</p>
+</li>
+<li><p>–triggers</p>
+</li>
+<li><p>–complete-insert Use complete INSERT statements that include column names</p>
+</li>
+<li><p>–set-charset Add SET NAMES default_character_set to output</p>
+</li>
+<li><p>–add-drop-database</p>
+</li>
+<li><p>–add-drop-table</p>
+</li>
+<li><p>–add-locks</p>
+</li>
+<li><p>–default-character-set=utf8</p>
+</li>
+<li><p>–quick 流式取数据，非单次填充整个结果集到内存</p>
+</li>
+<li><p>–extended-insert Use multiple-row INSERT syntax</p>
+</li>
+<li><p>–create-options Include all MySQL-specific table options in CREATE TABLE statements</p>
+</li>
+<li><p>–flush-logs Flush MySQL server log files before starting dump</p>
+</li>
+<li><p>–lock-all-tables Lock all tables across all databases</p>
+</li>
+<li><p>–set-gtid-purged Whether to add SET @@GLOBAL.GTID_PURGED to output</p>
+</li>
+<li><p>–databases</p>
+</li>
+<li><p>–tables</p>
+</li>
+<li><p>–no-create-db</p>
+</li>
+<li><p>–no-create-info</p>
+</li>
+<li><p>–no-data</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" rel="tag"># mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/16/k8s/docker%E5%91%BD%E4%BB%A4/" rel="prev" title="docker命令">
+      <i class="fa fa-chevron-left"></i> docker命令
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/20/mysql/backup/" rel="next" title="backp">
+      backp <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致"><span class="nav-number">1.</span> <span class="nav-text">默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–lock-all-tables-所有库备份点一致"><span class="nav-number">2.</span> <span class="nav-text">–lock-all-tables  所有库备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–single-transaction-所有innodb表备份点一致"><span class="nav-number">3.</span> <span class="nav-text">–single-transaction  所有innodb表备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#–single-transaction-–master-data-2-需2次flush关表"><span class="nav-number">4.</span> <span class="nav-text">–single-transaction + –master-data&#x3D;2    需2次flush关表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参数"><span class="nav-number">5.</span> <span class="nav-text">参数</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
