@@ -144,6 +144,128 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/05/07/go/interface/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/07/go/interface/" class="post-title-link" itemprop="url">go inferface</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-05-07 14:18:13" itemprop="dateCreated datePublished" datetime="2020-05-07T14:18:13+00:00">2020-05-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="接口类型判断"><a href="#接口类型判断" class="headerlink" title="接口类型判断"></a>接口类型判断</h2><ol>
+<li>对于S类型仅能看到S的方法，<em>S类型能看到S和</em>S的所有方法</li>
+<li>接口类型判断方法，判断时严格匹配类型的可见函数</li>
+</ol>
+<blockquote>
+<p>变量.(类型) // 判断是不是某个具体类型<br>switch 变量.(type) // 返回具体类型的值拷贝，必须搭配swith语句</p>
+</blockquote>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> <span class="string">"fmt"</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> I1 <span class="keyword">interface</span> &#123;</span><br><span class="line">    add()</span><br><span class="line">    sqr()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> I2 <span class="keyword">interface</span> &#123;</span><br><span class="line">    sqr()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> S <span class="keyword">struct</span> &#123;</span><br><span class="line">    n <span class="keyword">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *S)</span> <span class="title">add</span><span class="params">()</span></span> &#123;</span><br><span class="line">    s.n++</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s S)</span> <span class="title">sqr</span><span class="params">()</span></span> &#123;</span><br><span class="line">    s.n = s.n * s.n</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestI1</span><span class="params">(i I1)</span></span> &#123;</span><br><span class="line">    i.add()</span><br><span class="line">    i.sqr()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TestI2</span><span class="params">(i I2)</span></span> &#123;</span><br><span class="line">    i.sqr()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintIf</span><span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> v, ok := i.(I1); ok &#123;</span><br><span class="line">        fmt.Printf(<span class="string">"I1 type[%T] %v\n"</span>, v, v)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> v, ok := i.(I2); ok &#123;</span><br><span class="line">        fmt.Printf(<span class="string">"I2 type[%T] %v\n"</span>, v, v)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintSwtich</span><span class="params">(i <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">    fmt.Printf(<span class="string">"%p %v\n"</span>, &amp;i, i)</span><br><span class="line">    <span class="keyword">switch</span> t := i.(<span class="keyword">type</span>) &#123;</span><br><span class="line">    <span class="keyword">case</span> I1:</span><br><span class="line">        fmt.Printf(<span class="string">"I1 type[%T] %v\n"</span>, t, t)</span><br><span class="line">    <span class="keyword">case</span> I2:</span><br><span class="line">        fmt.Printf(<span class="string">"I2 type[%T] %v\n"</span>, t, t)</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        fmt.Printf(<span class="string">"unknow\n"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> s S</span><br><span class="line"></span><br><span class="line">    TestI1(&amp;s)</span><br><span class="line">    <span class="comment">// TestI1(s)</span></span><br><span class="line">    <span class="comment">// cannot use s (type S) as type I1 in argument to TestI1:</span></span><br><span class="line">    <span class="comment">// does not implement I1 (add method has pointer receiver)</span></span><br><span class="line"></span><br><span class="line">    TestI2(&amp;s)</span><br><span class="line">    TestI2(s)</span><br><span class="line"></span><br><span class="line">    PrintIf(s)</span><br><span class="line">    PrintIf(&amp;s)</span><br><span class="line"></span><br><span class="line">    fmt.Printf(<span class="string">"------------\n"</span>)</span><br><span class="line">    PrintSwtich(s)</span><br><span class="line">    PrintSwtich(&amp;s)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">I2 <span class="keyword">type</span>[main.S] &#123;<span class="number">1</span>&#125; <span class="comment">// S类型只能看到sqr方法，仅能匹配I2</span></span><br><span class="line">I1 <span class="keyword">type</span>[*main.S] &amp;&#123;<span class="number">1</span>&#125; <span class="comment">// *S类型可以匹配I1</span></span><br><span class="line">I2 <span class="keyword">type</span>[*main.S] &amp;&#123;<span class="number">1</span>&#125; <span class="comment">// 和I2</span></span><br><span class="line">------------</span><br><span class="line"><span class="number">0xc0001021e0</span> &#123;<span class="number">1</span>&#125;</span><br><span class="line">I2 <span class="keyword">type</span>[main.S] &#123;<span class="number">1</span>&#125; <span class="comment">// S类型只能看到sqr方法，仅能匹配I2</span></span><br><span class="line"><span class="number">0xc0001021f0</span> &amp;&#123;<span class="number">1</span>&#125;</span><br><span class="line">I1 <span class="keyword">type</span>[*main.S] &amp;&#123;<span class="number">1</span>&#125; <span class="comment">// *S类型可以匹配I1，switch分支退出</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="接口组成"><a href="#接口组成" class="headerlink" title="接口组成"></a>接口组成</h2><p>从接口源码看，接口组成为<code>类型</code>和<code>数据</code>，判断两个接口是否相等，就是看<code>类型</code>和<code>数据</code>是否相等<br><code>类型</code>和<code>数据</code>都为nil，才代表该接口为nil</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> a <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"><span class="keyword">var</span> b <span class="keyword">interface</span>&#123;&#125; = (*<span class="keyword">int</span>)(<span class="literal">nil</span>)</span><br><span class="line">fmt.Println(a == <span class="literal">nil</span>, b == <span class="literal">nil</span>) <span class="comment">//true false</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="接口类型转换-多态"><a href="#接口类型转换-多态" class="headerlink" title="接口类型转换(多态)"></a>接口类型转换(多态)</h2><p>不包含任何方法的空接口A，任意类型都符合转换成A<br>即使B=nil，A本身非nil，仅A.数据=nil<br>若要对A判断空，需构造B的空对象用于A的判断</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"fmt"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> A <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> B <span class="keyword">struct</span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> b_nil = B&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f</span><span class="params">()</span> <span class="title">A</span></span> &#123;</span><br><span class="line">    <span class="keyword">var</span> b *B <span class="comment">// b = nil</span></span><br><span class="line">    <span class="keyword">return</span> b <span class="comment">// 函数返回触发值拷贝，A.类型=*B, A.数据=nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f_nil</span><span class="params">()</span> <span class="title">A</span></span> &#123;</span><br><span class="line">    <span class="keyword">return</span> b_nil</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    a := f() <span class="comment">// a = (A)(nil&lt;*B&gt;)，此处类型为A，数据为*B类型的nil</span></span><br><span class="line">    <span class="keyword">if</span> a == <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">"nil B"</span>)</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">"non nil A"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    a = f_nil()</span><br><span class="line">    <span class="keyword">if</span> a == b_nil &#123;</span><br><span class="line">        fmt.Println(<span class="string">"nil B"</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">non <span class="literal">nil</span> A</span><br><span class="line"><span class="literal">nil</span> B</span><br></pre></td></tr></table></figure>
+
+<h2 id="interface-和-interface"><a href="#interface-和-interface" class="headerlink" title="interface{}和*interface{}"></a>interface{}和*interface{}</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> S <span class="keyword">struct</span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// all type is OK</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">f</span><span class="params">(x <span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// only *interface&#123;&#125; is OK</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">g</span><span class="params">(x *<span class="keyword">interface</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    s := S&#123;&#125; <span class="comment">// var</span></span><br><span class="line">    p := &amp;s  <span class="comment">// point</span></span><br><span class="line">    f(s)     <span class="comment">// var -&gt; interface: OK</span></span><br><span class="line">    g(s)     <span class="comment">// error</span></span><br><span class="line">    f(p)     <span class="comment">// point -&gt; interface: OK</span></span><br><span class="line">    g(p)     <span class="comment">// error</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="接口结构"><a href="#接口结构" class="headerlink" title="接口结构"></a>接口结构</h2><p>接口分空接口和非空接口，runtime2.go:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 空接口定义</span></span><br><span class="line"><span class="keyword">type</span> eface <span class="keyword">struct</span> &#123;</span><br><span class="line">    _type *_type</span><br><span class="line">    data  unsafe.Pointer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 非空接口定义</span></span><br><span class="line"><span class="keyword">type</span> iface <span class="keyword">struct</span> &#123;</span><br><span class="line">    tab  *itab</span><br><span class="line">    data unsafe.Pointer <span class="comment">// 指向runtime申请的内存，存储实际数据</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> itab <span class="keyword">struct</span> &#123;</span><br><span class="line">    inter *interfacetype <span class="comment">// 接口类型</span></span><br><span class="line">    _type *_type <span class="comment">// 数据类型，iface.data指向值的类型信息</span></span><br><span class="line">    hash  <span class="keyword">uint32</span> <span class="comment">// copy of _type.hash. Used for type switches. golang Duck-typing机制</span></span><br><span class="line">    _     [<span class="number">4</span>]<span class="keyword">byte</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 函数地址占位符</span></span><br><span class="line">    <span class="comment">// fun[0]==0 means _type does not implement inter.</span></span><br><span class="line">    <span class="comment">// fun[0]!=0，fun存放第一个接口方法的地址，其他方法依次向后存放，空间换时间，对应_type中也可以查到方法，使用时不用再动态查找</span></span><br><span class="line">    fun   [<span class="number">1</span>]<span class="keyword">uintptr</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> interfacetype <span class="keyword">struct</span> &#123;</span><br><span class="line">    typ     _type</span><br><span class="line">    pkgpath name <span class="comment">// 接口包名</span></span><br><span class="line">    mhdr    []imethod <span class="comment">// 接口中定义的函数，由连接器嵌入</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> imethod <span class="keyword">struct</span> &#123;</span><br><span class="line">    name nameOff <span class="comment">// name of method</span></span><br><span class="line">    ityp typeOff <span class="comment">// .(*FuncType) underneath</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> _type <span class="keyword">struct</span> &#123;</span><br><span class="line">    size       <span class="keyword">uintptr</span></span><br><span class="line">    ptrdata    <span class="keyword">uintptr</span> <span class="comment">// size of memory prefix holding all pointers</span></span><br><span class="line">    hash       <span class="keyword">uint32</span></span><br><span class="line">    tflag      tflag</span><br><span class="line">    align      <span class="keyword">uint8</span></span><br><span class="line">    fieldAlign <span class="keyword">uint8</span></span><br><span class="line">    kind       <span class="keyword">uint8</span></span><br><span class="line">    <span class="comment">// function for comparing objects of this type</span></span><br><span class="line">    <span class="comment">// (ptr to object A, ptr to object B) -&gt; ==?</span></span><br><span class="line">    equal <span class="function"><span class="keyword">func</span><span class="params">(unsafe.Pointer, unsafe.Pointer)</span> <span class="title">bool</span></span></span><br><span class="line">    <span class="comment">// gcdata stores the GC type data for the garbage collector.</span></span><br><span class="line">    <span class="comment">// If the KindGCProg bit is set in kind, gcdata is a GC program.</span></span><br><span class="line">    <span class="comment">// Otherwise it is a ptrmask bitmap. See mbitmap.go for details.</span></span><br><span class="line">    gcdata    *<span class="keyword">byte</span></span><br><span class="line">    str       nameOff</span><br><span class="line">    ptrToThis typeOff</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="全局itab"><a href="#全局itab" class="headerlink" title="全局itab"></a>全局itab</h2><p>全局itab使用数组保存，iface.go:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> itabInitSize = <span class="number">512</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> (</span><br><span class="line">    itabLock      mutex                               <span class="comment">// lock for accessing itab table</span></span><br><span class="line">    itabTable     = &amp;itabTableInit                    <span class="comment">// pointer to current table</span></span><br><span class="line">    itabTableInit = itabTableType&#123;size: itabInitSize&#125; <span class="comment">// starter table</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Note: change the formula in the mallocgc call in itabAdd if you change these fields.</span></span><br><span class="line"><span class="keyword">type</span> itabTableType <span class="keyword">struct</span> &#123;</span><br><span class="line">    size    <span class="keyword">uintptr</span>             <span class="comment">// 数组大小，2的幂次方</span></span><br><span class="line">    count   <span class="keyword">uintptr</span>             <span class="comment">// 已保存记录数</span></span><br><span class="line">    entries [itabInitSize]*itab <span class="comment">// *itab数组，初始大小512</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="接口转换函数"><a href="#接口转换函数" class="headerlink" title="接口转换函数"></a>接口转换函数</h2><p>接口转换调用conv系列函数</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 类型转为空接口，</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">convT2E</span><span class="params">(t *_type, elem unsafe.Pointer)</span> <span class="params">(e eface)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> raceenabled &#123;</span><br><span class="line">        raceReadObjectPC(t, elem, getcallerpc(), funcPC(convT2E))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> msanenabled &#123;</span><br><span class="line">        msanread(elem, t.size)</span><br><span class="line">    &#125;</span><br><span class="line">    x := mallocgc(t.size, t, <span class="literal">true</span>) <span class="comment">// mallocgc内存用于拷贝源值</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> We allocate a zeroed object only to overwrite it with actual data.</span></span><br><span class="line">    <span class="comment">// Figure out how to avoid zeroing. Also below in convT2Eslice, convT2I, convT2Islice.</span></span><br><span class="line">    typedmemmove(t, x, elem)</span><br><span class="line">    e._type = t <span class="comment">// type直接复制源type</span></span><br><span class="line">    e.data = x <span class="comment">// data指针指向mallocgc内存</span></span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 类型转为非空接口</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">convT2I</span><span class="params">(tab *itab, elem unsafe.Pointer)</span> <span class="params">(i iface)</span></span> &#123;</span><br><span class="line">    t := tab._type</span><br><span class="line">    <span class="keyword">if</span> raceenabled &#123;</span><br><span class="line">        raceReadObjectPC(t, elem, getcallerpc(), funcPC(convT2I))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> msanenabled &#123;</span><br><span class="line">        msanread(elem, t.size)</span><br><span class="line">    &#125;</span><br><span class="line">    x := mallocgc(t.size, t, <span class="literal">true</span>) <span class="comment">// // mallocgc内存用于拷贝源值</span></span><br><span class="line">    typedmemmove(t, x, elem)</span><br><span class="line">    i.tab = tab <span class="comment">// tab指向类型T的同一个tab，由编译器生成</span></span><br><span class="line">    i.data = x <span class="comment">// data指针指向mallocgc内存</span></span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接口转为接口</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">convI2I</span><span class="params">(inter *interfacetype, i iface)</span> <span class="params">(r iface)</span></span> &#123;</span><br><span class="line">    tab := i.tab</span><br><span class="line">    <span class="keyword">if</span> tab == <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> tab.inter == inter &#123;</span><br><span class="line">        r.tab = tab</span><br><span class="line">        r.data = i.data</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    r.tab = getitab(inter, tab._type, <span class="literal">false</span>) <span class="comment">// 调用getitab函数获取tab</span></span><br><span class="line">    r.data = i.data</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 其他特定类型转换，如果是0值指向zeroVal[0]，非0值使用mallocgc开辟内存空间</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">convTstring</span><span class="params">(val <span class="keyword">string</span>)</span> <span class="params">(x unsafe.Pointer)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> val == <span class="string">""</span> &#123;</span><br><span class="line">        x = unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        x = mallocgc(unsafe.Sizeof(val), stringType, <span class="literal">true</span>)</span><br><span class="line">        *(*<span class="keyword">string</span>)(x) = val</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="getitab流程"><a href="#getitab流程" class="headerlink" title="getitab流程"></a>getitab流程</h2><ol>
+<li>t=itabTable地址，保存地址避免执行find时地址被改变，t.find查找，不加锁</li>
+<li>加锁使用itabTable.find，在itabAdd函数中新添加的itab在此处查到</li>
+<li>加锁后没查到，新建m，调用itabAdd函数添加到itabTable</li>
+<li>itabAdd函数中，容量超过3/4会进行翻倍扩容</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getitab</span><span class="params">(inter *interfacetype, typ *_type, canfail <span class="keyword">bool</span>)</span> *<span class="title">itab</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(inter.mhdr) == <span class="number">0</span> &#123;</span><br><span class="line">        throw(<span class="string">"internal error - misuse of itab"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// easy case</span></span><br><span class="line">    <span class="keyword">if</span> typ.tflag&amp;tflagUncommon == <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> canfail &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        name := inter.typ.nameOff(inter.mhdr[<span class="number">0</span>].name)</span><br><span class="line">        <span class="built_in">panic</span>(&amp;TypeAssertionError&#123;<span class="literal">nil</span>, typ, &amp;inter.typ, name.name()&#125;)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> m *itab</span><br><span class="line"></span><br><span class="line">    <span class="comment">// First, look in the existing table to see if we can find the itab we need.</span></span><br><span class="line">    <span class="comment">// This is by far the most common case, so do it without locks.</span></span><br><span class="line">    <span class="comment">// Use atomic to ensure we see any previous writes done by the thread</span></span><br><span class="line">    <span class="comment">// that updates the itabTable field (with atomic.Storep in itabAdd).</span></span><br><span class="line">    t := (*itabTableType)(atomic.Loadp(unsafe.Pointer(&amp;itabTable)))</span><br><span class="line">    <span class="keyword">if</span> m = t.find(inter, typ); m != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">goto</span> finish</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Not found.  Grab the lock and try again.</span></span><br><span class="line">    lock(&amp;itabLock)</span><br><span class="line">    <span class="keyword">if</span> m = itabTable.find(inter, typ); m != <span class="literal">nil</span> &#123;</span><br><span class="line">        unlock(&amp;itabLock)</span><br><span class="line">        <span class="keyword">goto</span> finish</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Entry doesn't exist yet. Make a new entry &amp; add it.</span></span><br><span class="line">    m = (*itab)(persistentalloc(unsafe.Sizeof(itab&#123;&#125;)+<span class="keyword">uintptr</span>(<span class="built_in">len</span>(inter.mhdr)<span class="number">-1</span>)*sys.PtrSize, <span class="number">0</span>, &amp;memstats.other_sys))</span><br><span class="line">    m.inter = inter</span><br><span class="line">    m._type = typ</span><br><span class="line">    <span class="comment">// The hash is used in type switches. However, compiler statically generates itab's</span></span><br><span class="line">    <span class="comment">// for all interface/type pairs used in switches (which are added to itabTable</span></span><br><span class="line">    <span class="comment">// in itabsinit). The dynamically-generated itab's never participate in type switches,</span></span><br><span class="line">    <span class="comment">// and thus the hash is irrelevant.</span></span><br><span class="line">    <span class="comment">// Note: m.hash is _not_ the hash used for the runtime itabTable hash table.</span></span><br><span class="line">    m.hash = <span class="number">0</span></span><br><span class="line">    m.init()</span><br><span class="line">    itabAdd(m)</span><br><span class="line">    unlock(&amp;itabLock)</span><br><span class="line">finish:</span><br><span class="line">    <span class="keyword">if</span> m.fun[<span class="number">0</span>] != <span class="number">0</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> m</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> canfail &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// this can only happen if the conversion</span></span><br><span class="line">    <span class="comment">// was already done once using the , ok form</span></span><br><span class="line">    <span class="comment">// and we have a cached negative result.</span></span><br><span class="line">    <span class="comment">// The cached result doesn't record which</span></span><br><span class="line">    <span class="comment">// interface function was missing, so initialize</span></span><br><span class="line">    <span class="comment">// the itab again to get the missing function name.</span></span><br><span class="line">    <span class="built_in">panic</span>(&amp;TypeAssertionError&#123;concrete: typ, asserted: &amp;inter.typ, missingMethod: m.init()&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/125488954" title="" target="">Golang中interface内部构造</a></li>
+<li><a href="https://www.jianshu.com/p/5f8ecbe4f6af" title="" target="">剖析golang interface实现</a>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/05/07/go/defer/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -168,14 +290,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-05-07 05:07:35" itemprop="dateCreated datePublished" datetime="2020-05-07T05:07:35+00:00">2020-05-07</time>
+              <time title="Created: 2020-05-07 13:07:35" itemprop="dateCreated datePublished" datetime="2020-05-07T13:07:35+00:00">2020-05-07</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-07-18 15:01:14" itemprop="dateModified" datetime="2020-07-18T15:01:14+00:00">2020-07-18</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -285,14 +407,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-05-05 13:06:42" itemprop="dateCreated datePublished" datetime="2020-05-05T13:06:42+00:00">2020-05-05</time>
+              <time title="Created: 2020-05-05 21:06:42" itemprop="dateCreated datePublished" datetime="2020-05-05T21:06:42+00:00">2020-05-05</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -361,14 +483,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-05-04 14:10:36" itemprop="dateCreated datePublished" datetime="2020-05-04T14:10:36+00:00">2020-05-04</time>
+              <time title="Created: 2020-05-04 22:10:36" itemprop="dateCreated datePublished" datetime="2020-05-04T22:10:36+00:00">2020-05-04</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-07-22 16:19:53" itemprop="dateModified" datetime="2020-07-22T16:19:53+00:00">2020-07-22</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -544,7 +666,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%B5%8B%E8%AF%95/">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/30/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%B5%8B%E8%AF%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -558,7 +680,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/04/29/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">数据库测试</a>
+            <a href="/2020/04/30/mysql/%E6%95%B0%E6%8D%AE%E5%BA%93%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">数据库测试</a>
         </h2>
 
         <div class="post-meta">
@@ -568,14 +690,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 21:46:23" itemprop="dateCreated datePublished" datetime="2020-04-29T21:46:23+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-30 05:46:23" itemprop="dateCreated datePublished" datetime="2020-04-30T05:46:23+00:00">2020-04-30</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-03 02:01:34" itemprop="dateModified" datetime="2021-01-03T02:01:34+00:00">2021-01-03</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -736,7 +858,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/go/goim/">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/30/go/goim/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -750,7 +872,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/04/29/go/goim/" class="post-title-link" itemprop="url">goim源码</a>
+            <a href="/2020/04/30/go/goim/" class="post-title-link" itemprop="url">goim源码</a>
         </h2>
 
         <div class="post-meta">
@@ -760,14 +882,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 20:03:46" itemprop="dateCreated datePublished" datetime="2020-04-29T20:03:46+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-30 04:03:46" itemprop="dateCreated datePublished" datetime="2020-04-30T04:03:46+00:00">2020-04-30</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -915,14 +1037,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 06:29:01" itemprop="dateCreated datePublished" datetime="2020-04-29T06:29:01+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-29 14:29:01" itemprop="dateCreated datePublished" datetime="2020-04-29T14:29:01+00:00">2020-04-29</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1095,14 +1217,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 06:23:17" itemprop="dateCreated datePublished" datetime="2020-04-29T06:23:17+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-29 14:23:17" itemprop="dateCreated datePublished" datetime="2020-04-29T14:23:17+00:00">2020-04-29</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1276,14 +1398,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 06:17:38" itemprop="dateCreated datePublished" datetime="2020-04-29T06:17:38+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-29 14:17:38" itemprop="dateCreated datePublished" datetime="2020-04-29T14:17:38+00:00">2020-04-29</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1375,14 +1497,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-04-29 06:10:33" itemprop="dateCreated datePublished" datetime="2020-04-29T06:10:33+00:00">2020-04-29</time>
+              <time title="Created: 2020-04-29 14:10:33" itemprop="dateCreated datePublished" datetime="2020-04-29T14:10:33+00:00">2020-04-29</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1505,202 +1627,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/04/29/zk/zkSrc_election/" class="post-title-link" itemprop="url">zookeeper源码-2.启动和选举</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-04-29 05:55:27" itemprop="dateCreated datePublished" datetime="2020-04-29T05:55:27+00:00">2020-04-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-06-06 14:16:33" itemprop="dateModified" datetime="2020-06-06T14:16:33+00:00">2020-06-06</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/zookeeper/" itemprop="url" rel="index"><span itemprop="name">zookeeper</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h2><ol>
-<li>QuorumPeerMain读取config</li>
-<li>调用QuorumPeer.start()<br>2.1 loadDataBase() 载入当前节点的数据库<br>2.2 startServerCnxnFactory() 启动客户端连接监听<br>2.3 startLeaderElection() 开始选举<br>2.4 调用run() 获取选举结果并执行响应</li>
-</ol>
-<h2 id="载入数据库"><a href="#载入数据库" class="headerlink" title="载入数据库"></a>载入数据库</h2><h2 id="启动客户端连接监听"><a href="#启动客户端连接监听" class="headerlink" title="启动客户端连接监听"></a>启动客户端连接监听</h2><p>监听分为两种模式，默认使用ServerCnxnFactory的NioServerCnxnFactory</p>
-<ul>
-<li>ServerCnxnFactory cnxnFactory<ul>
-<li>NioServerCnxnFactory</li>
-<li>NettyServerCnxnFactory</li>
-</ul>
-</li>
-<li>ServerCnxnFactory secureCnxnFactory</li>
-</ul>
-<h2 id="选举"><a href="#选举" class="headerlink" title="选举"></a>选举</h2><p>节点启动时，节点状态初始化为ServerState.LOOKING，此时ZK会获取当前的Leader或者会发起一个选举。</p>
-<img src="/2020/04/29/zk/zkSrc_election/peer_state.png" class="">
-
-<p>ZooKeeper实现了四种选举模式，默认选用FastLeaderElection</p>
-<ol>
-<li>LeaderElection</li>
-<li>AuthFastLeaderElection with authenticate disabled</li>
-<li>AuthFastLeaderElection with authenticate enabled</li>
-<li>FastLeaderElection</li>
-</ol>
-<img src="/2020/04/29/zk/zkSrc_election/election_class.png" class="">
-
-<h3 id="相关类"><a href="#相关类" class="headerlink" title="相关类"></a>相关类</h3><p>QuorumVerifier用于检查一个服务器列表能否构成一个可用的服务器集群。实现类有</p>
-<ul>
-<li>QuorumMaj 简单过半投票，默认策略</li>
-<li>QuorumHierarchical 基于权重投票策略</li>
-</ul>
-<p>QuorumMaj 主要接口如下:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; allMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; votingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; observingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>containsQuorum 选举的结果是否超过集群半数节点。</li>
-<li>getAllMembers 获取集群中所有的节点。</li>
-<li>getVotingMembers 获取集群中参与选举的节点。</li>
-<li>getObservingMembers 获取集群中Observer节点。</li>
-</ul>
-<p>SyncedLearnerTracker用于FastLeaderElection中，保存集群和选举的映射关系。主要接口如下:</p>
-<ul>
-<li>addQuorumVerifier 添加集群信息</li>
-<li>addAck 添加选举响应</li>
-<li>hasAllQuorums 调用QuorumVerifier.containsQuorum()判断集群中参与选举的节点是否超过集群半数节点。</li>
-</ul>
-<p>节点中维护了两个QuorumVerifier的实例，分别是QuorumPeer类中的如下两个:</p>
-<ul>
-<li>quorumVerifier 最后Commit的节点的Verifier</li>
-<li>lastSeenQuorumVerifier 最后Proposed节点的Verifier</li>
-</ul>
-<h3 id="FastLeaderElection实现"><a href="#FastLeaderElection实现" class="headerlink" title="FastLeaderElection实现"></a>FastLeaderElection实现</h3><img src="/2020/04/29/zk/zkSrc_election/fast_election_class.png" class="">
-
-<p>Election为选举基类，lookForLeader()会循环阻塞在LOOKING状态，一直到成功获取Leader节点。</p>
-<ol>
-<li>节点首先更新Proposed为自己，广播通知，并循环获取<code>recvqueue</code>队列通知</li>
-<li>超时，重新广播通知</li>
-<li>忽略不在自己members中的通知和OBSERVING的通知</li>
-<li>收到LOOKING的通知<br>4.1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知<br>4.2 选举轮次落后自己，忽略<br>4.3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知<br>4.4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
-<li>收到FOLLOWING和LEADING的通知<br>5.1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举<br>5.2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
-</ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));</span><br></pre></td></tr></table></figure>
-
-<p>QuorumCnxManager负责选举中的连接管理，该类包含三个inner class。</p>
-<ul>
-<li>Listener 负责监接收新连接，并且管理连接，在单独的线程运行。</li>
-<li>SendWorker 负责发送数据到其他节点，所发送的数据由FastLeaderElection提供，在单独的线程运行。</li>
-<li>RecvWorker 负责从其他节点接收数据，并且将数据发送给FastLeaderElection，在单独的线程运行。</li>
-</ul>
-<p>FastLeaderElection负责选举的算法处理，该类包含如下主要inner class。</p>
-<ul>
-<li>Messenger 发送和接收数据的管理类。注意，此处的发送和接收数据更关注的是打包和解包相关的逻辑，而不和网络相关，网络相关的部分由QuorumCnxManager负责。</li>
-<li>WorkerSender 负责打包选举数据，发送到其他节点，在单独的线程运行。</li>
-<li>WorkerReceiver 负责解析接收到数据，并根据结果反馈对应的ACK，在单独的线程运行。</li>
-</ul>
-<blockquote>
-<p>WorkerSender和WorkerReceiver为守护线程</p>
-</blockquote>
-<p><strong>选举启动流程:</strong>  </p>
-<img src="/2020/04/29/zk/zkSrc_election/fast_election_flow.png" class="">
-
-<p>FastLeader启动后：  </p>
-<ul>
-<li>创建QuorumCnxManager实例，并且开始监听其他节点新建的连接。</li>
-<li>创建FastLeaderElection实例，并且开启发送和接收数据的线程。(Messenger类会启动WorkerSender和WorkReceiver的线程)</li>
-</ul>
-<p><strong>触发选举:</strong></p>
-<p>新启动节点的状态为LOOKING，在节点主线程启动后(QuorumPeer.run)，调用Election的lookForLeader方法获取Leader信息。</p>
-<p>发送数据到其他节点的数据流向：</p>
-<img src="/2020/04/29/zk/zkSrc_election/send_flow.png" class="">
-
-<p>详细时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/send_seq.png" class="">
-
-<p>当FastLeaderElection要发送数据时，会通过向sendqueue发送数据来异步调用 WorkerSender.process。<br>在QuorumCnxManager.toSend的实现中，若到发送目标节点的连接不存在，则会主动建立连接。<br>QuorumCnxManager调用connectOne通过将数据添加到发送列表来异步调用SendWorker.send。</p>
-<p>在发送端建立连接时，首先会发送一个头信息，包括：</p>
-<ul>
-<li>版本信息</li>
-<li>前节点的server id</li>
-<li>ip地址信息</li>
-</ul>
-<p>详细信息详见QuorumCnxManager.initiateConnection</p>
-<p>接收方收到连接的时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/listen_seq.png" class="">
-
-<p>在接收端收到新连接时，首先会解析发送方发送的头信息。为了保证两个节点之间只有一个连接（即不会出现A建立连接到B，同时B也建立连接到A），zk会检查建立连接的节点的id。若发起连接的节点id小于当前节点，zk会断开这连接，并且主动建立一个到对方节点的连接。</p>
-<p>接收数据的流向为:</p>
-<img src="/2020/04/29/zk/zkSrc_election/recv_flow.png" class="">
-
-<p>详细时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/recv_seq.png" class="">
-
-<p>RecvWorker在收到数据后，调用addToRecvQueue将数据添加到队列，WorkerReceiver从队列取数据处理。WorkerReceiver处理逻辑如下:</p>
-<ul>
-<li>检查对方节点是否参与选举，不参与选举的话直接返回当前节点的结果。</li>
-<li>若当前节点也在LOOKING状态，则将对方节点选举的结果添加到接收队列。若对方节点处于LOOKING状态，且electionEpoch落后于当前节点logicalclock，则发送当前节点的proposed选举信息到对方节点。</li>
-<li>若当前节点处于选举成功状态(不是LOOKING状态)，则发送当前节点的选举结果到对方节点。</li>
-</ul>
-<h2 id="zxid以及ElectionEpoch"><a href="#zxid以及ElectionEpoch" class="headerlink" title="zxid以及ElectionEpoch"></a>zxid以及ElectionEpoch</h2><h3 id="zxid"><a href="#zxid" class="headerlink" title="zxid"></a>zxid</h3><p>选举中会使用到数据库中最新的事务id(ZKDatabase.getDataTreeLastProcessedZxid()), 事务id由两部分组成，高32位表示Epoch，每次有新的节点当选会+1(Leader.lead())；后32位为事务id，有新的节点当选，该部分会从0重新开始。当数据库有写操作时，整个事务id会+1（参考ZooKeeperServer.getNextZxid()的引用）</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ZxidUtils</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getEpochFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &gt;&gt; <span class="number">32L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getCounterFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &amp; <span class="number">0xffffffffL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">makeZxid</span><span class="params">(<span class="keyword">long</span> epoch, <span class="keyword">long</span> counter)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 前32位表示Epoch，后32位表示当前Epoch的事务号，新Leader节点lead()函数epoch+1，count从0开始</span></span><br><span class="line">        <span class="keyword">return</span> (epoch &lt;&lt; <span class="number">32L</span>) | (counter &amp; <span class="number">0xffffffffL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">zxidToString</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Long.toHexString(zxid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="ElectionEpoch"><a href="#ElectionEpoch" class="headerlink" title="ElectionEpoch"></a>ElectionEpoch</h3><p>当前节点的ElectionEpoch定义于FastLeaderElection.logicalclock中，每发起一次新选举，该值会自+1。若其他节点选举信息中的ElectionEpoch大于当前节点，则会设置当前节点的值为接收到的值。</p>
-<hr>
-<h2 id="ZOOKEEPER-1732"><a href="#ZOOKEEPER-1732" class="headerlink" title="ZOOKEEPER-1732"></a>ZOOKEEPER-1732</h2><p>QuorumPeer.updateElectionVote<br>Vote.equals</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1770,7 +1696,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-count">33</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

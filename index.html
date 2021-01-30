@@ -144,6 +144,71 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/30/yuque/Tidb%20parser/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/30/yuque/Tidb%20parser/" class="post-title-link" itemprop="url">Tidb parser</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-01-30 16:52:47 / Modified: 18:19:56" itemprop="dateCreated datePublished" datetime="2021-01-30T16:52:47+00:00">2021-01-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Import-Dependencies"><a href="#Import-Dependencies" class="headerlink" title="Import Dependencies"></a>Import Dependencies</h2><blockquote>
+<p>go get -v github.com/pingcap/tidb/types/parser_driver@328b6d0</p>
+</blockquote>
+<p>test111</p>
+<h2 id="test"><a href="#test" class="headerlink" title="test"></a>test</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line"></span><br><span class="line">	<span class="string">"github.com/pingcap/parser"</span></span><br><span class="line">	<span class="string">"github.com/pingcap/parser/ast"</span></span><br><span class="line">	_ <span class="string">"github.com/pingcap/tidb/types/parser_driver"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> colX <span class="keyword">struct</span> &#123;</span><br><span class="line">	colNames []<span class="keyword">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(v *colX)</span> <span class="title">Enter</span><span class="params">(in ast.Node)</span> <span class="params">(ast.Node, <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> name, ok := in.(*ast.ColumnName); ok &#123;</span><br><span class="line">		v.colNames = <span class="built_in">append</span>(v.colNames, name.Name.O)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> in, <span class="literal">false</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(v *colX)</span> <span class="title">Leave</span><span class="params">(in ast.Node)</span> <span class="params">(ast.Node, <span class="keyword">bool</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> in, <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">extractColumnName</span><span class="params">(rootNode *ast.StmtNode)</span> []<span class="title">string</span></span> &#123;</span><br><span class="line">	v := &amp;colX&#123;&#125;</span><br><span class="line">	(*rootNode).Accept(v)</span><br><span class="line">	<span class="keyword">return</span> v.colNames</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">parse</span><span class="params">(sql <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	p := parser.New()</span><br><span class="line"></span><br><span class="line">	stmtNodes, _, err := p.Parse(sql, <span class="string">""</span>, <span class="string">""</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Printf(<span class="string">"parse error: %v\n"</span>, err.Error())</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Printf(<span class="string">"%v\n"</span>, extractColumnName(&amp;stmtNodes[<span class="number">0</span>]))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">normalize</span><span class="params">(sql <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">"%v\n"</span>, parser.Normalize(sql))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sql := <span class="string">`SELECT a, b from t where c1=1 and c2='a' and c3='2021/01/30 0:00:00'`</span></span><br><span class="line">	parse(sql)     <span class="comment">// a b c1 c2 c3 c c4</span></span><br><span class="line">	normalize(sql) <span class="comment">// select a , b from t where c1 = ? and c2 = ? and c3 = ?</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><p><a href="https://github.com/pingcap/parser/blob/master/docs/quickstart.md" target="_blank" rel="noopener">pingcap/parser/docs/quickstart.md</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/25/go/reflect/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -175,7 +240,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:08:53" itemprop="dateModified" datetime="2021-01-30T18:08:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -241,14 +306,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-11-23 14:53:19" itemprop="dateCreated datePublished" datetime="2020-11-23T14:53:19+00:00">2020-11-23</time>
+              <time title="Created: 2020-11-23 22:53:19" itemprop="dateCreated datePublished" datetime="2020-11-23T22:53:19+00:00">2020-11-23</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-12-31 22:21:19" itemprop="dateModified" datetime="2020-12-31T22:21:19+00:00">2020-12-31</time>
+                <time title="Modified: 2021-01-30 18:19:35" itemprop="dateModified" datetime="2021-01-30T18:19:35+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -335,10 +400,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-11-18 07:00:34 / Modified: 08:17:46" itemprop="dateCreated datePublished" datetime="2020-11-18T07:00:34+00:00">2020-11-18</time>
+              <time title="Created: 2020-11-18 15:00:34" itemprop="dateCreated datePublished" datetime="2020-11-18T15:00:34+00:00">2020-11-18</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -416,10 +487,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-11-18 04:37:20 / Modified: 05:59:33" itemprop="dateCreated datePublished" datetime="2020-11-18T04:37:20+00:00">2020-11-18</time>
+              <time title="Created: 2020-11-18 12:37:20" itemprop="dateCreated datePublished" datetime="2020-11-18T12:37:20+00:00">2020-11-18</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -533,14 +610,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-10-22 14:35:45" itemprop="dateCreated datePublished" datetime="2020-10-22T14:35:45+00:00">2020-10-22</time>
+              <time title="Created: 2020-10-22 22:35:45" itemprop="dateCreated datePublished" datetime="2020-10-22T22:35:45+00:00">2020-10-22</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-18 08:20:18" itemprop="dateModified" datetime="2020-11-18T08:20:18+00:00">2020-11-18</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -665,14 +742,14 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-10-14 14:38:45" itemprop="dateCreated datePublished" datetime="2020-10-14T14:38:45+00:00">2020-10-14</time>
+              <time title="Created: 2020-10-14 22:38:45" itemprop="dateCreated datePublished" datetime="2020-10-14T22:38:45+00:00">2020-10-14</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-18 07:54:42" itemprop="dateModified" datetime="2020-11-18T07:54:42+00:00">2020-11-18</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -757,7 +834,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:08:53" itemprop="dateModified" datetime="2021-01-30T18:08:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -869,7 +946,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/20/mysql/backup/">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/21/mysql/backup/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -883,7 +960,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/07/20/mysql/backup/" class="post-title-link" itemprop="url">backp</a>
+            <a href="/2020/07/21/mysql/backup/" class="post-title-link" itemprop="url">backp</a>
         </h2>
 
         <div class="post-meta">
@@ -893,14 +970,14 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-07-20 16:54:09" itemprop="dateCreated datePublished" datetime="2020-07-20T16:54:09+00:00">2020-07-20</time>
+              <time title="Created: 2020-07-21 00:54:09" itemprop="dateCreated datePublished" datetime="2020-07-21T00:54:09+00:00">2020-07-21</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-19 13:45:16" itemprop="dateModified" datetime="2020-11-19T13:45:16+00:00">2020-11-19</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -989,7 +1066,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/20/mysql/mysqldump/">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/21/mysql/mysqldump/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1003,7 +1080,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/07/20/mysql/mysqldump/" class="post-title-link" itemprop="url">mysqldump</a>
+            <a href="/2020/07/21/mysql/mysqldump/" class="post-title-link" itemprop="url">mysqldump</a>
         </h2>
 
         <div class="post-meta">
@@ -1013,14 +1090,14 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2020-07-20 16:54:09" itemprop="dateCreated datePublished" datetime="2020-07-20T16:54:09+00:00">2020-07-20</time>
+              <time title="Created: 2020-07-21 00:54:09" itemprop="dateCreated datePublished" datetime="2020-07-21T00:54:09+00:00">2020-07-21</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-12-31 22:24:14" itemprop="dateModified" datetime="2020-12-31T22:24:14+00:00">2020-12-31</time>
+                <time title="Modified: 2021-01-30 18:19:36" itemprop="dateModified" datetime="2021-01-30T18:19:36+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1143,81 +1220,6 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/16/k8s/docker%E5%91%BD%E4%BB%A4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/16/k8s/docker%E5%91%BD%E4%BB%A4/" class="post-title-link" itemprop="url">docker命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-07-16 16:28:00" itemprop="dateCreated datePublished" datetime="2020-07-16T16:28:00+00:00">2020-07-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-05 15:52:56" itemprop="dateModified" datetime="2020-08-05T15:52:56+00:00">2020-08-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>docker rm<br>docker rmi<br>docker pull<br>docker push<br>docker run</p>
-<h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">docker ps -a</span><br><span class="line">docker inspect $id</span><br><span class="line">docker stats $id</span><br><span class="line">docker top $id</span><br><span class="line"></span><br><span class="line">docker start $id</span><br><span class="line">docker stop $id</span><br><span class="line"></span><br><span class="line">docker exec -it $id bash</span><br><span class="line"></span><br><span class="line">docker kill --signal=1 $id</span><br><span class="line">docker rename $id &#123;new_name&#125;</span><br><span class="line">docker update --cpuset-cpus=0-3 $id</span><br><span class="line"></span><br><span class="line">docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]</span><br><span class="line">docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1287,7 +1289,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">32</span>
+          <span class="site-state-item-count">33</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
