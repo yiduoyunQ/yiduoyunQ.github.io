@@ -1,0 +1,1320 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="go sync.pool, yiduoyunQ">
+    <meta name="description" content="">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+
+    <title>go sync.pool | yiduoyunQ</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+
+    <script src="/libs/jquery/jquery.min.js"></script>
+
+<meta name="generator" content="Hexo 5.3.0">
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">yiduoyunQ</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/categories" class="waves-effect waves-light">
+      
+      <i class="fas fa-bookmark" style="zoom: 0.6;"></i>
+      
+      <span>分类</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/contact" class="waves-effect waves-light">
+      
+      <i class="fas fa-comments" style="zoom: 0.6;"></i>
+      
+      <span>留言板</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/friends" class="waves-effect waves-light">
+      
+      <i class="fas fa-address-book" style="zoom: 0.6;"></i>
+      
+      <span>友情链接</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">yiduoyunQ</div>
+        <div class="logo-desc">
+            
+            Never really desperate, only the lost of the soul.
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/categories" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-bookmark"></i>
+			
+			分类
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/contact" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-comments"></i>
+			
+			留言板
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/friends" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-address-book"></i>
+			
+			友情链接
+		</a>
+          
+        </li>
+        
+        
+        <li><div class="divider"></div></li>
+        <li>
+            <a href="https://github.com/blinkfox/hexo-theme-matery" class="waves-effect waves-light" target="_blank">
+                <i class="fab fa-github-square fa-fw"></i>Fork Me
+            </a>
+        </li>
+        
+    </ul>
+</div>
+
+
+        </div>
+
+        
+            <style>
+    .nav-transparent .github-corner {
+        display: none !important;
+    }
+
+    .github-corner {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        right: 0;
+        border: 0;
+        transform: scale(1.1);
+    }
+
+    .github-corner svg {
+        color: #0f9d58;
+        fill: #fff;
+        height: 64px;
+        width: 64px;
+    }
+
+    .github-corner:hover .octo-arm {
+        animation: a 0.56s ease-in-out;
+    }
+
+    .github-corner .octo-arm {
+        animation: none;
+    }
+
+    @keyframes a {
+        0%,
+        to {
+            transform: rotate(0);
+        }
+        20%,
+        60% {
+            transform: rotate(-25deg);
+        }
+        40%,
+        80% {
+            transform: rotate(10deg);
+        }
+    }
+</style>
+
+<a href="https://github.com/blinkfox/hexo-theme-matery" class="github-corner tooltipped hide-on-med-and-down" target="_blank"
+   data-tooltip="Fork Me" data-position="left" data-delay="50">
+    <svg viewBox="0 0 250 250" aria-hidden="true">
+        <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+        <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+              fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+        <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+              fill="currentColor" class="octo-body"></path>
+    </svg>
+</a>
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/7.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">go sync.pool</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="post-container content">
+
+    
+    <link rel="stylesheet" href="/libs/tocbot/tocbot.css">
+<style>
+    #articleContent h1::before,
+    #articleContent h2::before,
+    #articleContent h3::before,
+    #articleContent h4::before,
+    #articleContent h5::before,
+    #articleContent h6::before {
+        display: block;
+        content: " ";
+        height: 100px;
+        margin-top: -100px;
+        visibility: hidden;
+    }
+
+    #articleContent :focus {
+        outline: none;
+    }
+
+    .toc-fixed {
+        position: fixed;
+        top: 64px;
+    }
+
+    .toc-widget {
+        width: 345px;
+        padding-left: 20px;
+    }
+
+    .toc-widget .toc-title {
+        padding: 35px 0 15px 17px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1.5rem;
+    }
+
+    .toc-widget ol {
+        padding: 0;
+        list-style: none;
+    }
+
+    #toc-content {
+        padding-bottom: 30px;
+        overflow: auto;
+    }
+
+    #toc-content ol {
+        padding-left: 10px;
+    }
+
+    #toc-content ol li {
+        padding-left: 10px;
+    }
+
+    #toc-content .toc-link:hover {
+        color: #42b983;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    #toc-content .toc-link::before {
+        background-color: transparent;
+        max-height: 25px;
+
+        position: absolute;
+        right: 23.5vw;
+        display: block;
+    }
+
+    #toc-content .is-active-link {
+        color: #42b983;
+    }
+
+    #floating-toc-btn {
+        position: fixed;
+        right: 15px;
+        bottom: 76px;
+        padding-top: 15px;
+        margin-bottom: 0;
+        z-index: 998;
+    }
+
+    #floating-toc-btn .btn-floating {
+        width: 48px;
+        height: 48px;
+    }
+
+    #floating-toc-btn .btn-floating i {
+        line-height: 48px;
+        font-size: 1.4rem;
+    }
+</style>
+<div class="row">
+    <div id="main-content" class="col s12 m12 l9">
+        <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/%E6%BA%90%E7%A0%81/">
+                                <span class="chip bg-color">源码</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/go/" class="post-category">
+                                go
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-05-11
+                </div>
+                
+
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    2.8k
+                </div>
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
+                    13 分
+                </div>
+                
+
+                
+            </div>
+        </div>
+        <hr class="clearfix">
+
+        
+
+        
+
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <p>sync.pool是用于临时取还对象的池子，对于需要频繁分配和回收的对象使用sync.pool降低GC压力<br>sync.pool是线程安全的，一般设置new函数，在pool中没有对象时创建新对象<br>fmt、encoding/json等都用到sync.pool</p>
+<h2 id="fmt用例"><a href="#fmt用例" class="headerlink" title="fmt用例"></a>fmt用例</h2><p>fmt包print类函数使用sync.pool</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Printf</span><span class="params">(format <span class="keyword">string</span>, a ...<span class="keyword">interface</span>{})</span> <span class="params">(n <span class="keyword">int</span>, err error)</span></span> {</span><br><span class="line">    <span class="keyword">return</span> Fprintf(os.Stdout, format, a...)</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Fprintf</span><span class="params">(w io.Writer, format <span class="keyword">string</span>, a ...<span class="keyword">interface</span>{})</span> <span class="params">(n <span class="keyword">int</span>, err error)</span></span> {</span><br><span class="line">    p := newPrinter()</span><br><span class="line">    p.doPrintf(format, a)</span><br><span class="line">    n, err = w.Write(p.buf)</span><br><span class="line">    p.free()</span><br><span class="line">    <span class="keyword">return</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newPrinter</span><span class="params">()</span> *<span class="title">pp</span></span> {</span><br><span class="line">    p := ppFree.Get().(*pp)</span><br><span class="line">    p.panicking = <span class="literal">false</span></span><br><span class="line">    p.erroring = <span class="literal">false</span></span><br><span class="line">    p.wrapErrs = <span class="literal">false</span></span><br><span class="line">    p.fmt.init(&amp;p.buf)</span><br><span class="line">    <span class="keyword">return</span> p</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *pp)</span> <span class="title">free</span><span class="params">()</span></span> {</span><br><span class="line">    <span class="comment">// 初始put的大对象可能经过多个GC后才被回收，避免放回大对象</span></span><br><span class="line">    <span class="comment">// See https://golang.org/issue/23199</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">cap</span>(p.buf) &gt; <span class="number">64</span>&lt;&lt;<span class="number">10</span> {</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    p.buf = p.buf[:<span class="number">0</span>]</span><br><span class="line">    p.arg = <span class="literal">nil</span></span><br><span class="line">    p.value = reflect.Value{}</span><br><span class="line">    p.wrappedErr = <span class="literal">nil</span></span><br><span class="line">    ppFree.Put(p)</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> ppFree = sync.Pool{</span><br><span class="line">    New: <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">interface</span></span>{} { <span class="keyword">return</span> <span class="built_in">new</span>(pp) },</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="pool-test"><a href="#pool-test" class="headerlink" title="pool test"></a>pool test</h2><p>略</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">defer</span> debug.SetGCPercent(debug.SetGCPercent(<span class="number">-1</span>))</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">runtime.SetFinalizer(v, <span class="function"><span class="keyword">func</span><span class="params">(vv *<span class="keyword">string</span>)</span></span> {</span><br><span class="line">    atomic.AddUint32(&amp;fin, <span class="number">1</span>)</span><br><span class="line">})</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="pool结构"><a href="#pool结构" class="headerlink" title="pool结构"></a>pool结构</h2><figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// poolDequeue是单生产多消费的ring，方法pushHead/popHead/popTail</span></span><br><span class="line"><span class="keyword">type</span> poolDequeue <span class="keyword">struct</span> {</span><br><span class="line">    <span class="comment">// head = index of next slot to fill</span></span><br><span class="line">    <span class="comment">// tail = index of oldest data in queue</span></span><br><span class="line">    headTail <span class="keyword">uint64</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 固定大小的ring，通过head/tail索引</span></span><br><span class="line">    vals []eface</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> eface <span class="keyword">struct</span> {</span><br><span class="line">    typ, val unsafe.Pointer</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// poolChain是双向链表的poolDequeue，方法pushHead/popHead/popTail</span></span><br><span class="line"><span class="comment">// 第一次pushHead创建poolDequeue初始大小8</span></span><br><span class="line"><span class="comment">// 每次pushHead若已用满，新建poolDequeue大小翻倍</span></span><br><span class="line"><span class="comment">// popHead从头到尾遍历链表，对每个poolDequeue执行popHead尝试pop</span></span><br><span class="line"><span class="comment">// popTail从尾到头遍历链表，对每个poolDequeue执行popTail尝试pop</span></span><br><span class="line"><span class="keyword">type</span> poolChain <span class="keyword">struct</span> {</span><br><span class="line">    head *poolChainElt</span><br><span class="line">    tail *poolChainElt</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> poolChainElt <span class="keyword">struct</span> {</span><br><span class="line">    poolDequeue</span><br><span class="line">    next, prev *poolChainElt</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Pool <span class="keyword">struct</span> {</span><br><span class="line">    noCopy noCopy</span><br><span class="line"></span><br><span class="line">    local     unsafe.Pointer <span class="comment">// 每个P的本地队列，实际类型为[P]poolLocal</span></span><br><span class="line">    localSize <span class="keyword">uintptr</span></span><br><span class="line"></span><br><span class="line">    victim     unsafe.Pointer <span class="comment">// local from previous cycle</span></span><br><span class="line">    victimSize <span class="keyword">uintptr</span>        <span class="comment">// size of victims array</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// pool无可用对象时调用</span></span><br><span class="line">    New <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">interface</span></span>{}</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> poolLocalInternal <span class="keyword">struct</span> {</span><br><span class="line">    private <span class="keyword">interface</span>{} <span class="comment">// 每个P的私有共享，使用时无需加锁</span></span><br><span class="line">    shared  poolChain   <span class="comment">// poolChain对象，本地P可以pushHead/popHead，其他P仅能popTail</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> poolLocal <span class="keyword">struct</span> {</span><br><span class="line">    poolLocalInternal</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 伪共享，仅占位用，防止在cache line上分配多个poolLocalInternal</span></span><br><span class="line">    pad [<span class="number">128</span> - unsafe.Sizeof(poolLocalInternal{})%<span class="number">128</span>]<span class="keyword">byte</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 优先放poolLocal.private</span></span><br><span class="line"><span class="comment">// 2. 其次放poolLocal.shared</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">Put</span><span class="params">(x <span class="keyword">interface</span>{})</span></span> {</span><br><span class="line">    <span class="keyword">if</span> x == <span class="literal">nil</span> {</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> race.Enabled {</span><br><span class="line">        <span class="keyword">if</span> fastrand()%<span class="number">4</span> == <span class="number">0</span> {</span><br><span class="line">            <span class="comment">// Randomly drop x on floor.</span></span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        }</span><br><span class="line">        race.ReleaseMerge(poolRaceAddr(x))</span><br><span class="line">        race.Disable()</span><br><span class="line">    }</span><br><span class="line">    l, _ := p.pin()</span><br><span class="line">    <span class="keyword">if</span> l.private == <span class="literal">nil</span> {</span><br><span class="line">        l.private = x</span><br><span class="line">        x = <span class="literal">nil</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> x != <span class="literal">nil</span> {</span><br><span class="line">        l.shared.pushHead(x)</span><br><span class="line">    }</span><br><span class="line">    runtime_procUnpin()</span><br><span class="line">    <span class="keyword">if</span> race.Enabled {</span><br><span class="line">        race.Enable()</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 根据p获取poolLocal和pid</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">pin</span><span class="params">()</span> <span class="params">(*poolLocal, <span class="keyword">int</span>)</span></span> {</span><br><span class="line">    pid := runtime_procPin() <span class="comment">// 在runtime_procUnpin前当前G和P不会被抢占，防止下面pid发生改变</span></span><br><span class="line">    s := atomic.LoadUintptr(&amp;p.localSize)</span><br><span class="line">    l := p.local</span><br><span class="line">    <span class="comment">// pid &lt; p.local数组长度时，在p.local里查找poolLocal对象</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">uintptr</span>(pid) &lt; s {</span><br><span class="line">        <span class="keyword">return</span> indexLocal(l, pid), pid</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 否则调用pinSlow创建新poolLocal</span></span><br><span class="line">    <span class="keyword">return</span> p.pinSlow()</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// pid在pool中没有对应poolLocal对象时，创建新对象</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">pinSlow</span><span class="params">()</span> <span class="params">(*poolLocal, <span class="keyword">int</span>)</span></span> {</span><br><span class="line">    runtime_procUnpin() <span class="comment">// 先解除抢占再lock</span></span><br><span class="line">    allPoolsMu.Lock()</span><br><span class="line">    <span class="keyword">defer</span> allPoolsMu.Unlock()</span><br><span class="line">    pid := runtime_procPin()</span><br><span class="line">    s := p.localSize</span><br><span class="line">    l := p.local</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">uintptr</span>(pid) &lt; s {</span><br><span class="line">        <span class="keyword">return</span> indexLocal(l, pid), pid <span class="comment">// 解除抢期间可能p.local已发生变化</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> p.local == <span class="literal">nil</span> {</span><br><span class="line">        allPools = <span class="built_in">append</span>(allPools, p)</span><br><span class="line">    }</span><br><span class="line">    <span class="comment">// 创建新poolLocal数组，旧数组进入gc</span></span><br><span class="line">    size := runtime.GOMAXPROCS(<span class="number">0</span>)</span><br><span class="line">    local := <span class="built_in">make</span>([]poolLocal, size)</span><br><span class="line">    atomic.StorePointer(&amp;p.local, unsafe.Pointer(&amp;local[<span class="number">0</span>]))</span><br><span class="line">    atomic.StoreUintptr(&amp;p.localSize, <span class="keyword">uintptr</span>(size))</span><br><span class="line">    <span class="keyword">return</span> &amp;local[pid], pid</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 1。调用pin获取poolLocal和pid</span></span><br><span class="line"><span class="comment">// 2. poolLocal.private为空，依次尝试以下方式</span></span><br><span class="line"><span class="comment">// 2.1 从poolLocal.shared队列中获取对象</span></span><br><span class="line"><span class="comment">// 2.2 调用getSlow从其他P偷取对象</span></span><br><span class="line"><span class="comment">// 2.3 调用new创建对象</span></span><br><span class="line"><span class="comment">// 3. poolLocal.private不为空，直接复用对象返回</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">Get</span><span class="params">()</span> <span class="title">interface</span></span>{} {</span><br><span class="line">    <span class="keyword">if</span> race.Enabled {</span><br><span class="line">        race.Disable()</span><br><span class="line">    }</span><br><span class="line">    l, pid := p.pin()</span><br><span class="line">    x := l.private <span class="comment">// poolLocal.private不为空时，复用对象返回</span></span><br><span class="line">    l.private = <span class="literal">nil</span></span><br><span class="line">    <span class="keyword">if</span> x == <span class="literal">nil</span> {</span><br><span class="line">        <span class="comment">// poolLocal.private为空，从poolLocal.shared队列中获取对象</span></span><br><span class="line">        x, _ = l.shared.popHead()</span><br><span class="line">        <span class="keyword">if</span> x == <span class="literal">nil</span> {</span><br><span class="line">            x = p.getSlow(pid)</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    runtime_procUnpin()</span><br><span class="line">    <span class="keyword">if</span> race.Enabled {</span><br><span class="line">        race.Enable()</span><br><span class="line">        <span class="keyword">if</span> x != <span class="literal">nil</span> {</span><br><span class="line">            race.Acquire(poolRaceAddr(x))</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">if</span> x == <span class="literal">nil</span> &amp;&amp; p.New != <span class="literal">nil</span> {</span><br><span class="line">        x = p.New() <span class="comment">// 用new()函数创建对象</span></span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">return</span> x</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 当本地P无可用对象，从其他P偷取对象</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *Pool)</span> <span class="title">getSlow</span><span class="params">(pid <span class="keyword">int</span>)</span> <span class="title">interface</span></span>{} {</span><br><span class="line">    size := atomic.LoadUintptr(&amp;p.localSize)</span><br><span class="line">    locals := p.local</span><br><span class="line">    <span class="comment">// 循环尝试从其他P偷取对象，popTail从链表尾获取</span></span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(size); i++ {</span><br><span class="line">        l := indexLocal(locals, (pid+i+<span class="number">1</span>)%<span class="keyword">int</span>(size))</span><br><span class="line">        <span class="keyword">if</span> x, _ := l.shared.popTail(); x != <span class="literal">nil</span> {</span><br><span class="line">            <span class="keyword">return</span> x</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    size = atomic.LoadUintptr(&amp;p.victimSize)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">uintptr</span>(pid) &gt;= size {</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">    }</span><br><span class="line">    locals = p.victim</span><br><span class="line">    l := indexLocal(locals, pid)</span><br><span class="line">    <span class="keyword">if</span> x := l.private; x != <span class="literal">nil</span> {</span><br><span class="line">        l.private = <span class="literal">nil</span></span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line">    }</span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(size); i++ {</span><br><span class="line">        l := indexLocal(locals, (pid+i)%<span class="keyword">int</span>(size))</span><br><span class="line">        <span class="keyword">if</span> x, _ := l.shared.popTail(); x != <span class="literal">nil</span> {</span><br><span class="line">            <span class="keyword">return</span> x</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Mark the victim cache as empty for future gets don't bother</span></span><br><span class="line">    <span class="comment">// with it.</span></span><br><span class="line">    atomic.StoreUintptr(&amp;p.victimSize, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="nocopy"><a href="#nocopy" class="headerlink" title="nocopy"></a>nocopy</h2><figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// noCopy 用于嵌入一个结构体中来保证其第一次使用后不会被复制</span></span><br><span class="line"><span class="comment">// https://golang.org/issues/8005#issuecomment-190753527</span></span><br><span class="line"><span class="keyword">type</span> noCopy <span class="keyword">struct</span>{}</span><br><span class="line"></span><br><span class="line"><span class="comment">// Lock 是一个空操作用来给 `go vet` 的 -copylocks 静态分析</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*noCopy)</span> <span class="title">Lock</span><span class="params">()</span></span>   {}</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*noCopy)</span> <span class="title">Unlock</span><span class="params">()</span></span> {}</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="pad"><a href="#pad" class="headerlink" title="pad"></a>pad</h2><ul>
+<li><a href="https://www.jianshu.com/p/dc4b5562aad2" title="" target="">什么是cpu cache</a>
+
+</li>
+</ul>
+<h2 id="pin-unpin"><a href="#pin-unpin" class="headerlink" title="pin/unpin"></a>pin/unpin</h2><p><code>sync.runtime_procPin</code>和<code>sync.runtime_procUnpin</code>通过go:linkname关联到<code>runtime.procPin</code>和<code>runtime.procUnpin</code><br>pin/unpin抢占方式为对m的locks增减，实际GPM调度判断M是否能被抢占的判断就包含<code>mp.locks == 0</code></p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//go:nosplit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">procPin</span><span class="params">()</span> <span class="title">int</span></span> {</span><br><span class="line">    _g_ := getg()</span><br><span class="line">    mp := _g_.m</span><br><span class="line"></span><br><span class="line">    mp.locks++</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">int</span>(mp.p.ptr().id)</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:nosplit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">procUnpin</span><span class="params">()</span></span> {</span><br><span class="line">    _g_ := getg()</span><br><span class="line">    _g_.m.locks--</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:linkname sync_runtime_procPin sync.runtime_procPin</span></span><br><span class="line"><span class="comment">//go:nosplit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">sync_runtime_procPin</span><span class="params">()</span> <span class="title">int</span></span> {</span><br><span class="line">    <span class="keyword">return</span> procPin()</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:linkname sync_runtime_procUnpin sync.runtime_procUnpin</span></span><br><span class="line"><span class="comment">//go:nosplit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">sync_runtime_procUnpin</span><span class="params">()</span></span> {</span><br><span class="line">    procUnpin()</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// preempt.go</span></span><br><span class="line"><span class="comment">// canPreemptM reports whether mp is in a state that is safe to preempt.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// It is nosplit because it has nosplit callers.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">//go:nosplit</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">canPreemptM</span><span class="params">(mp *m)</span> <span class="title">bool</span></span> {</span><br><span class="line">	<span class="keyword">return</span> mp.locks == <span class="number">0</span> &amp;&amp; mp.mallocing == <span class="number">0</span> &amp;&amp; mp.preemptoff == <span class="string">""</span> &amp;&amp; mp.p.ptr().status == _Prunning</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="go-linkname用例"><a href="#go-linkname用例" class="headerlink" title="go:linkname用例"></a>go:linkname用例</h3><p>go:linkname让私有方法可以跨包访问，甚至导出为公开方法</p>
+<p>目录结构：</p>
+<img src="/2020/05/11/go/sync.pool/go_linkname.png" class="">
+
+<p>go build 默认使用<code>-complete</code>检查方法完整性，直接build会报错：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">go build</span><br><span class="line"><span class="meta">#</span><span class="bash"> github.com/yiduoyunQ/<span class="built_in">test</span>/b</span></span><br><span class="line">b/b.go:10:6: missing function body</span><br></pre></td></tr></tbody></table></figure>
+<p>通过在b包中添加一个汇编文件，让go build编译器突破方法完整性限制，汇编文件名称任意<br>参考： - <a href="http://sitano.github.io/2016/04/28/golang-private/" title="" target="">How to call private functions (bind to hidden symbols) in GoLang</a></p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// a.go</span></span><br><span class="line"><span class="keyword">package</span> a</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"fmt"</span></span><br><span class="line">    _ <span class="string">"unsafe"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">func_a</span><span class="params">()</span></span> {</span><br><span class="line">    fmt.Println(<span class="string">"private func_a in package a"</span>)</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">//go:linkname b_func_a github.com/yiduoyunQ/test/b.Func_b</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">b_func_a</span><span class="params">()</span></span> {</span><br><span class="line">    func_a()</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// b.go</span></span><br><span class="line"><span class="keyword">package</span> b</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    _ <span class="string">"unsafe"</span></span><br><span class="line"></span><br><span class="line">    _ <span class="string">"github.com/yiduoyunQ/test/a"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 仅有方法名，方法体通过go:linkname在a包中关联</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Func_b</span><span class="params">()</span></span></span><br><span class="line"></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// test.go</span></span><br><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"github.com/yiduoyunQ/test/b"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> {</span><br><span class="line">    <span class="comment">// 使用b的公开方法，在b中仅有方法名的申明</span></span><br><span class="line">    b.Func_b()</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>输出： <code>private func_a in package a</code></p>
+<h2 id="锁竞争"><a href="#锁竞争" class="headerlink" title="锁竞争"></a>锁竞争</h2><p><code>pushHead</code>先取slot再判断是否可插入最后修改</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *poolDequeue)</span> <span class="title">pushHead</span><span class="params">(val <span class="keyword">interface</span>{})</span> <span class="title">bool</span></span> {</span><br><span class="line">    ptrs := atomic.LoadUint64(&amp;d.headTail)</span><br><span class="line">    head, tail := d.unpack(ptrs)</span><br><span class="line">    <span class="keyword">if</span> (tail+<span class="keyword">uint32</span>(<span class="built_in">len</span>(d.vals)))&amp;(<span class="number">1</span>&lt;&lt;dequeueBits<span class="number">-1</span>) == head {</span><br><span class="line">        <span class="comment">// Queue is full.</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    }</span><br><span class="line">    slot := &amp;d.vals[head&amp;<span class="keyword">uint32</span>(<span class="built_in">len</span>(d.vals)<span class="number">-1</span>)]</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check if the head slot has been released by popTail.</span></span><br><span class="line">    typ := atomic.LoadPointer(&amp;slot.typ)</span><br><span class="line">    <span class="keyword">if</span> typ != <span class="literal">nil</span> {</span><br><span class="line">        <span class="comment">// Another goroutine is still cleaning up the tail, so</span></span><br><span class="line">        <span class="comment">// the queue is actually still full.</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The head slot is free, so we own it.</span></span><br><span class="line">    <span class="keyword">if</span> val == <span class="literal">nil</span> {</span><br><span class="line">        val = dequeueNil(<span class="literal">nil</span>)</span><br><span class="line">    }</span><br><span class="line">    *(*<span class="keyword">interface</span>{})(unsafe.Pointer(slot)) = val</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Increment head. This passes ownership of slot to popTail</span></span><br><span class="line">    <span class="comment">// and acts as a store barrier for writing the slot.</span></span><br><span class="line">    atomic.AddUint64(&amp;d.headTail, <span class="number">1</span>&lt;&lt;dequeueBits)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p><code>popTail</code>先修改headTail再取slot然后重置slot</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *poolDequeue)</span> <span class="title">popTail</span><span class="params">()</span> <span class="params">(<span class="keyword">interface</span>{}, <span class="keyword">bool</span>)</span></span> {</span><br><span class="line">    <span class="keyword">var</span> slot *eface</span><br><span class="line">    <span class="keyword">for</span> {</span><br><span class="line">        ptrs := atomic.LoadUint64(&amp;d.headTail)</span><br><span class="line">        head, tail := d.unpack(ptrs)</span><br><span class="line">        <span class="keyword">if</span> tail == head {</span><br><span class="line">            <span class="comment">// Queue is empty.</span></span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span>, <span class="literal">false</span></span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Confirm head and tail (for our speculative check</span></span><br><span class="line">        <span class="comment">// above) and increment tail. If this succeeds, then</span></span><br><span class="line">        <span class="comment">// we own the slot at tail.</span></span><br><span class="line">        ptrs2 := d.pack(head, tail+<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">if</span> atomic.CompareAndSwapUint64(&amp;d.headTail, ptrs, ptrs2) {</span><br><span class="line">            <span class="comment">// Success.</span></span><br><span class="line">            slot = &amp;d.vals[tail&amp;<span class="keyword">uint32</span>(<span class="built_in">len</span>(d.vals)<span class="number">-1</span>)]</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// We now own slot.</span></span><br><span class="line">    val := *(*<span class="keyword">interface</span>{})(unsafe.Pointer(slot))</span><br><span class="line">    <span class="keyword">if</span> val == dequeueNil(<span class="literal">nil</span>) {</span><br><span class="line">        val = <span class="literal">nil</span></span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Tell pushHead that we're done with this slot. Zeroing the</span></span><br><span class="line">    <span class="comment">// slot is also important so we don't leave behind references</span></span><br><span class="line">    <span class="comment">// that could keep this object live longer than necessary.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// We write to val first and then publish that we're done with</span></span><br><span class="line">    <span class="comment">// this slot by atomically writing to typ.</span></span><br><span class="line">    slot.val = <span class="literal">nil</span></span><br><span class="line">    atomic.StorePointer(&amp;slot.typ, <span class="literal">nil</span>)</span><br><span class="line">    <span class="comment">// At this point pushHead owns the slot.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> val, <span class="literal">true</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>考虑正常push/pop情况，head和tail指向slot不会有交集，仅需原子获取修改<strong>headTail</strong></p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_1.png" class="">
+
+<p>考虑当发生写溢出，pop速度跟不上push速度时</p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_2.png" class="">
+
+<ul>
+<li>若<code>pushHead</code>先执行，在第一次计算队列时发现队列满，false退出</li>
+<li>若<code>popTail</code>先执行，tail成功+1<ul>
+<li>此时<code>pushHead</code>执行，在第一次计算队列时发现队列没满，接着原子判断slot.typ<ul>
+<li>若在判断前，<code>popTail</code>先执行原子设置slot.typ为空，则<code>pushHead</code>能获得slot正常插入，pop+push后队列仍满</li>
+<li>若<code>pushHead</code>先执行原子判断slot.typ，此时typ非空，push失败</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>poolChain使用双向链表存储poolDequeue，对poolChain执行<code>popTail</code>如图</p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_3.png" class="">
+
+<p>若pop速度很快，当前队列已空且无next队列，则保留当前队列用于下一次pushHead<br>若push速度大于pop，pool使用内存会不断扩展，不加入victime和gc机制的话会导致内存溢出</p>
+<h2 id="oldPools-allPools，victim，gc"><a href="#oldPools-allPools，victim，gc" class="headerlink" title="oldPools, allPools，victim，gc"></a>oldPools, allPools，victim，gc</h2><p>victime作为二级缓存，用来降低GC压力并提高命中率。</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// This function is called with the world stopped, at the beginning of a garbage collection.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">poolCleanup</span><span class="params">()</span></span> {</span><br><span class="line">    <span class="comment">// Drop victim caches from all pools.</span></span><br><span class="line">    <span class="keyword">for</span> _, p := <span class="keyword">range</span> oldPools {</span><br><span class="line">        p.victim = <span class="literal">nil</span></span><br><span class="line">        p.victimSize = <span class="number">0</span></span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Move primary cache to victim cache.</span></span><br><span class="line">    <span class="keyword">for</span> _, p := <span class="keyword">range</span> allPools {</span><br><span class="line">        p.victim = p.local</span><br><span class="line">        p.victimSize = p.localSize</span><br><span class="line">        p.local = <span class="literal">nil</span></span><br><span class="line">        p.localSize = <span class="number">0</span></span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="comment">// The pools with non-empty primary caches now have non-empty</span></span><br><span class="line">    <span class="comment">// victim caches and no pools have primary caches.</span></span><br><span class="line">    oldPools, allPools = allPools, <span class="literal">nil</span></span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在pool的init中注册gc时的清理函数</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> {</span><br><span class="line">    runtime_registerPoolCleanup(poolCleanup)</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<ol>
+<li>初始状态，oldPools和allPools均为nil</li>
+<li>第1次调用<code>Get</code>，由于p.local为nil，将会在pinSlow中创建p.local，然后将p放入allPools，此时allPools长度为1，oldPools为nil</li>
+<li>对象使用完毕，第1次调用<code>Put</code>放回对象</li>
+<li>第1次GC STW阶段，allPools中所有p.local将值赋值给victim并置为nil，最后allPools为nil，oldPools长度为1</li>
+<li>第2次调用<code>Get</code>，由于p.local为nil，此时会从p.victim里面尝试取对象</li>
+<li>对象使用完毕，第2次调用<code>Put</code>放回对象，但由于p.local为nil，重新创建p.local，并将对象放回，此时allPools长度为1，oldPools长度为1</li>
+<li>第2次GC STW阶段，oldPools中所有p.victim置nil，前一次的cache在本次GC时被回收，allPools所有p.local将值赋值给victim并置为nil，最后allPools为&nbsp;nil，oldPools长度为1</li>
+</ol>
+<p>Go 1.13以前poolCleanup的实现：<br>3层循环清空，时间复杂度为总长度O(n)</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">poolCleanup</span><span class="params">()</span></span> {</span><br><span class="line">    <span class="keyword">for</span> i, p := <span class="keyword">range</span> allPools {</span><br><span class="line">        allPools[i] = <span class="literal">nil</span></span><br><span class="line">        <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="keyword">int</span>(p.localSize); i++ {</span><br><span class="line">            l := indexLocal(p.local, i)</span><br><span class="line">            l.private = <span class="literal">nil</span></span><br><span class="line">            <span class="keyword">for</span> j := <span class="keyword">range</span> l.shared {</span><br><span class="line">                l.shared[j] = <span class="literal">nil</span></span><br><span class="line">            }</span><br><span class="line">            l.shared = <span class="literal">nil</span></span><br><span class="line">        }</span><br><span class="line">        p.local = <span class="literal">nil</span></span><br><span class="line">        p.localSize = <span class="number">0</span></span><br><span class="line">    }</span><br><span class="line">    allPools = []*Pool{}</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<p>Go 1.13以前每次GC遍历allPools清空所有字段，新版相比Go 1.13以前，通过引入<strong>victim</strong>拉大了GC的粒度，且减小了GC的开销。<br><strong>victim</strong>在GC时将当前对象放入其中，在下一次GC前仍可作为二级缓存获取数据，直到下一次GC时回收，即GC的粒度从原来每次GC回收空对象变为2次GC才回收空对象。同时由于从<strong>victim</strong>中获取的数据没有再次放回<strong>victim</strong>中，相应GC的开销也减小了。<br>Go 1.13通过增加缓存方式，每次对allPools对象一次性清空，相比以前使用循环遍历，GC时间复杂度由原来的O(n)变为O(1)</p>
+<p>gc调用链：<br>在runtime包mgc.go中创建函数钩子，通过go:linkname链接到sync包pool.go中，进行注册</p>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// pool.go</span></span><br><span class="line"><span class="comment">// Implemented in runtime.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">runtime_registerPoolCleanup</span><span class="params">(cleanup <span class="keyword">func</span>()</span>)</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// mgc.go</span></span><br><span class="line"><span class="comment">// Hooks for other packages</span></span><br><span class="line"><span class="keyword">var</span> poolcleanup <span class="function"><span class="keyword">func</span><span class="params">()</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">//go:linkname sync_runtime_registerPoolCleanup sync.runtime_registerPoolCleanup</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">sync_runtime_registerPoolCleanup</span><span class="params">(f <span class="keyword">func</span>()</span>)</span> {</span><br><span class="line">	poolcleanup = f</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="无锁化"><a href="#无锁化" class="headerlink" title="无锁化"></a>无锁化</h2><h3 id="原子操作代替锁"><a href="#原子操作代替锁" class="headerlink" title="原子操作代替锁"></a>原子操作代替锁</h3><p>通过<strong>headTail</strong>和<strong>slot.type</strong>的CAS原子操作代替锁，保证并发的前提下降低开销</p>
+<h3 id="操作行为隔离"><a href="#操作行为隔离" class="headerlink" title="操作行为隔离"></a>操作行为隔离</h3><p>通过双向链表将<code>pushHead</code>和<code>popTail</code>行为尽可能隔离开</p>
+<h3 id="victim"><a href="#victim" class="headerlink" title="victim"></a>victim</h3><p>通过<strong>victim</strong>二级缓存降低GC开销</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/133638023" title="" target="">深度解密Go语言之sync.Pool</a></li>
+<li><a href="https://xargin.com/lock-contention-in-go/" title="" target="">几个Go系统可能遇到的锁问题</a>
+</li>
+</ul>
+
+                
+            </div>
+            <hr/>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        
+            <div class="reprint__author">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-user">
+                        文章作者:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="/about" rel="external nofollow noreferrer">yiduoyunQ</a>
+                </span>
+            </div>
+            <div class="reprint__type">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-link">
+                        文章链接:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="https://yiduoyunQ.github.io/2020/05/11/go/sync.pool/">https://yiduoyunQ.github.io/2020/05/11/go/sync.pool/</a>
+                </span>
+            </div>
+            <div class="reprint__notice">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-copyright">
+                        版权声明:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    本博客所有文章除特別声明外，均采用
+                    <a href="https://creativecommons.org/licenses/by/4.0/deed.zh" rel="external nofollow noreferrer" target="_blank">CC BY 4.0</a>
+                    许可协议。转载请注明来源
+                    <a href="/about" target="_blank">yiduoyunQ</a>
+                    !
+                </span>
+            </div>
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+
+            <div class="tag_share" style="display: block;">
+                <div class="post-meta__tag-list" style="display: inline-block;">
+                    
+                        <div class="article-tag">
+                            
+                                <a href="/tags/%E6%BA%90%E7%A0%81/">
+                                    <span class="chip bg-color">源码</span>
+                                </a>
+                            
+                        </div>
+                    
+                </div>
+                <div class="post_share" style="zoom: 80%; width: fit-content; display: inline-block; float: right; margin: -0.15rem 0;">
+                    <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+<div id="article-share">
+
+    
+    <div class="social-share" data-sites="twitter,facebook,google,qq,qzone,wechat,weibo,douban,linkedin" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+    <script src="/libs/share/js/social-share.min.js"></script>
+    
+
+    
+
+</div>
+
+                </div>
+            </div>
+            
+                <style>
+    #reward {
+        margin: 40px 0;
+        text-align: center;
+    }
+
+    #reward .reward-link {
+        font-size: 1.4rem;
+        line-height: 38px;
+    }
+
+    #reward .btn-floating:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    #rewardModal {
+        width: 320px;
+        height: 350px;
+    }
+
+    #rewardModal .reward-title {
+        margin: 15px auto;
+        padding-bottom: 5px;
+    }
+
+    #rewardModal .modal-content {
+        padding: 10px;
+    }
+
+    #rewardModal .close {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 1.3rem;
+        line-height: 20px;
+        cursor: pointer;
+    }
+
+    #rewardModal .close:hover {
+        color: #ef5350;
+        transform: scale(1.3);
+        -moz-transform:scale(1.3);
+        -webkit-transform:scale(1.3);
+        -o-transform:scale(1.3);
+    }
+
+    #rewardModal .reward-tabs {
+        margin: 0 auto;
+        width: 210px;
+    }
+
+    .reward-tabs .tabs {
+        height: 38px;
+        margin: 10px auto;
+        padding-left: 0;
+    }
+
+    .reward-content ul {
+        padding-left: 0 !important;
+    }
+
+    .reward-tabs .tabs .tab {
+        height: 38px;
+        line-height: 38px;
+    }
+
+    .reward-tabs .tab a {
+        color: #fff;
+        background-color: #ccc;
+    }
+
+    .reward-tabs .tab a:hover {
+        background-color: #ccc;
+        color: #fff;
+    }
+
+    .reward-tabs .wechat-tab .active {
+        color: #fff !important;
+        background-color: #22AB38 !important;
+    }
+
+    .reward-tabs .alipay-tab .active {
+        color: #fff !important;
+        background-color: #019FE8 !important;
+    }
+
+    .reward-tabs .reward-img {
+        width: 210px;
+        height: 210px;
+    }
+</style>
+
+<div id="reward">
+    <a href="#rewardModal" class="reward-link modal-trigger btn-floating btn-medium waves-effect waves-light red">赏</a>
+
+    <!-- Modal Structure -->
+    <div id="rewardModal" class="modal">
+        <div class="modal-content">
+            <a class="close modal-close"><i class="fas fa-times"></i></a>
+            <h4 class="reward-title">你的赏识是我前进的动力</h4>
+            <div class="reward-content">
+                <div class="reward-tabs">
+                    <ul class="tabs row">
+                        <li class="tab col s6 alipay-tab waves-effect waves-light"><a href="#alipay">支付宝</a></li>
+                        <li class="tab col s6 wechat-tab waves-effect waves-light"><a href="#wechat">微 信</a></li>
+                    </ul>
+                    <div id="alipay">
+                        <img src="/medias/reward/alipay.jpg" class="reward-img" alt="支付宝打赏二维码">
+                    </div>
+                    <div id="wechat">
+                        <img src="/medias/reward/wechat.png" class="reward-img" alt="微信打赏二维码">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('.tabs').tabs();
+    });
+</script>
+
+            
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+            <div class="card">
+                <a href="/2020/05/27/go/mutex/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/9.jpg" class="responsive-img" alt="go mutex">
+                        
+                        <span class="card-title">go mutex</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2020-05-27
+                        </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/go/" class="post-category">
+                                    go
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/%E6%BA%90%E7%A0%81/">
+                        <span class="chip bg-color">源码</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/05/11/go/goroutine/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/4.jpg" class="responsive-img" alt="goroutine">
+                        
+                        <span class="card-title">goroutine</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-05-11
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/go/" class="post-category">
+                                    go
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/%E6%BA%90%E7%A0%81/">
+                        <span class="chip bg-color">源码</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+    </div>
+    <div id="toc-aside" class="expanded col l3 hide-on-med-and-down">
+        <div class="toc-widget card" style="background-color: white;">
+            <div class="toc-title"><i class="far fa-list-alt"></i>&nbsp;&nbsp;目录</div>
+            <div id="toc-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOC 悬浮按钮. -->
+
+<div id="floating-toc-btn" class="hide-on-med-and-down">
+    <a class="btn-floating btn-large bg-color">
+        <i class="fas fa-list-ul"></i>
+    </a>
+</div>
+
+
+<script src="/libs/tocbot/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '#articleContent',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            collapseDepth: Number('0'),
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('#articleContent').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+
+        
+        /* 修复文章卡片 div 的宽度. */
+        let fixPostCardWidth = function (srcId, targetId) {
+            let srcDiv = $('#' + srcId);
+            if (srcDiv.length === 0) {
+                return;
+            }
+
+            let w = srcDiv.width();
+            if (w >= 450) {
+                w = w + 21;
+            } else if (w >= 350 && w < 450) {
+                w = w + 18;
+            } else if (w >= 300 && w < 350) {
+                w = w + 16;
+            } else {
+                w = w + 14;
+            }
+            $('#' + targetId).width(w);
+        };
+
+        // 切换TOC目录展开收缩的相关操作.
+        const expandedClass = 'expanded';
+        let $tocAside = $('#toc-aside');
+        let $mainContent = $('#main-content');
+        $('#floating-toc-btn .btn-floating').click(function () {
+            if ($tocAside.hasClass(expandedClass)) {
+                $tocAside.removeClass(expandedClass).hide();
+                $mainContent.removeClass('l9');
+            } else {
+                $tocAside.addClass(expandedClass).show();
+                $mainContent.addClass('l9');
+            }
+            fixPostCardWidth('artDetail', 'prenext-posts');
+        });
+        
+    });
+</script>
+
+    
+
+</main>
+
+
+
+
+    <footer class="page-footer bg-color">
+    
+        <link rel="stylesheet" href="/libs/aplayer/APlayer.min.css">
+<style>
+    .aplayer .aplayer-lrc p {
+        
+        display: none;
+        
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 16px !important;
+    }
+
+    .aplayer .aplayer-lrc p.aplayer-lrc-current {
+        
+        display: none;
+        
+        font-size: 15px;
+        color: #42b983;
+    }
+
+    
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body {
+        left: -66px !important;
+    }
+
+    .aplayer.aplayer-fixed.aplayer-narrow .aplayer-body:hover {
+        left: 0px !important;
+    }
+
+    
+</style>
+<div class="">
+    
+    <div class="row">
+        <meting-js class="col l8 offset-l2 m10 offset-m1 s12"
+                   server="netease"
+                   type="playlist"
+                   id="503838841"
+                   fixed='true'
+                   autoplay='false'
+                   theme='#42b983'
+                   loop='all'
+                   order='random'
+                   preload='auto'
+                   volume='0.7'
+                   list-folded='true'
+        >
+        </meting-js>
+    </div>
+</div>
+
+<script src="/libs/aplayer/APlayer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+
+    
+    <div class="container row center-align" style="margin-bottom: 0px !important;">
+        <div class="col s12 m8 l8 copy-right">
+            Copyright&nbsp;&copy;
+            
+                <span id="year">2019-2021</span>
+            
+            <span id="year">2019</span>
+            <a href="/about" target="_blank">yiduoyunQ</a>
+            |&nbsp;Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            |&nbsp;Theme&nbsp;<a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+            <br>
+            
+            
+            
+            
+            
+            
+            <span id="busuanzi_container_site_pv">
+                |&nbsp;<i class="far fa-eye"></i>&nbsp;总访问量:&nbsp;<span id="busuanzi_value_site_pv"
+                    class="white-color"></span>&nbsp;次
+            </span>
+            
+            
+            <span id="busuanzi_container_site_uv">
+                |&nbsp;<i class="fas fa-users"></i>&nbsp;总访问人数:&nbsp;<span id="busuanzi_value_site_uv"
+                    class="white-color"></span>&nbsp;人
+            </span>
+            
+            <br>
+            
+            <br>
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/blinkfox" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fab fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:1181062873@qq.com" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fas fa-envelope-open"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="tencent://AddContact/?fromId=50&fromSubId=1&subcmd=all&uin=1181062873" class="tooltipped" target="_blank" data-tooltip="QQ联系我: 1181062873" data-position="top" data-delay="50">
+        <i class="fab fa-qq"></i>
+    </a>
+
+
+
+
+
+
+
+    <a href="/atom.xml" class="tooltipped" target="_blank" data-tooltip="RSS 订阅" data-position="top" data-delay="50">
+        <i class="fas fa-rss"></i>
+    </a>
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字"
+                   class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function () {
+    var searchFunc = function (path, search_id, content_id) {
+        'use strict';
+        $.ajax({
+            url: path,
+            dataType: "xml",
+            success: function (xmlResponse) {
+                // get the contents from search data
+                var datas = $("entry", xmlResponse).map(function () {
+                    return {
+                        title: $("title", this).text(),
+                        content: $("content", this).text(),
+                        url: $("url", this).text()
+                    };
+                }).get();
+                var $input = document.getElementById(search_id);
+                var $resultContent = document.getElementById(content_id);
+                $input.addEventListener('input', function () {
+                    var str = '<ul class=\"search-result-list\">';
+                    var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                    $resultContent.innerHTML = "";
+                    if (this.value.trim().length <= 0) {
+                        return;
+                    }
+                    // perform local searching
+                    datas.forEach(function (data) {
+                        var isMatch = true;
+                        var data_title = data.title.trim().toLowerCase();
+                        var data_content = data.content.trim().replace(/<[^>]+>/g, "").toLowerCase();
+                        var data_url = data.url;
+                        data_url = data_url.indexOf('/') === 0 ? data.url : '/' + data_url;
+                        var index_title = -1;
+                        var index_content = -1;
+                        var first_occur = -1;
+                        // only match artiles with not empty titles and contents
+                        if (data_title !== '' && data_content !== '') {
+                            keywords.forEach(function (keyword, i) {
+                                index_title = data_title.indexOf(keyword);
+                                index_content = data_content.indexOf(keyword);
+                                if (index_title < 0 && index_content < 0) {
+                                    isMatch = false;
+                                } else {
+                                    if (index_content < 0) {
+                                        index_content = 0;
+                                    }
+                                    if (i === 0) {
+                                        first_occur = index_content;
+                                    }
+                                }
+                            });
+                        }
+                        // show search results
+                        if (isMatch) {
+                            str += "<li><a href='" + data_url + "' class='search-result-title'>" + data_title + "</a>";
+                            var content = data.content.trim().replace(/<[^>]+>/g, "");
+                            if (first_occur >= 0) {
+                                // cut out 100 characters
+                                var start = first_occur - 20;
+                                var end = first_occur + 80;
+                                if (start < 0) {
+                                    start = 0;
+                                }
+                                if (start === 0) {
+                                    end = 100;
+                                }
+                                if (end > content.length) {
+                                    end = content.length;
+                                }
+                                var match_content = content.substr(start, end);
+                                // highlight all keywords
+                                keywords.forEach(function (keyword) {
+                                    var regS = new RegExp(keyword, "gi");
+                                    match_content = match_content.replace(regS, "<em class=\"search-keyword\">" + keyword + "</em>");
+                                });
+
+                                str += "<p class=\"search-result\">" + match_content + "...</p>"
+                            }
+                            str += "</li>";
+                        }
+                    });
+                    str += "</ul>";
+                    $resultContent.innerHTML = str;
+                });
+            }
+        });
+    };
+
+    searchFunc('/search.xml', 'searchInput', 'searchResult');
+});
+</script>
+
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    <script src="/libs/others/clicklove.js" async="async"></script>
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    <!--腾讯兔小巢-->
+    
+    
+
+    
+
+    
+
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>
