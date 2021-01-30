@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -26,8 +26,9 @@
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/07/21/mysql/backup/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
 <meta property="og:description" content="mysqlbackup(MBE) &amp; xtrabackup利用mysql crash recover使用redo log恢复机制FTWRL复制获取binlog点或gtid xtrabackupbackup innoDB tables and files &amp; undo fileExecuting FLUSH NO_WRITE_TO_BINLOG TABLESExecuting FLU">
+<meta property="og:locale">
 <meta property="article:published_time" content="2020-07-21T00:54:09.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.768Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:43.005Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
@@ -180,7 +181,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -333,7 +334,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqlbackup-MBE-amp-xtrabackup"><span class="nav-number">1.</span> <span class="nav-text">mysqlbackup(MBE) &amp; xtrabackup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#xtrabackup"><span class="nav-number">1.1.</span> <span class="nav-text">xtrabackup</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS"><span class="nav-number">1.1.1.</span> <span class="nav-text">Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MBE"><span class="nav-number">1.2.</span> <span class="nav-text">MBE</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二级备份技术"><span class="nav-number">2.</span> <span class="nav-text">二级备份技术</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#mysqlbackup-MBE-amp-xtrabackup"><span class="nav-number">1.</span> <span class="nav-text">mysqlbackup(MBE) &amp; xtrabackup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#xtrabackup"><span class="nav-number">1.1.</span> <span class="nav-text">xtrabackup</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS"><span class="nav-number">1.1.1.</span> <span class="nav-text">Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MBE"><span class="nav-number">1.2.</span> <span class="nav-text">MBE</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E7%BA%A7%E5%A4%87%E4%BB%BD%E6%8A%80%E6%9C%AF"><span class="nav-number">2.</span> <span class="nav-text">二级备份技术</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

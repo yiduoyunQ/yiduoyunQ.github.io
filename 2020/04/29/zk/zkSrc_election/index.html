@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,12 +20,13 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start()2.1 loadDataBase() 载入当前节点的数据库2.2 startServerCnxnFactory() 启动客户端连接监听2.3 startLeaderElection() 开始选举2.4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用Ser">
+  <meta name="description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start() 1 loadDataBase() 载入当前节点的数据库 2 startServerCnxnFactory() 启动客户端连接监听 3 startLeaderElection() 开始选举 4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用ServerC">
 <meta property="og:type" content="article">
 <meta property="og:title" content="zookeeper源码-2.启动和选举">
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start()2.1 loadDataBase() 载入当前节点的数据库2.2 startServerCnxnFactory() 启动客户端连接监听2.3 startLeaderElection() 开始选举2.4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用Ser">
+<meta property="og:description" content="启动流程 QuorumPeerMain读取config 调用QuorumPeer.start() 1 loadDataBase() 载入当前节点的数据库 2 startServerCnxnFactory() 启动客户端连接监听 3 startLeaderElection() 开始选举 4 调用run() 获取选举结果并执行响应  载入数据库启动客户端连接监听监听分为两种模式，默认使用ServerC">
+<meta property="og:locale">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/peer_state.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/election_class.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/fast_election_class.png">
@@ -36,7 +37,7 @@
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/recv_flow.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/recv_seq.png">
 <meta property="article:published_time" content="2020-04-29T13:55:27.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.776Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:43.017Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -190,7 +191,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -215,7 +216,11 @@
       
         <h2 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h2><ol>
 <li>QuorumPeerMain读取config</li>
-<li>调用QuorumPeer.start()<br>2.1 loadDataBase() 载入当前节点的数据库<br>2.2 startServerCnxnFactory() 启动客户端连接监听<br>2.3 startLeaderElection() 开始选举<br>2.4 调用run() 获取选举结果并执行响应</li>
+<li>调用QuorumPeer.start()</li>
+<li>1 loadDataBase() 载入当前节点的数据库</li>
+<li>2 startServerCnxnFactory() 启动客户端连接监听</li>
+<li>3 startLeaderElection() 开始选举</li>
+<li>4 调用run() 获取选举结果并执行响应</li>
 </ol>
 <h2 id="载入数据库"><a href="#载入数据库" class="headerlink" title="载入数据库"></a>载入数据库</h2><h2 id="启动客户端连接监听"><a href="#启动客户端连接监听" class="headerlink" title="启动客户端连接监听"></a>启动客户端连接监听</h2><p>监听分为两种模式，默认使用ServerCnxnFactory的NioServerCnxnFactory</p>
 <ul>
@@ -245,7 +250,6 @@
 </ul>
 <p>QuorumMaj 主要接口如下:</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; allMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; votingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; observingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>containsQuorum 选举的结果是否超过集群半数节点。</li>
 <li>getAllMembers 获取集群中所有的节点。</li>
@@ -270,11 +274,16 @@
 <li>节点首先更新Proposed为自己，广播通知，并循环获取<code>recvqueue</code>队列通知</li>
 <li>超时，重新广播通知</li>
 <li>忽略不在自己members中的通知和OBSERVING的通知</li>
-<li>收到LOOKING的通知<br>4.1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知<br>4.2 选举轮次落后自己，忽略<br>4.3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知<br>4.4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
-<li>收到FOLLOWING和LEADING的通知<br>5.1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举<br>5.2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
+<li>收到LOOKING的通知</li>
+<li>1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知</li>
+<li>2 选举轮次落后自己，忽略</li>
+<li>3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知</li>
+<li>4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
+<li>收到FOLLOWING和LEADING的通知</li>
+<li>1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举</li>
+<li>2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
 </ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));  </span><br></pre></td></tr></table></figure>
 <p>QuorumCnxManager负责选举中的连接管理，该类包含三个inner class。</p>
 <ul>
 <li>Listener 负责监接收新连接，并且管理连接，在单独的线程运行。</li>
@@ -332,7 +341,6 @@
 </ul>
 <h2 id="zxid以及ElectionEpoch"><a href="#zxid以及ElectionEpoch" class="headerlink" title="zxid以及ElectionEpoch"></a>zxid以及ElectionEpoch</h2><h3 id="zxid"><a href="#zxid" class="headerlink" title="zxid"></a>zxid</h3><p>选举中会使用到数据库中最新的事务id(ZKDatabase.getDataTreeLastProcessedZxid()), 事务id由两部分组成，高32位表示Epoch，每次有新的节点当选会+1(Leader.lead())；后32位为事务id，有新的节点当选，该部分会从0重新开始。当数据库有写操作时，整个事务id会+1（参考ZooKeeperServer.getNextZxid()的引用）</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ZxidUtils</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getEpochFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &gt;&gt; <span class="number">32L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getCounterFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &amp; <span class="number">0xffffffffL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">makeZxid</span><span class="params">(<span class="keyword">long</span> epoch, <span class="keyword">long</span> counter)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 前32位表示Epoch，后32位表示当前Epoch的事务号，新Leader节点lead()函数epoch+1，count从0开始</span></span><br><span class="line">        <span class="keyword">return</span> (epoch &lt;&lt; <span class="number">32L</span>) | (counter &amp; <span class="number">0xffffffffL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">zxidToString</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Long.toHexString(zxid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <h3 id="ElectionEpoch"><a href="#ElectionEpoch" class="headerlink" title="ElectionEpoch"></a>ElectionEpoch</h3><p>当前节点的ElectionEpoch定义于FastLeaderElection.logicalclock中，每发起一次新选举，该值会自+1。若其他节点选举信息中的ElectionEpoch大于当前节点，则会设置当前节点的值为接收到的值。</p>
 <hr>
 <h2 id="ZOOKEEPER-1732"><a href="#ZOOKEEPER-1732" class="headerlink" title="ZOOKEEPER-1732"></a>ZOOKEEPER-1732</h2><p>QuorumPeer.updateElectionVote<br>Vote.equals</p>
@@ -419,7 +427,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#启动流程"><span class="nav-number">1.</span> <span class="nav-text">启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#载入数据库"><span class="nav-number">2.</span> <span class="nav-text">载入数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动客户端连接监听"><span class="nav-number">3.</span> <span class="nav-text">启动客户端连接监听</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#选举"><span class="nav-number">4.</span> <span class="nav-text">选举</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#相关类"><span class="nav-number">4.1.</span> <span class="nav-text">相关类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FastLeaderElection实现"><span class="nav-number">4.2.</span> <span class="nav-text">FastLeaderElection实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zxid以及ElectionEpoch"><span class="nav-number">5.</span> <span class="nav-text">zxid以及ElectionEpoch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#zxid"><span class="nav-number">5.1.</span> <span class="nav-text">zxid</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ElectionEpoch"><span class="nav-number">5.2.</span> <span class="nav-text">ElectionEpoch</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZOOKEEPER-1732"><span class="nav-number">6.</span> <span class="nav-text">ZOOKEEPER-1732</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">启动流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%BD%E5%85%A5%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">2.</span> <span class="nav-text">载入数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%9E%E6%8E%A5%E7%9B%91%E5%90%AC"><span class="nav-number">3.</span> <span class="nav-text">启动客户端连接监听</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E4%B8%BE"><span class="nav-number">4.</span> <span class="nav-text">选举</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E7%B1%BB"><span class="nav-number">4.1.</span> <span class="nav-text">相关类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FastLeaderElection%E5%AE%9E%E7%8E%B0"><span class="nav-number">4.2.</span> <span class="nav-text">FastLeaderElection实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#zxid%E4%BB%A5%E5%8F%8AElectionEpoch"><span class="nav-number">5.</span> <span class="nav-text">zxid以及ElectionEpoch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#zxid"><span class="nav-number">5.1.</span> <span class="nav-text">zxid</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ElectionEpoch"><span class="nav-number">5.2.</span> <span class="nav-text">ElectionEpoch</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ZOOKEEPER-1732"><span class="nav-number">6.</span> <span class="nav-text">ZOOKEEPER-1732</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

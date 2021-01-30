@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -26,11 +26,12 @@
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_arch/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
 <meta property="og:description" content="节点架构   QuorumPeerMain服务器启动main入口，创建DatadirCleanupManager，按照config启动QuorumPeer   QuorumPeer节点类，根据节点类型管理和启动对应服务，管理选举算法及客户端连接。 ElectionQuorumPeer根据配置选取合适的选举算法。 ServerCnxnFactory管理客户端连接，QuorumPeer根据配置选取合适">
+<meta property="og:locale">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_arch/%E8%8A%82%E7%82%B9%E6%9E%B6%E6%9E%84.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_arch/%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_arch/leader_class.png">
 <meta property="article:published_time" content="2020-04-29T13:45:16.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.768Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:43.009Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -184,7 +185,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -324,7 +325,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#节点架构"><span class="nav-number">1.</span> <span class="nav-text">节点架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#节点类型"><span class="nav-number">2.</span> <span class="nav-text">节点类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader节点"><span class="nav-number">2.1.</span> <span class="nav-text">Leader节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LeaderZooKeeperServer"><span class="nav-number">2.1.1.</span> <span class="nav-text">LeaderZooKeeperServer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader"><span class="nav-number">2.1.2.</span> <span class="nav-text">Leader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LearnerHandler"><span class="nav-number">2.1.3.</span> <span class="nav-text">LearnerHandler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader-Processors"><span class="nav-number">2.1.4.</span> <span class="nav-text">Leader Processors</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Follower节点"><span class="nav-number">2.2.</span> <span class="nav-text">Follower节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FollowerZooKeeperServer"><span class="nav-number">2.2.1.</span> <span class="nav-text">FollowerZooKeeperServer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Follower"><span class="nav-number">2.2.2.</span> <span class="nav-text">Follower</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Follower-Processors"><span class="nav-number">2.2.3.</span> <span class="nav-text">Follower Processors</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Observer节点"><span class="nav-number">2.3.</span> <span class="nav-text">Observer节点</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">节点架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">节点类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Leader%E8%8A%82%E7%82%B9"><span class="nav-number">2.1.</span> <span class="nav-text">Leader节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#LeaderZooKeeperServer"><span class="nav-number">2.1.1.</span> <span class="nav-text">LeaderZooKeeperServer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader"><span class="nav-number">2.1.2.</span> <span class="nav-text">Leader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#LearnerHandler"><span class="nav-number">2.1.3.</span> <span class="nav-text">LearnerHandler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Leader-Processors"><span class="nav-number">2.1.4.</span> <span class="nav-text">Leader Processors</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Follower%E8%8A%82%E7%82%B9"><span class="nav-number">2.2.</span> <span class="nav-text">Follower节点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FollowerZooKeeperServer"><span class="nav-number">2.2.1.</span> <span class="nav-text">FollowerZooKeeperServer</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Follower"><span class="nav-number">2.2.2.</span> <span class="nav-text">Follower</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Follower-Processors"><span class="nav-number">2.2.3.</span> <span class="nav-text">Follower Processors</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Observer%E8%8A%82%E7%82%B9"><span class="nav-number">2.3.</span> <span class="nav-text">Observer节点</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

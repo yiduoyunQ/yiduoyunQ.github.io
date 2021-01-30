@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -24,6 +24,7 @@
 <meta property="og:title" content="yiduoyunQ">
 <meta property="og:url" content="https://yiduoyunq.github.io/page/4/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:locale">
 <meta property="article:author" content="yiduoyunQ">
 <meta name="twitter:card" content="summary">
 
@@ -175,7 +176,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -200,7 +201,11 @@
       
           <h2 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h2><ol>
 <li>QuorumPeerMain读取config</li>
-<li>调用QuorumPeer.start()<br>2.1 loadDataBase() 载入当前节点的数据库<br>2.2 startServerCnxnFactory() 启动客户端连接监听<br>2.3 startLeaderElection() 开始选举<br>2.4 调用run() 获取选举结果并执行响应</li>
+<li>调用QuorumPeer.start()</li>
+<li>1 loadDataBase() 载入当前节点的数据库</li>
+<li>2 startServerCnxnFactory() 启动客户端连接监听</li>
+<li>3 startLeaderElection() 开始选举</li>
+<li>4 调用run() 获取选举结果并执行响应</li>
 </ol>
 <h2 id="载入数据库"><a href="#载入数据库" class="headerlink" title="载入数据库"></a>载入数据库</h2><h2 id="启动客户端连接监听"><a href="#启动客户端连接监听" class="headerlink" title="启动客户端连接监听"></a>启动客户端连接监听</h2><p>监听分为两种模式，默认使用ServerCnxnFactory的NioServerCnxnFactory</p>
 <ul>
@@ -230,7 +235,6 @@
 </ul>
 <p>QuorumMaj 主要接口如下:</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; allMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; votingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br><span class="line"><span class="keyword">private</span> Map&lt;Long, QuorumServer&gt; observingMembers = <span class="keyword">new</span> HashMap&lt;Long, QuorumServer&gt;();</span><br></pre></td></tr></table></figure>
-
 <ul>
 <li>containsQuorum 选举的结果是否超过集群半数节点。</li>
 <li>getAllMembers 获取集群中所有的节点。</li>
@@ -255,11 +259,16 @@
 <li>节点首先更新Proposed为自己，广播通知，并循环获取<code>recvqueue</code>队列通知</li>
 <li>超时，重新广播通知</li>
 <li>忽略不在自己members中的通知和OBSERVING的通知</li>
-<li>收到LOOKING的通知<br>4.1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知<br>4.2 选举轮次落后自己，忽略<br>4.3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知<br>4.4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
-<li>收到FOLLOWING和LEADING的通知<br>5.1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举<br>5.2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
+<li>收到LOOKING的通知</li>
+<li>1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知</li>
+<li>2 选举轮次落后自己，忽略</li>
+<li>3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知</li>
+<li>4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
+<li>收到FOLLOWING和LEADING的通知</li>
+<li>1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举</li>
+<li>2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
 </ol>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));</span><br></pre></td></tr></table></figure>
-
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 选举策略</span></span><br><span class="line"><span class="comment"> * We return true if one of the following three cases hold:</span></span><br><span class="line"><span class="comment"> * 1- New epoch is higher</span></span><br><span class="line"><span class="comment"> * 2- New epoch is the same as current epoch, but new zxid is higher</span></span><br><span class="line"><span class="comment"> * 3- New epoch is the same as current epoch, new zxid is the same</span></span><br><span class="line"><span class="comment"> *  as current zxid, but server id is higher.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">return</span> ((newEpoch &gt; curEpoch)</span><br><span class="line">        || ((newEpoch == curEpoch)</span><br><span class="line">            &amp;&amp; ((newZxid &gt; curZxid)</span><br><span class="line">                || ((newZxid == curZxid)</span><br><span class="line">                    &amp;&amp; (newId &gt; curId)))));  </span><br></pre></td></tr></table></figure>
 <p>QuorumCnxManager负责选举中的连接管理，该类包含三个inner class。</p>
 <ul>
 <li>Listener 负责监接收新连接，并且管理连接，在单独的线程运行。</li>
@@ -317,7 +326,6 @@
 </ul>
 <h2 id="zxid以及ElectionEpoch"><a href="#zxid以及ElectionEpoch" class="headerlink" title="zxid以及ElectionEpoch"></a>zxid以及ElectionEpoch</h2><h3 id="zxid"><a href="#zxid" class="headerlink" title="zxid"></a>zxid</h3><p>选举中会使用到数据库中最新的事务id(ZKDatabase.getDataTreeLastProcessedZxid()), 事务id由两部分组成，高32位表示Epoch，每次有新的节点当选会+1(Leader.lead())；后32位为事务id，有新的节点当选，该部分会从0重新开始。当数据库有写操作时，整个事务id会+1（参考ZooKeeperServer.getNextZxid()的引用）</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ZxidUtils</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getEpochFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &gt;&gt; <span class="number">32L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getCounterFromZxid</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> zxid &amp; <span class="number">0xffffffffL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">makeZxid</span><span class="params">(<span class="keyword">long</span> epoch, <span class="keyword">long</span> counter)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 前32位表示Epoch，后32位表示当前Epoch的事务号，新Leader节点lead()函数epoch+1，count从0开始</span></span><br><span class="line">        <span class="keyword">return</span> (epoch &lt;&lt; <span class="number">32L</span>) | (counter &amp; <span class="number">0xffffffffL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">zxidToString</span><span class="params">(<span class="keyword">long</span> zxid)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Long.toHexString(zxid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <h3 id="ElectionEpoch"><a href="#ElectionEpoch" class="headerlink" title="ElectionEpoch"></a>ElectionEpoch</h3><p>当前节点的ElectionEpoch定义于FastLeaderElection.logicalclock中，每发起一次新选举，该值会自+1。若其他节点选举信息中的ElectionEpoch大于当前节点，则会设置当前节点的值为接收到的值。</p>
 <hr>
 <h2 id="ZOOKEEPER-1732"><a href="#ZOOKEEPER-1732" class="headerlink" title="ZOOKEEPER-1732"></a>ZOOKEEPER-1732</h2><p>QuorumPeer.updateElectionVote<br>Vote.equals</p>
@@ -371,7 +379,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -478,7 +486,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -509,7 +517,6 @@
 <h2 id="修改jre"><a href="#修改jre" class="headerlink" title="修改jre"></a>修改jre</h2><p>打开项目结构<strong>（⌘ + ;）</strong>，指定jdk为<code>1.8</code><br>若使用jdk13，不支持的com.sun.nio.file方法编译报错，<a href="https://github.com/apache/zookeeper/pull/1269" title="com.sun.nio.file.SensitivityWatchEventModifier" target="">issue</a></p>
 <h2 id="修改gitignore文件"><a href="#修改gitignore文件" class="headerlink" title="修改gitignore文件"></a>修改gitignore文件</h2><p>由于开发环境需要进行调试，临时配置文件是不需要进代码仓库的，所以进行排除。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Ignore debug conf</span></span><br><span class="line">conf/zoo.cfg</span><br><span class="line">conf/zoo*.cfg</span><br><span class="line">zookeeper-server/src/main/resources/log4j.properties</span><br></pre></td></tr></table></figure>
-
 <h2 id="config配置"><a href="#config配置" class="headerlink" title="config配置"></a>config配置</h2><ol>
 <li>拷贝zoo_sample.cfg文件至相同文件夹下，名为: zoo.cfg，配置全部使用默认</li>
 <li>创建/tmp/zookeeper目录，用于存放zk数据；</li>
@@ -519,7 +526,6 @@
 <img src="/2020/04/29/zk/zkSrc_debug/src_resource_config.png" class="">
 
 <h2 id="debug启动项"><a href="#debug启动项" class="headerlink" title="debug启动项"></a>debug启动项</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">QuorumPeerMain</span><br><span class="line">org.apache.zookeeper.server.quorum.QuorumPeerMain</span><br><span class="line">conf/zoo.cfg</span><br></pre></td></tr></table></figure>
-
 <img src="/2020/04/29/zk/zkSrc_debug/src_debug_config.png" class="">
 
 <h2 id="info-version"><a href="#info-version" class="headerlink" title="info version"></a>info version</h2><p>src/main/java/org/apache/zookeeper/version/util/VerGen.java 的main方法用于生成Info.java版本信息</p>

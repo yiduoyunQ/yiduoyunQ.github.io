@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,15 +20,16 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="原始标记清除法   从root开始循环遍历对象，mark 对未mark对象，sweep  三色标记清除法 白： 未标记，本次GC被sweep对象灰： 待标记，最终转黑黑： 标记，本次GC保留对象  流程 初始所有对象为白 从root开始遍历一次对象，标记为灰 遍历一次灰，标记本对象为黑，标记引用对象为灰，重复本操作 剩余白即为待sweep对象  若不使用STW的问题 白的(灰)引用被破坏 白被黑引">
+  <meta name="description" content="原始标记清除法   从root开始循环遍历对象，mark 对未mark对象，sweep  三色标记清除法 白： 未标记，本次GC被sweep对象灰： 待标记，最终转黑黑： 标记，本次GC保留对象  流程 初始所有对象为**白** 从root开始遍历一次对象，标记为**灰** 遍历一次*灰**，标记本对象为黑*，标记引用对象为**灰，重复本操作 剩余**白**即为待sweep对象  若不使用STW的">
 <meta property="og:type" content="article">
 <meta property="og:title" content="三色标记清除法">
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/11/18/go/wgb/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="原始标记清除法   从root开始循环遍历对象，mark 对未mark对象，sweep  三色标记清除法 白： 未标记，本次GC被sweep对象灰： 待标记，最终转黑黑： 标记，本次GC保留对象  流程 初始所有对象为白 从root开始遍历一次对象，标记为灰 遍历一次灰，标记本对象为黑，标记引用对象为灰，重复本操作 剩余白即为待sweep对象  若不使用STW的问题 白的(灰)引用被破坏 白被黑引">
+<meta property="og:description" content="原始标记清除法   从root开始循环遍历对象，mark 对未mark对象，sweep  三色标记清除法 白： 未标记，本次GC被sweep对象灰： 待标记，最终转黑黑： 标记，本次GC保留对象  流程 初始所有对象为**白** 从root开始遍历一次对象，标记为**灰** 遍历一次*灰**，标记本对象为黑*，标记引用对象为**灰，重复本操作 剩余**白**即为待sweep对象  若不使用STW的">
+<meta property="og:locale">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/11/18/go/wgb/mark_and_sweep.jpg">
 <meta property="article:published_time" content="2020-11-18T12:37:20.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.764Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:43.001Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -182,7 +183,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -215,10 +216,10 @@
 <p>白： 未标记，本次GC被sweep对象<br>灰： 待标记，最终转黑<br>黑： 标记，本次GC保留对象</p>
 </blockquote>
 <h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3><ol>
-<li>初始所有对象为<strong><em>白</em></strong></li>
-<li>从root开始遍历一次对象，标记为<strong><em>灰</em></strong></li>
-<li>遍历一次<strong><em>灰</em></strong>，标记本对象为<strong><em>黑</em></strong>，标记引用对象为<strong><em>灰</em></strong>，重复本操作</li>
-<li>剩余<strong><em>白</em></strong>即为待sweep对象</li>
+<li>初始所有对象为**<em>白**</em></li>
+<li>从root开始遍历一次对象，标记为**<em>灰**</em></li>
+<li>遍历一次*<strong>灰**<em>，标记本对象为</em></strong>黑*<strong>，标记引用对象为**<em>灰</em></strong>，重复本操作</li>
+<li>剩余**<em>白**</em>即为待sweep对象</li>
 </ol>
 <h3 id="若不使用STW的问题"><a href="#若不使用STW的问题" class="headerlink" title="若不使用STW的问题"></a>若不使用STW的问题</h3><ol>
 <li>白的(灰)引用被破坏</li>
@@ -232,11 +233,11 @@
 <h3 id="插入写屏障"><a href="#插入写屏障" class="headerlink" title="插入写屏障"></a>插入写屏障</h3><blockquote>
 <p>对象被引用时触发<br>满足强三色不变式</p>
 </blockquote>
-<p>对象被引用时，设为<strong><em>灰</em></strong></p>
+<p>对象被引用时，设为**<em>灰**</em></p>
 <h4 id="插入写屏障问题"><a href="#插入写屏障问题" class="headerlink" title="插入写屏障问题"></a>插入写屏障问题</h4><p>为提高GC效率，<font color=red>栈内存</font>不执行插入写屏障</p>
 <p>解决：</p>
 <ol>
-<li>三色标记完成后，栈对象统一变<strong><em>白</em></strong></li>
+<li>三色标记完成后，栈对象统一变**<em>白**</em></li>
 <li>启动STW</li>
 <li>三色标记处理栈对象</li>
 <li>停止STW</li>
@@ -247,12 +248,12 @@
 <h3 id="删除屏障"><a href="#删除屏障" class="headerlink" title="删除屏障"></a>删除屏障</h3><blockquote>
 <p>对象被删除时触发<br>满足弱三色不变式</p>
 </blockquote>
-<p>标记下游引用对象为<strong><em>灰</em></strong></p>
-<h4 id="删除屏障问题"><a href="#删除屏障问题" class="headerlink" title="删除屏障问题"></a>删除屏障问题</h4><p>删除对象下游对象最终会被标记为<strong><em>黑</em></strong>，可能无其他引用，本轮GC保留一轮，在下轮GC清除</p>
+<p>标记下游引用对象为**<em>灰**</em></p>
+<h4 id="删除屏障问题"><a href="#删除屏障问题" class="headerlink" title="删除屏障问题"></a>删除屏障问题</h4><p>删除对象下游对象最终会被标记为**<em>黑**</em>，可能无其他引用，本轮GC保留一轮，在下轮GC清除</p>
 <h3 id="混合写屏障-结合写屏障和删除屏障"><a href="#混合写屏障-结合写屏障和删除屏障" class="headerlink" title="混合写屏障 (结合写屏障和删除屏障)"></a>混合写屏障 (结合写屏障和删除屏障)</h3><ol>
-<li>初始扫描<font color=red>栈可达对象</font>标记为<strong><em>黑</em></strong>，GC期间新创建的栈对象直接标记为<strong><em>黑</em></strong> (解决写屏障问题)</li>
-<li>被删除对象为<strong><em>灰</em></strong> (删除屏障)</li>
-<li>被添加对象为<strong><em>灰</em></strong> (写屏障)</li>
+<li>初始扫描<font color=red>栈可达对象</font>标记为*<strong>黑**<em>，GC期间新创建的栈对象直接标记为</em></strong>黑*** (解决写屏障问题)</li>
+<li>被删除对象为**<em>灰**</em> (删除屏障)</li>
+<li>被添加对象为**<em>灰**</em> (写屏障)</li>
 </ol>
 <h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2>
     </div>
@@ -337,7 +338,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#原始标记清除法"><span class="nav-number">1.</span> <span class="nav-text">原始标记清除法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#三色标记清除法"><span class="nav-number">2.</span> <span class="nav-text">三色标记清除法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#流程"><span class="nav-number">2.1.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#若不使用STW的问题"><span class="nav-number">2.2.</span> <span class="nav-text">若不使用STW的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#强三色不变式"><span class="nav-number">2.3.</span> <span class="nav-text">强三色不变式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#若三色不变式"><span class="nav-number">2.4.</span> <span class="nav-text">若三色不变式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插入写屏障"><span class="nav-number">2.5.</span> <span class="nav-text">插入写屏障</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#插入写屏障问题"><span class="nav-number">2.5.1.</span> <span class="nav-text">插入写屏障问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除屏障"><span class="nav-number">2.6.</span> <span class="nav-text">删除屏障</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#删除屏障问题"><span class="nav-number">2.6.1.</span> <span class="nav-text">删除屏障问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#混合写屏障-结合写屏障和删除屏障"><span class="nav-number">2.7.</span> <span class="nav-text">混合写屏障 (结合写屏障和删除屏障)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#源码"><span class="nav-number">3.</span> <span class="nav-text">源码</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E5%A7%8B%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4%E6%B3%95"><span class="nav-number">1.</span> <span class="nav-text">原始标记清除法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">三色标记清除法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%81%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8B%A5%E4%B8%8D%E4%BD%BF%E7%94%A8STW%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">2.2.</span> <span class="nav-text">若不使用STW的问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%BA%E4%B8%89%E8%89%B2%E4%B8%8D%E5%8F%98%E5%BC%8F"><span class="nav-number">2.3.</span> <span class="nav-text">强三色不变式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8B%A5%E4%B8%89%E8%89%B2%E4%B8%8D%E5%8F%98%E5%BC%8F"><span class="nav-number">2.4.</span> <span class="nav-text">若三色不变式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E5%86%99%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.5.</span> <span class="nav-text">插入写屏障</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E5%86%99%E5%B1%8F%E9%9A%9C%E9%97%AE%E9%A2%98"><span class="nav-number">2.5.1.</span> <span class="nav-text">插入写屏障问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.6.</span> <span class="nav-text">删除屏障</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E5%B1%8F%E9%9A%9C%E9%97%AE%E9%A2%98"><span class="nav-number">2.6.1.</span> <span class="nav-text">删除屏障问题</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9C-%E7%BB%93%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9C%E5%92%8C%E5%88%A0%E9%99%A4%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.7.</span> <span class="nav-text">混合写屏障 (结合写屏障和删除屏障)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">源码</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

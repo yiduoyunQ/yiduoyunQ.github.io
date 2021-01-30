@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -26,11 +26,12 @@
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_serverCnxn/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
 <meta property="og:description" content="默认使用NIO，可配置为Netty   configure在QuorumPeerMain中调用，入口在QuorumPeer.startServerCnxnFactory Factory使用Set&lt;ServerCnxn&gt;保存所有ServerCnxn NIO Factory 使用一个AcceptThread接受所有连接，按照round-robin分配到Collection&lt;Selec">
+<meta property="og:locale">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_serverCnxn/client_cnxn_class.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_serverCnxn/receive_data_flow.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_serverCnxn/process_data_flow.png">
 <meta property="article:published_time" content="2020-04-29T14:17:38.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.776Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:43.021Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -184,7 +185,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:43" itemprop="dateModified" datetime="2021-01-30T19:21:43+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -316,7 +317,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Netty实现"><span class="nav-number">1.</span> <span class="nav-text">Netty实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#启动服务器"><span class="nav-number">1.1.</span> <span class="nav-text">启动服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立连接"><span class="nav-number">1.2.</span> <span class="nav-text">建立连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#处理客户端数据"><span class="nav-number">1.3.</span> <span class="nav-text">处理客户端数据</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#接收客户端数据"><span class="nav-number">1.3.1.</span> <span class="nav-text">接收客户端数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#处理数据流程"><span class="nav-number">1.3.2.</span> <span class="nav-text">处理数据流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#返回数据"><span class="nav-number">1.3.3.</span> <span class="nav-text">返回数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Watch通知"><span class="nav-number">1.3.4.</span> <span class="nav-text">Watch通知</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Netty%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">Netty实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.1.</span> <span class="nav-text">启动服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E8%BF%9E%E6%8E%A5"><span class="nav-number">1.2.</span> <span class="nav-text">建立连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%95%B0%E6%8D%AE"><span class="nav-number">1.3.</span> <span class="nav-text">处理客户端数据</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6%E5%AE%A2%E6%88%B7%E7%AB%AF%E6%95%B0%E6%8D%AE"><span class="nav-number">1.3.1.</span> <span class="nav-text">接收客户端数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%95%B0%E6%8D%AE%E6%B5%81%E7%A8%8B"><span class="nav-number">1.3.2.</span> <span class="nav-text">处理数据流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%94%E5%9B%9E%E6%95%B0%E6%8D%AE"><span class="nav-number">1.3.3.</span> <span class="nav-text">返回数据</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Watch%E9%80%9A%E7%9F%A5"><span class="nav-number">1.3.4.</span> <span class="nav-text">Watch通知</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,14 +20,15 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="[]byte到string转换需要拷贝内存12345678910111213b :&#x3D; []byte(&quot;b&quot;)s :&#x3D; string(b)pbyte :&#x3D; (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)pstring :&#x3D; (*reflect.StringHeader)(unsafe.Pointer(&amp;s))fmt.Println(pbyte.Da">
+  <meta name="description" content="[]byte到string转换需要拷贝内存12345678910111213b :&#x3D; []byte(&quot;b&quot;)s :&#x3D; string(b)pbyte :&#x3D; (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)pstring :&#x3D; (*reflect.StringHeader)(unsafe.Pointer(&amp;s))fmt.Printl">
 <meta property="og:type" content="article">
 <meta property="og:title" content="反射">
 <meta property="og:url" content="https://yiduoyunq.github.io/2021/01/25/go/reflect/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="[]byte到string转换需要拷贝内存12345678910111213b :&#x3D; []byte(&quot;b&quot;)s :&#x3D; string(b)pbyte :&#x3D; (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)pstring :&#x3D; (*reflect.StringHeader)(unsafe.Pointer(&amp;s))fmt.Println(pbyte.Da">
+<meta property="og:description" content="[]byte到string转换需要拷贝内存12345678910111213b :&#x3D; []byte(&quot;b&quot;)s :&#x3D; string(b)pbyte :&#x3D; (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)pstring :&#x3D; (*reflect.StringHeader)(unsafe.Pointer(&amp;s))fmt.Printl">
+<meta property="og:locale">
 <meta property="article:published_time" content="2021-01-25T22:50:23.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.760Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:42.997Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -180,7 +181,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:42" itemprop="dateModified" datetime="2021-01-30T19:21:42+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -203,7 +204,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">b := []<span class="keyword">byte</span>(<span class="string">"b"</span>)</span><br><span class="line">s := <span class="keyword">string</span>(b)</span><br><span class="line">pbyte := (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)</span><br><span class="line">pstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;s))</span><br><span class="line">fmt.Println(pbyte.Data == pstring.Data) <span class="comment">// false</span></span><br><span class="line">b = []<span class="keyword">byte</span>(<span class="string">"ttt"</span>)</span><br><span class="line">pstring.Data = pbyte.Data</span><br><span class="line">fmt.Println(s) <span class="comment">// t</span></span><br><span class="line">pstring.Len = pbyte.Len</span><br><span class="line">fmt.Println(s) <span class="comment">// ttt</span></span><br><span class="line">ss := <span class="keyword">string</span>(s)</span><br><span class="line">psstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;ss))</span><br><span class="line">   fmt.Println(psstring.Data == pbyte.Data) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+        <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">b := []<span class="keyword">byte</span>(<span class="string">&quot;b&quot;</span>)</span><br><span class="line">s := <span class="keyword">string</span>(b)</span><br><span class="line">pbyte := (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)</span><br><span class="line">pstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;s))</span><br><span class="line">fmt.Println(pbyte.Data == pstring.Data) <span class="comment">// false</span></span><br><span class="line">b = []<span class="keyword">byte</span>(<span class="string">&quot;ttt&quot;</span>)</span><br><span class="line">pstring.Data = pbyte.Data</span><br><span class="line">fmt.Println(s) <span class="comment">// t</span></span><br><span class="line">pstring.Len = pbyte.Len</span><br><span class="line">fmt.Println(s) <span class="comment">// ttt</span></span><br><span class="line">ss := <span class="keyword">string</span>(s)</span><br><span class="line">psstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;ss))</span><br><span class="line">   fmt.Println(psstring.Data == pbyte.Data) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
     </div>
 
     
@@ -286,7 +287,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#byte到string转换需要拷贝内存"><span class="nav-number">1.</span> <span class="nav-text">[]byte到string转换需要拷贝内存</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#byte%E5%88%B0string%E8%BD%AC%E6%8D%A2%E9%9C%80%E8%A6%81%E6%8B%B7%E8%B4%9D%E5%86%85%E5%AD%98"><span class="nav-number">1.</span> <span class="nav-text">[]byte到string转换需要拷贝内存</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

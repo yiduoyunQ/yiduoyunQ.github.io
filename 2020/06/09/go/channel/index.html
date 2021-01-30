@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 4.2.0">
+<meta name="generator" content="Hexo 5.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -26,8 +26,9 @@
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/06/09/go/channel/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
 <meta property="og:description" content="channel底层使用ring buffer实现，通过sendx、recvx移动实现带缓存的chan，数据FIFO先入先出   dataqsiz&#x3D;0表示同步chan，dataqsiz&gt;0表示异步chan recvq &#x2F; sendq其中之一必定为空，或两者都为空 qcount &gt; 0表示recvq为空 qcount &lt; dataqsiz表示sendq为空  12345678910">
+<meta property="og:locale">
 <meta property="article:published_time" content="2020-06-09T00:50:29.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:48:53.752Z">
+<meta property="article:modified_time" content="2021-01-30T19:21:42.985Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -180,7 +181,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 19:21:42" itemprop="dateModified" datetime="2021-01-30T19:21:42+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -213,16 +214,19 @@
 <li>qcount &lt; dataqsiz表示sendq为空</li>
 </ul>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> hchan <span class="keyword">struct</span> &#123;</span><br><span class="line">    qcount   <span class="keyword">uint</span>           <span class="comment">// buffer中元素数量</span></span><br><span class="line">    dataqsiz <span class="keyword">uint</span>           <span class="comment">// make chan时候指定的buf大小</span></span><br><span class="line">    buf      unsafe.Pointer <span class="comment">// buffer</span></span><br><span class="line">    elemsize <span class="keyword">uint16</span>         <span class="comment">// 每个元素大小</span></span><br><span class="line">    elemtype *_type         <span class="comment">// 元素类型</span></span><br><span class="line">    closed   <span class="keyword">uint32</span>         <span class="comment">// chan是否已关闭，=0表示未关闭</span></span><br><span class="line">    sendx    <span class="keyword">uint</span>           <span class="comment">// send索引下标</span></span><br><span class="line">    recvx    <span class="keyword">uint</span>           <span class="comment">// recv索引下标</span></span><br><span class="line">    recvq    waitq          <span class="comment">// 接受等待队列，双向链表</span></span><br><span class="line">    sendq    waitq          <span class="comment">// 发送等待队列，双向链表</span></span><br><span class="line"></span><br><span class="line">    lock mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
 <p>chansend流程：</p>
 <ol>
 <li>若recvq不为空，表示有等待的recv sudog，调用memmove进行数据拷贝，然后调用goready唤醒该recv sudug</li>
-<li>若recvq为空<br>2.1 若qcount &lt; dataqsiz，表示当前chan还有缓存空间，调用memmove进行数据拷贝<br>2.2 若缓存空间满，将当前gp封装成sudog放入sendq队列，并进入休眠(在recv函数中进行数据拷贝，然后调用goready被唤醒)，唤醒后数据已被拷贝走，release释放sudog</li>
+<li>若recvq为空</li>
+<li>1 若qcount &lt; dataqsiz，表示当前chan还有缓存空间，调用memmove进行数据拷贝</li>
+<li>2 若缓存空间满，将当前gp封装成sudog放入sendq队列，并进入休眠(在recv函数中进行数据拷贝，然后调用goready被唤醒)，唤醒后数据已被拷贝走，release释放sudog</li>
 </ol>
 <p>chanrecv流程：</p>
 <ol>
 <li>若sendq不为空，表示有等待的send sudog。若是同步chan，将send sudo拷贝到recv sudo；若是带缓存的chan，将缓存head元素传给recv sudo，将sendq取出元素传给缓存队尾，然后调用goready唤醒send sudug</li>
-<li>若sendq为空<br>2.1 若创建时指定的buf大小&gt;0，且缓存中有数据，从缓存中取第一个元素传给recv sudo<br>2.2 若都不满足，进入recvq队列</li>
+<li>若sendq为空</li>
+<li>1 若创建时指定的buf大小&gt;0，且缓存中有数据，从缓存中取第一个元素传给recv sudo</li>
+<li>2 若都不满足，进入recvq队列</li>
 </ol>
 <p>close流程：</p>
 <ol>
