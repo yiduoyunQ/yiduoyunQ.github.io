@@ -144,6 +144,79 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/25/go/reflect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/25/go/reflect/" class="post-title-link" itemprop="url">反射</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-25 22:50:23" itemprop="dateCreated datePublished" datetime="2021-01-25T22:50:23+00:00">2021-01-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-30 14:27:56" itemprop="dateModified" datetime="2021-01-30T14:27:56+00:00">2021-01-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">b := []<span class="keyword">byte</span>(<span class="string">"b"</span>)</span><br><span class="line">s := <span class="keyword">string</span>(b)</span><br><span class="line">pbyte := (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)</span><br><span class="line">pstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;s))</span><br><span class="line">fmt.Println(pbyte.Data == pstring.Data) <span class="comment">// false</span></span><br><span class="line">b = []<span class="keyword">byte</span>(<span class="string">"ttt"</span>)</span><br><span class="line">pstring.Data = pbyte.Data</span><br><span class="line">fmt.Println(s) <span class="comment">// t</span></span><br><span class="line">pstring.Len = pbyte.Len</span><br><span class="line">fmt.Println(s) <span class="comment">// ttt</span></span><br><span class="line">ss := <span class="keyword">string</span>(s)</span><br><span class="line">psstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;ss))</span><br><span class="line">   fmt.Println(psstring.Data == pbyte.Data) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/11/23/go/net/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -684,7 +757,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-21 13:21:35" itemprop="dateModified" datetime="2021-01-21T13:21:35+00:00">2021-01-21</time>
+                <time title="Modified: 2021-01-30 14:27:56" itemprop="dateModified" datetime="2021-01-30T14:27:56+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1145,108 +1218,6 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/06/23/git/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/23/git/" class="post-title-link" itemprop="url">git</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-06-23 05:40:07" itemprop="dateCreated datePublished" datetime="2020-06-23T05:40:07+00:00">2020-06-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-11 06:13:02" itemprop="dateModified" datetime="2021-01-11T06:13:02+00:00">2021-01-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/git/" itemprop="url" rel="index"><span itemprop="name">git</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>git commit –amend –no-edit</p>
-<p>git tag<br>git tag v1.4<br>git tag -a v1.4 -m “my version 1.4” {commit_id}<br>git show v1.4<br>git push origin –delete <tagname></p>
-<p>git log // 查找要删除的前一次提交的 commit_id<br>git rebase -i commit_id // 将 commit_id 替换成复制的值<br>git push origin HEAD –force // 强制推送到远端</p>
-<h2 id="diff"><a href="#diff" class="headerlink" title="diff"></a>diff</h2><p><code>git diff v2.1.29 v2.1.29-updrdb --name-only | wc -l</code></p>
-<h2 id="merge"><a href="#merge" class="headerlink" title="merge"></a>merge</h2><p><code>master$ git merge dev</code></p>
-<ul>
-<li>fast forward 不会创建新的commit</li>
-<li>no fast forward 会创建新的commit</li>
-<li>merge冲突 手动修改后commit</li>
-</ul>
-<h2 id="rebase"><a href="#rebase" class="headerlink" title="rebase"></a>rebase</h2><p><code>dev$ git rebase master</code></p>
-<p>获取master最新修改，而不提交。rabase后未提交区内容基于最新master代码。</p>
-<h2 id="交互rebase"><a href="#交互rebase" class="headerlink" title="交互rebase"></a>交互rebase</h2><p><code>master$ git rebase -i HEAD~3</code></p>
-<p>默认pick。<br>修改为drop后移除对应commit，最后可push到仓库修改历史commit。<br>修改为squash将两个commit合并。</p>
-<h2 id="reset"><a href="#reset" class="headerlink" title="reset"></a>reset</h2><p><code>dev$ git reset --soft HEAD~3</code></p>
-<h3 id="soft"><a href="#soft" class="headerlink" title="soft"></a>soft</h3><p><code>master$ git reset --soft HEAD~3</code><br><code>master$ git status</code></p>
-<p>HEAD指向HEAD~3，期间的提交保留在未commit区</p>
-<h3 id="hard"><a href="#hard" class="headerlink" title="hard"></a>hard</h3><p><code>master$ git reset --soft HEAD~3</code><br><code>master$ git status</code></p>
-<p>HEAD指向HEAD~3，期间的提交被回退</p>
-<h2 id="revert"><a href="#revert" class="headerlink" title="revert"></a>revert</h2><p><code>dev$ git revert ec5be</code></p>
-<p>将<strong>ec5be</strong>的修改还原，并创建新的未提交commit</p>
-<h2 id="cherry-pick"><a href="#cherry-pick" class="headerlink" title="cherry-pick"></a>cherry-pick</h2><p><code>master$ git cherry-pick 76d12</code></p>
-<p>从其他分支中整合某一次commit修改内容到当前分支</p>
-<h2 id="reflog"><a href="#reflog" class="headerlink" title="reflog"></a>reflog</h2><p><code>master$ git reflog</code><br><code>master$ git reset HEAD@{1}</code><br><code>master$ git reflog</code></p>
-<p>展示所有已执行git动作</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://zhuanlan.zhihu.com/p/132573100" title="" target="">动图展示10大Git命令</a>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1316,7 +1287,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-count">32</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
