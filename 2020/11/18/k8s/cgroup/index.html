@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    116
+                    127
                 </div>
                 
 
@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -493,7 +496,22 @@
 
 <h2 id="V2"><a href="#V2" class="headerlink" title="V2"></a>V2</h2><img src="/2020/11/18/k8s/cgroup/cgroupV2.jpg" class="">
 
-<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> ls /sys/fs/cgroup/ |grep cpu</span></span><br><span class="line">cpu</span><br><span class="line">cpuacct</span><br><span class="line">cpu,cpuacct</span><br><span class="line">cpuset</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> cat /sys/fs/cgroup/cpu/user.slice/tasks</span></span><br><span class="line">4872</span><br><span class="line">21893</span><br><span class="line">21896</span><br><span class="line">21907</span><br><span class="line">21913</span><br><span class="line">21914</span><br><span class="line"><span class="meta">#</span><span class="bash"> ps -ef | grep 21896 | grep -v grep</span></span><br><span class="line">root     21896     1  0 14:15 ?        00:00:00 /usr/lib/systemd/systemd --user</span><br><span class="line">root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># ls /sys/fs/cgroup/ |grep cpu
+cpu
+cpuacct
+cpu,cpuacct
+cpuset
+
+# cat /sys/fs/cgroup/cpu/user.slice/tasks
+4872
+21893
+21896
+21907
+21913
+21914
+# ps -ef | grep 21896 | grep -v grep
+root     21896     1  0 14:15 ?        00:00:00 /usr/lib/systemd/systemd --user
+root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p>tasks中记录cgroup内pid</p>
 </blockquote>

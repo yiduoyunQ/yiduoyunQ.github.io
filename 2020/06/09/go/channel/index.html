@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -498,7 +501,20 @@
 <li>qcount &gt; 0表示recvq为空</li>
 <li>qcount &lt; dataqsiz表示sendq为空</li>
 </ul>
-<figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> hchan <span class="keyword">struct</span> {</span><br><span class="line">    qcount   <span class="keyword">uint</span>           <span class="comment">// buffer中元素数量</span></span><br><span class="line">    dataqsiz <span class="keyword">uint</span>           <span class="comment">// make chan时候指定的buf大小</span></span><br><span class="line">    buf      unsafe.Pointer <span class="comment">// buffer</span></span><br><span class="line">    elemsize <span class="keyword">uint16</span>         <span class="comment">// 每个元素大小</span></span><br><span class="line">    elemtype *_type         <span class="comment">// 元素类型</span></span><br><span class="line">    closed   <span class="keyword">uint32</span>         <span class="comment">// chan是否已关闭，=0表示未关闭</span></span><br><span class="line">    sendx    <span class="keyword">uint</span>           <span class="comment">// send索引下标</span></span><br><span class="line">    recvx    <span class="keyword">uint</span>           <span class="comment">// recv索引下标</span></span><br><span class="line">    recvq    waitq          <span class="comment">// 接受等待队列，双向链表</span></span><br><span class="line">    sendq    waitq          <span class="comment">// 发送等待队列，双向链表</span></span><br><span class="line"></span><br><span class="line">    lock mutex</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> hchan <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    qcount   <span class="token builtin">uint</span>           <span class="token comment">// buffer中元素数量</span>
+    dataqsiz <span class="token builtin">uint</span>           <span class="token comment">// make chan时候指定的buf大小</span>
+    buf      unsafe<span class="token punctuation">.</span>Pointer <span class="token comment">// buffer</span>
+    elemsize <span class="token builtin">uint16</span>         <span class="token comment">// 每个元素大小</span>
+    elemtype <span class="token operator">*</span>_type         <span class="token comment">// 元素类型</span>
+    closed   <span class="token builtin">uint32</span>         <span class="token comment">// chan是否已关闭，=0表示未关闭</span>
+    sendx    <span class="token builtin">uint</span>           <span class="token comment">// send索引下标</span>
+    recvx    <span class="token builtin">uint</span>           <span class="token comment">// recv索引下标</span>
+    recvq    waitq          <span class="token comment">// 接受等待队列，双向链表</span>
+    sendq    waitq          <span class="token comment">// 发送等待队列，双向链表</span>
+
+    lock mutex
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>chansend流程：</p>
 <ol>
 <li>若recvq不为空，表示有等待的recv sudog，调用memmove进行数据拷贝，然后调用goready唤醒该recv sudug</li>

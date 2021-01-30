@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    67
+                    72
                 </div>
                 
 
@@ -484,12 +484,27 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">b := []<span class="keyword">byte</span>(<span class="string">"b"</span>)</span><br><span class="line">s := <span class="keyword">string</span>(b)</span><br><span class="line">pbyte := (*reflect.SliceHeader)(unsafe.Pointer(&amp;b)</span><br><span class="line">pstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;s))</span><br><span class="line">fmt.Println(pbyte.Data == pstring.Data) <span class="comment">// false</span></span><br><span class="line">b = []<span class="keyword">byte</span>(<span class="string">"ttt"</span>)</span><br><span class="line">pstring.Data = pbyte.Data</span><br><span class="line">fmt.Println(s) <span class="comment">// t</span></span><br><span class="line">pstring.Len = pbyte.Len</span><br><span class="line">fmt.Println(s) <span class="comment">// ttt</span></span><br><span class="line">ss := <span class="keyword">string</span>(s)</span><br><span class="line">psstring := (*reflect.StringHeader)(unsafe.Pointer(&amp;ss))</span><br><span class="line">   fmt.Println(psstring.Data == pbyte.Data) <span class="comment">// true</span></span><br></pre></td></tr></tbody></table></figure>
+                <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">b <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span>
+s <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+pbyte <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>SliceHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>b<span class="token punctuation">)</span>
+pstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">)</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>pbyte<span class="token punctuation">.</span>Data <span class="token operator">==</span> pstring<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// false</span>
+b <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"ttt"</span><span class="token punctuation">)</span>
+pstring<span class="token punctuation">.</span>Data <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Data
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// t</span>
+pstring<span class="token punctuation">.</span>Len <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Len
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// ttt</span>
+ss <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+psstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ss<span class="token punctuation">)</span><span class="token punctuation">)</span>
+   fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>psstring<span class="token punctuation">.</span>Data <span class="token operator">==</span> pbyte<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// true</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>

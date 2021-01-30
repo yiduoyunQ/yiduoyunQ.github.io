@@ -486,7 +486,10 @@
                             <div class="summary block-with-text">
                                 
                                     TODOdocker rmdocker rmidocker pulldocker pushdocker run
-命令12345678910111213141516docker ps -adocker inspect $iddocker st
+命令docker ps -a
+docker inspect $id
+docker stats $id
+docker top $i
                                 
                             </div>
                             <div class="publish-info">
@@ -675,7 +678,8 @@ n
                         <div class="card-content article-content">
                             <div class="summary block-with-text">
                                 
-                                    组件安装阿里yum源设置12mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backupwget -O /etc/yum.repos.d/Cent
+                                    组件安装阿里yum源设置mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+wget -O /etc/yum.repos.d/CentO
                                 
                             </div>
                             <div class="publish-info">
@@ -872,7 +876,9 @@ recvq / sendq其
 32位对齐：4
 64位对齐：8
 
-1234567891011121314151617181920212223242526272829type T1 struct {    a bool
+type T1 struct {
+    a bool  // 占1B
+    b int32 // 对齐为4，a后面需要3B padding，从第5
                                 
                             </div>
                             <div class="publish-info">

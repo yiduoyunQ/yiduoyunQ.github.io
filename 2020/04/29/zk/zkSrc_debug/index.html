@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    322
+                    326
                 </div>
                 
 
@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -496,7 +499,10 @@
 
 <h2 id="修改jre"><a href="#修改jre" class="headerlink" title="修改jre"></a>修改jre</h2><p>打开项目结构<strong>（⌘ + ;）</strong>，指定jdk为<code>1.8</code><br>若使用jdk13，不支持的com.sun.nio.file方法编译报错，<a href="https://github.com/apache/zookeeper/pull/1269" title="com.sun.nio.file.SensitivityWatchEventModifier" target="">issue</a></p>
 <h2 id="修改gitignore文件"><a href="#修改gitignore文件" class="headerlink" title="修改gitignore文件"></a>修改gitignore文件</h2><p>由于开发环境需要进行调试，临时配置文件是不需要进代码仓库的，所以进行排除。</p>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Ignore debug conf</span></span><br><span class="line">conf/zoo.cfg</span><br><span class="line">conf/zoo*.cfg</span><br><span class="line">zookeeper-server/src/main/resources/log4j.properties</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># Ignore debug conf
+conf/zoo.cfg
+conf/zoo*.cfg
+zookeeper-server/src/main/resources/log4j.properties<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="config配置"><a href="#config配置" class="headerlink" title="config配置"></a>config配置</h2><ol>
 <li>拷贝zoo_sample.cfg文件至相同文件夹下，名为: zoo.cfg，配置全部使用默认</li>
 <li>创建/tmp/zookeeper目录，用于存放zk数据；</li>
@@ -505,7 +511,9 @@
 </ol>
 <img src="/2020/04/29/zk/zkSrc_debug/src_resource_config.png" class="">
 
-<h2 id="debug启动项"><a href="#debug启动项" class="headerlink" title="debug启动项"></a>debug启动项</h2><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">QuorumPeerMain</span><br><span class="line">org.apache.zookeeper.server.quorum.QuorumPeerMain</span><br><span class="line">conf/zoo.cfg</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="debug启动项"><a href="#debug启动项" class="headerlink" title="debug启动项"></a>debug启动项</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">QuorumPeerMain
+org.apache.zookeeper.server.quorum.QuorumPeerMain
+conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <img src="/2020/04/29/zk/zkSrc_debug/src_debug_config.png" class="">
 
 <h2 id="info-version"><a href="#info-version" class="headerlink" title="info version"></a>info version</h2><p>src/main/java/org/apache/zookeeper/version/util/VerGen.java 的main方法用于生成Info.java版本信息</p>

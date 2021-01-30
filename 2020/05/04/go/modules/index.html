@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -510,12 +513,13 @@
 <li>验证文件go.sum。</li>
 <li>不再有GOPATH限制。模块可以位于任何路径中。</li>
 </ol>
-<h3 id="迁移"><a href="#迁移" class="headerlink" title="迁移"></a>迁移</h3><figure class="highlight go"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> mod init github.com/username/repository</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="升级依赖关系，默认最小化升级"><a href="#升级依赖关系，默认最小化升级" class="headerlink" title="升级依赖关系，默认最小化升级"></a>升级依赖关系，默认最小化升级</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> go get -t -d -v ./...</span></span><br></pre></td></tr></tbody></table></figure>
+<h3 id="迁移"><a href="#迁移" class="headerlink" title="迁移"></a>迁移</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">go</span> mod init github<span class="token punctuation">.</span>com<span class="token operator">/</span>username<span class="token operator">/</span>repository<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="升级依赖关系，默认最小化升级"><a href="#升级依赖关系，默认最小化升级" class="headerlink" title="升级依赖关系，默认最小化升级"></a>升级依赖关系，默认最小化升级</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">$ go get -t -d -v ./...<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <blockquote>
 <p>-t flag：考虑构建测试所需的module。<br>-d flag：下载每个module的源代码，但不要构建或安装它们。<br>-v flag：提供详细输出。<br>./… ：在整个源代码树中执行这些操作，并且仅更新所需的依赖项。<br>-u flag 最新最大升级，通常不使用</p>
 </blockquote>
-<h3 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h3><h4 id="列出软件包的可用版本"><a href="#列出软件包的可用版本" class="headerlink" title="列出软件包的可用版本"></a>列出软件包的可用版本</h4><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> go list -m -versions github.com/getsentry/raven-go</span></span><br><span class="line">github.com/getsentry/raven-go v0.1.0 v0.1.1 v0.1.2 v0.2.0</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h3><h4 id="列出软件包的可用版本"><a href="#列出软件包的可用版本" class="headerlink" title="列出软件包的可用版本"></a>列出软件包的可用版本</h4><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">$ go list -m -versions github.com/getsentry/raven-go
+github.com/getsentry/raven-go v0.1.0 v0.1.1 v0.1.2 v0.2.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <h4 id="添加依赖"><a href="#添加依赖" class="headerlink" title="添加依赖"></a>添加依赖</h4><p>添加依赖项是隐式的。在代码中导入依赖项后，运行go build或go test命令将获取模块的最新版本并将其添加到go.mod文件中。<br>如果要显式添加依赖项，请运行go get github.com/username/repository。</p>
 <h4 id="依赖项的升级-降级"><a href="#依赖项的升级-降级" class="headerlink" title="依赖项的升级/降级"></a>依赖项的升级/降级</h4><p>go get github.com/username/repository@vx.x.x下载并设置依赖项和更新go.mod文件的特定版本</p>
 <h4 id="mod命令"><a href="#mod命令" class="headerlink" title="mod命令"></a>mod命令</h4><ul>
@@ -595,13 +599,31 @@
 <p>代码可以使用<code>express</code>引入的<code>debug</code>模块，即使没有显式的引入</p>
 <img src="/2020/05/04/go/modules/pnpm_package.jpg" class="">
 
-<figure class="highlight js"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/index.js</span></span><br><span class="line"><span class="keyword">const</span> debug = <span class="built_in">require</span>(<span class="string">'debug'</span>)</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js"><span class="token comment">// src/index.js</span>
+<span class="token keyword">const</span> debug <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'debug'</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <p>pnpm的结构</p>
 <img src="/2020/05/04/go/modules/pnpm_arch.jpg" class="">
 
 <p>顶层已没有<code>debug</code>模块，因此代码里不会错误的引用</p>
-<h3 id="pnpm-vs-yarn"><a href="#pnpm-vs-yarn" class="headerlink" title="pnpm vs yarn"></a>pnpm vs yarn</h3><figure class="highlight json"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// package.json</span></span><br><span class="line">{</span><br><span class="line">  <span class="attr">"dependencies"</span>: {</span><br><span class="line">    <span class="attr">"debug"</span>: <span class="string">"3"</span>,</span><br><span class="line">    <span class="attr">"express"</span>: <span class="string">"4.0.0"</span>,</span><br><span class="line">    <span class="attr">"koa"</span>: <span class="string">"^2.11.0"</span></span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight js"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">dependencies:</span><br><span class="line">debug <span class="number">3.1</span><span class="number">.0</span></span><br><span class="line">express <span class="number">4.0</span><span class="number">.0</span></span><br><span class="line">├── debug <span class="number">0.8</span><span class="number">.1</span></span><br><span class="line">├─┬ send <span class="number">0.2</span><span class="number">.0</span></span><br><span class="line">│ └── debug <span class="number">1.0</span><span class="number">.5</span></span><br><span class="line">└─┬ serve-<span class="keyword">static</span> <span class="number">1.0</span><span class="number">.1</span></span><br><span class="line">  └─┬ send <span class="number">0.1</span><span class="number">.4</span></span><br><span class="line">    └── debug <span class="number">1.0</span><span class="number">.5</span></span><br><span class="line">koa <span class="number">2.11</span><span class="number">.0</span></span><br><span class="line">└── debug <span class="number">3.1</span><span class="number">.0</span>%  </span><br></pre></td></tr></tbody></table></figure>
+<h3 id="pnpm-vs-yarn"><a href="#pnpm-vs-yarn" class="headerlink" title="pnpm vs yarn"></a>pnpm vs yarn</h3><pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token comment">// package.json</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"dependencies"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"debug"</span><span class="token operator">:</span> <span class="token string">"3"</span><span class="token punctuation">,</span>
+    <span class="token property">"express"</span><span class="token operator">:</span> <span class="token string">"4.0.0"</span><span class="token punctuation">,</span>
+    <span class="token property">"koa"</span><span class="token operator">:</span> <span class="token string">"^2.11.0"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-js" data-language="js"><code class="language-js">dependencies<span class="token operator">:</span>
+debug <span class="token number">3.1</span><span class="token number">.0</span>
+express <span class="token number">4.0</span><span class="token number">.0</span>
+├── debug <span class="token number">0.8</span><span class="token number">.1</span>
+├─┬ send <span class="token number">0.2</span><span class="token number">.0</span>
+│ └── debug <span class="token number">1.0</span><span class="token number">.5</span>
+└─┬ serve<span class="token operator">-</span><span class="token keyword">static</span> <span class="token number">1.0</span><span class="token number">.1</span>
+  └─┬ send <span class="token number">0.1</span><span class="token number">.4</span>
+    └── debug <span class="token number">1.0</span><span class="token number">.5</span>
+koa <span class="token number">2.11</span><span class="token number">.0</span>
+└── debug <span class="token number">3.1</span><span class="token number">.0</span><span class="token operator">%</span>  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>yarn放在不同层级，依赖递归查找算法来选择版本</p>
 <img src="/2020/05/04/go/modules/pnpm_module.jpg" class="">
 

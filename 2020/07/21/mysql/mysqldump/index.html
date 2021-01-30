@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    828
+                    836
                 </div>
                 
 
@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -496,15 +499,37 @@
 <li>2 show create table + select * from table， 导出</li>
 <li>3 unlock tables</li>
 </ol>
-<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:02:01.441631Z	   18 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`</span><br><span class="line">2020-11-01T16:02:01.441820Z	   18 Query	show tables</span><br><span class="line">2020-11-01T16:02:01.442210Z	   18 Query	LOCK TABLES `employees` READ /*!32311 LOCAL */,`t1` READ /*!32311 LOCAL */,`test` READ /*!32311 LOCAL */,`test_auto` READ /*!32311 LOCAL */</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:02:04.181862Z	   18 Query	UNLOCK TABLES</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:02:01.441631Z	   18 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+2020-11-01T16:02:01.441820Z	   18 Query	show tables
+2020-11-01T16:02:01.442210Z	   18 Query	LOCK TABLES `employees` READ /*!32311 LOCAL */,`t1` READ /*!32311 LOCAL */,`test` READ /*!32311 LOCAL */,`test_auto` READ /*!32311 LOCAL */
+...
+2020-11-01T16:02:04.181862Z	   18 Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="–lock-all-tables-所有库备份点一致"><a href="#–lock-all-tables-所有库备份点一致" class="headerlink" title="–lock-all-tables  所有库备份点一致"></a>–lock-all-tables  所有库备份点一致</h2><p>整个数据库变为只读</p>
-<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:16:57.678240Z	   21 Query	FLUSH TABLES</span><br><span class="line">2020-11-01T16:16:58.204729Z	   21 Query	FLUSH TABLES WITH READ LOCK</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:16:57.678240Z	   21 Query	FLUSH TABLES
+2020-11-01T16:16:58.204729Z	   21 Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <h2 id="–single-transaction-所有innodb表备份点一致"><a href="#–single-transaction-所有innodb表备份点一致" class="headerlink" title="–single-transaction  所有innodb表备份点一致"></a>–single-transaction  所有innodb表备份点一致</h2><ol>
 <li>设置会话隔离级别为RR</li>
 <li>开启一个MVCC会话，START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */ ，开启会话时自带一次select保证备份点之后的读一致性</li>
 <li>创建SAVEPOINT开始表备份，在ROLLBACK TO SAVEPOINT前对表的DDL阻塞</li>
 </ol>
-<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:20:35.440889Z	   22 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ</span><br><span class="line">2020-11-01T16:20:35.441080Z	   22 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.451846Z	   22 Query	UNLOCK TABLES</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.471418Z	   22 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`</span><br><span class="line">2020-11-01T16:20:35.471499Z	   22 Query	SAVEPOINT sp</span><br><span class="line">2020-11-01T16:20:35.478244Z	   22 Query	show tables</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.484877Z	   22 Query	show create table `t1`</span><br><span class="line">2020-11-01T16:20:35.486464Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `t1`</span><br><span class="line">2020-11-01T16:20:35.488296Z	   22 Query	ROLLBACK TO SAVEPOINT sp</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:35.489280Z	   22 Query	show create table `test`</span><br><span class="line">2020-11-01T16:20:35.497826Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `test`</span><br><span class="line">2020-11-01T16:20:38.400419Z	   22 Query	ROLLBACK TO SAVEPOINT sp</span><br><span class="line">...</span><br><span class="line">2020-11-01T16:20:38.403299Z	   22 Query	RELEASE SAVEPOINT sp</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:20:35.440889Z	   22 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+2020-11-01T16:20:35.441080Z	   22 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
+...
+2020-11-01T16:20:35.451846Z	   22 Query	UNLOCK TABLES
+...
+2020-11-01T16:20:35.471418Z	   22 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+2020-11-01T16:20:35.471499Z	   22 Query	SAVEPOINT sp
+2020-11-01T16:20:35.478244Z	   22 Query	show tables
+...
+2020-11-01T16:20:35.484877Z	   22 Query	show create table `t1`
+2020-11-01T16:20:35.486464Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `t1`
+2020-11-01T16:20:35.488296Z	   22 Query	ROLLBACK TO SAVEPOINT sp
+...
+2020-11-01T16:20:35.489280Z	   22 Query	show create table `test`
+2020-11-01T16:20:35.497826Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `test`
+2020-11-01T16:20:38.400419Z	   22 Query	ROLLBACK TO SAVEPOINT sp
+...
+2020-11-01T16:20:38.403299Z	   22 Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="–single-transaction-–master-data-2-需2次flush关表"><a href="#–single-transaction-–master-data-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
 <ol>
 <li>flush tables + FTWRL 整个数据库达到一致</li>
@@ -512,7 +537,14 @@
 <li>通过show master status获取binlog位点</li>
 <li>UNLOCK TABLES</li>
 </ol>
-<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">2020-11-01T16:47:40.165353Z	   23 Query	FLUSH /*!40101 LOCAL */ TABLES</span><br><span class="line">2020-11-01T16:47:40.190316Z	   23 Query	FLUSH TABLES WITH READ LOCK</span><br><span class="line">2020-11-01T16:47:40.190471Z	   23 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ</span><br><span class="line">2020-11-01T16:47:40.190537Z	   23 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */</span><br><span class="line">2020-11-01T16:47:40.190744Z	   23 Query	SHOW VARIABLES LIKE 'gtid\_mode'</span><br><span class="line">2020-11-01T16:47:40.202013Z	   23 Query	SHOW MASTER STATUS</span><br><span class="line">2020-11-01T16:47:40.204813Z	   23 Query	UNLOCK TABLES</span><br><span class="line">...</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:47:40.165353Z	   23 Query	FLUSH /*!40101 LOCAL */ TABLES
+2020-11-01T16:47:40.190316Z	   23 Query	FLUSH TABLES WITH READ LOCK
+2020-11-01T16:47:40.190471Z	   23 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+2020-11-01T16:47:40.190537Z	   23 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
+2020-11-01T16:47:40.190744Z	   23 Query	SHOW VARIABLES LIKE 'gtid\_mode'
+2020-11-01T16:47:40.202013Z	   23 Query	SHOW MASTER STATUS
+2020-11-01T16:47:40.204813Z	   23 Query	UNLOCK TABLES
+...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>mysql –max-allowed-packet=16MB -BNe “SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN (‘mysql’, ‘performance_schema’, ‘information_schema’, ‘sys’)” | tr ‘\n’ ‘ ‘ &gt; dbs.sql<br>mysqldump  –opt –add-drop-database –add-drop-table –complete-insert –default-character-set=utf8 –hex-blob –master-data=2 –quote-names –single-transaction –events –routines –triggers –databases $(cat dbs.sql) &gt; full_dump.sql</p>
 <ul>
 <li><p>-q, –quick   Don’t buffer query, dump directly to stdout. (Defaults to on; use –skip-quick to disable.)</p>

@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    942
+                    987
                 </div>
                 
 
@@ -484,24 +484,134 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h2 id="组件安装"><a href="#组件安装" class="headerlink" title="组件安装"></a>组件安装</h2><h3 id="阿里yum源设置"><a href="#阿里yum源设置" class="headerlink" title="阿里yum源设置"></a>阿里yum源设置</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup</span><br><span class="line">wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-8.repo</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="docker-ce安装"><a href="#docker-ce安装" class="headerlink" title="docker-ce安装"></a>docker-ce安装</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</span><br><span class="line">yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo</span><br><span class="line">yum list docker-ce.x86_64 --showduplicates | sort -r</span><br><span class="line"><span class="meta">#</span><span class="bash">yum -y install docker-ce-[VERSION]</span></span><br><span class="line">wget https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm</span><br><span class="line">yum install -y containerd.io-1.2.13-3.2.el7.x86_64.rpm</span><br><span class="line">yum install -y docker-ce.x86_64</span><br><span class="line">systemctl start docker.service</span><br><span class="line">docker version</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="设置cgroup-driver为systemd"><a href="#设置cgroup-driver为systemd" class="headerlink" title="设置cgroup driver为systemd"></a>设置cgroup driver为systemd</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF &gt; /etc/docker/daemon.json</span><br><span class="line">{</span><br><span class="line">  "exec-opts": ["native.cgroupdriver=systemd"]</span><br><span class="line">}</span><br><span class="line">EOF</span><br><span class="line">systemctl restart docker</span><br><span class="line">docker info | grep Cgroup</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="kubernetes安装"><a href="#kubernetes安装" class="headerlink" title="kubernetes安装"></a>kubernetes安装</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo</span><br><span class="line">[kubernetes]</span><br><span class="line">name=Kubernetes</span><br><span class="line">baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/</span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=1</span><br><span class="line">repo_gpgcheck=1</span><br><span class="line">gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg</span><br><span class="line">EOF</span><br><span class="line">yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="kubeadm-init"><a href="#kubeadm-init" class="headerlink" title="kubeadm init"></a>kubeadm init</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 使用flannel网络必须设置cidr，网段自定</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> --ignore-preflight-errors all 跳过之前已安装部分（出问题时，问题解决后加上继续运行）</span></span><br><span class="line">kubeadm init --image-repository=registry.aliyuncs.com/google_containers --apiserver-advertise-address=172.19.191.191 --service-cidr=10.1.0.0/16 --pod-network-cidr=10.96.0.0/16 --kubernetes-version=v1.18.3</span><br><span class="line"><span class="meta">#</span><span class="bash"> 根据init提示执行</span></span><br><span class="line">mkdir -p $HOME/.kube</span><br><span class="line">sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="安装网络组件flannel"><a href="#安装网络组件flannel" class="headerlink" title="安装网络组件flannel"></a>安装网络组件flannel</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</span><br><span class="line"><span class="meta">#</span><span class="bash">安装完flannel，将配置拷到node节点，否则添加节点之后状态不对</span></span><br><span class="line">scp -r /etc/cni root@{node}:/etc</span><br><span class="line"><span class="meta">#</span><span class="bash">这一步也要拷贝，否则节点看着正常，但是pod由于网络原因无法创建</span></span><br><span class="line">scp -r /run/flannel/ root@{node}:/run</span><br></pre></td></tr></tbody></table></figure>
+                <h2 id="组件安装"><a href="#组件安装" class="headerlink" title="组件安装"></a>组件安装</h2><h3 id="阿里yum源设置"><a href="#阿里yum源设置" class="headerlink" title="阿里yum源设置"></a>阿里yum源设置</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-8.repo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="docker-ce安装"><a href="#docker-ce安装" class="headerlink" title="docker-ce安装"></a>docker-ce安装</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">yum install -y yum-utils device-mapper-persistent-data lvm2
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum list docker-ce.x86_64 --showduplicates | sort -r
+#yum -y install docker-ce-[VERSION]
+wget https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm
+yum install -y containerd.io-1.2.13-3.2.el7.x86_64.rpm
+yum install -y docker-ce.x86_64
+systemctl start docker.service
+docker version<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="设置cgroup-driver为systemd"><a href="#设置cgroup-driver为systemd" class="headerlink" title="设置cgroup driver为systemd"></a>设置cgroup driver为systemd</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt; /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"]
+}
+EOF
+systemctl restart docker
+docker info | grep Cgroup<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="kubernetes安装"><a href="#kubernetes安装" class="headerlink" title="kubernetes安装"></a>kubernetes安装</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
+yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="kubeadm-init"><a href="#kubeadm-init" class="headerlink" title="kubeadm init"></a>kubeadm init</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># 使用flannel网络必须设置cidr，网段自定
+# --ignore-preflight-errors all 跳过之前已安装部分（出问题时，问题解决后加上继续运行）
+kubeadm init --image-repository=registry.aliyuncs.com/google_containers --apiserver-advertise-address=172.19.191.191 --service-cidr=10.1.0.0/16 --pod-network-cidr=10.96.0.0/16 --kubernetes-version=v1.18.3
+# 根据init提示执行
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装网络组件flannel"><a href="#安装网络组件flannel" class="headerlink" title="安装网络组件flannel"></a>安装网络组件flannel</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+#安装完flannel，将配置拷到node节点，否则添加节点之后状态不对
+scp -r /etc/cni root@{node}:/etc
+#这一步也要拷贝，否则节点看着正常，但是pod由于网络原因无法创建
+scp -r /run/flannel/ root@{node}:/run<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="nginx部署"><a href="#nginx部署" class="headerlink" title="nginx部署"></a>nginx部署</h2><p>nginx-deployment.yaml</p>
-<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1</span> <span class="comment"># for versions before 1.9.0 use apps/v1beta2</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Deployment</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx-deployment</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">2</span> <span class="comment"># tells deployment to run 2 pods matching the template</span></span><br><span class="line">  <span class="attr">template:</span> <span class="comment"># create pods using pod definition in this template</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="comment"># unlike pod-nginx.yaml, the name is not included in the meta data as a unique name is</span></span><br><span class="line">      <span class="comment"># generated from the deployment name</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">        <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span> <span class="comment">#或者使用Never，默认Always</span></span><br><span class="line">        <span class="attr">ports:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1 <span class="token comment"># for versions before 1.9.0 use apps/v1beta2</span>
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Deployment
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>deployment
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">matchLabels</span><span class="token punctuation">:</span>
+      <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx
+  <span class="token key atrule">replicas</span><span class="token punctuation">:</span> <span class="token number">2</span> <span class="token comment"># tells deployment to run 2 pods matching the template</span>
+  <span class="token key atrule">template</span><span class="token punctuation">:</span> <span class="token comment"># create pods using pod definition in this template</span>
+    <span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+      <span class="token comment"># unlike pod-nginx.yaml, the name is not included in the meta data as a unique name is</span>
+      <span class="token comment"># generated from the deployment name</span>
+      <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+        <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx
+    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+      <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> nginx
+        <span class="token key atrule">imagePullPolicy</span><span class="token punctuation">:</span> IfNotPresent <span class="token comment">#或者使用Never，默认Always</span>
+        <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">containerPort</span><span class="token punctuation">:</span> <span class="token number">80</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>nginx-svc.yml</p>
-<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx-svc</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">type:</span> <span class="string">NodePort</span> <span class="comment"># expose node port，不指定随机分配</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">app:</span> <span class="string">nginx</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">protocol:</span> <span class="string">TCP</span></span><br><span class="line">    <span class="attr">port:</span> <span class="number">8080</span>  <span class="comment"># svc端口</span></span><br><span class="line">    <span class="attr">targetPort:</span> <span class="number">80</span></span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">docker pull nginx</span><br><span class="line">kubectl create -f nginx-deployment.yaml</span><br><span class="line">kubectl apply -f nginx-svc.yaml</span><br><span class="line"></span><br><span class="line">kubectl get pods -o wide</span><br><span class="line">NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                      NOMINATED NODE   READINESS GATES</span><br><span class="line">nginx-deployment-558fc78868-fh5hg   1/1     Running   0          10m   10.96.0.15   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">nginx-deployment-558fc78868-wrskf   1/1     Running   0          10m   10.96.0.16   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;</span><br><span class="line"></span><br><span class="line">kubectl get svc</span><br><span class="line">NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE</span><br><span class="line">kubernetes   ClusterIP   10.1.0.1     &lt;none&gt;        443/TCP          23h</span><br><span class="line">nginx-svc    NodePort    10.1.22.28   &lt;none&gt;        8080:30765/TCP   37m</span><br><span class="line"></span><br><span class="line">curl 10.96.0.15:80 # pod</span><br><span class="line">curl 10.96.0.16:80 # pod</span><br><span class="line">curl 10.1.22.28:8080 # 集群内</span><br><span class="line">curl 139.196.224.165:30765 # 集群外</span><br></pre></td></tr></tbody></table></figure>
-<h2 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h2><h3 id="master节点不允许部署pod"><a href="#master节点不允许部署pod" class="headerlink" title="master节点不允许部署pod"></a>master节点不允许部署pod</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">kubectl describe pod nginx | tail -n 3</span><br><span class="line">  Type     Reason            Age                  From               Message</span><br><span class="line">  ----     ------            ----                 ----               -------</span><br><span class="line">  Warning  FailedScheduling  24s (x8 over 8m56s)  default-scheduler  0/1 nodes are available: 1 node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn't tolerate.</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> k8s默认master node不允许部署pod，取消该限制</span></span><br><span class="line">kubectl taint nodes --all node-role.kubernetes.io/master-</span><br><span class="line"><span class="meta">#</span><span class="bash"> 还原命令</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> kubectl taint nodes k8s node-role.kubernetes.io/master=<span class="literal">true</span>:NoSchedule</span></span><br></pre></td></tr></tbody></table></figure>
-<h3 id="cni0网卡已分配ip段与当前不一致"><a href="#cni0网卡已分配ip段与当前不一致" class="headerlink" title="cni0网卡已分配ip段与当前不一致"></a>cni0网卡已分配ip段与当前不一致</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods</span><br><span class="line">NAME    READY   STATUS              RESTARTS   AGE</span><br><span class="line">nginx   0/1     ContainerCreating   0          11m</span><br><span class="line"></span><br><span class="line">kubectl describe pod nginx | tail -n 1</span><br><span class="line">  Warning  FailedCreatePodSandBox  22s (x280 over 5m13s)   kubelet, izuf6h1cr4n27ctdyzruy1z  (combined from similar events): Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "053ca6b0dcd9801ddd6cbc6384e56e5b435ae6bacfeb96fe67f9347ca7d1aa38" network for pod "nginx": networkPlugin cni failed to set up pod "nginx_default" network: failed to set bridge addr: "cni0" already has an IP address different from 10.96.0.1/24</span><br><span class="line"></span><br><span class="line">ifconfig cni0</span><br><span class="line">cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        inet 10.244.0.1  netmask 255.255.255.0  broadcast 0.0.0.0</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 确认无人使用，删除网卡，由pod自动重建</span></span><br><span class="line">ifconfig cni0 down</span><br><span class="line">ip link delete cni0</span><br><span class="line">ifconfig cni0</span><br><span class="line">cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450</span><br><span class="line">        inet 10.96.0.1  netmask 255.255.255.0  broadcast 0.0.0.0</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Service
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> nginx<span class="token punctuation">-</span>svc
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">type</span><span class="token punctuation">:</span> NodePort <span class="token comment"># expose node port，不指定随机分配</span>
+  <span class="token key atrule">selector</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app</span><span class="token punctuation">:</span> nginx
+  <span class="token key atrule">ports</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">protocol</span><span class="token punctuation">:</span> TCP
+    <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8080</span>  <span class="token comment"># svc端口</span>
+    <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">80</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">docker pull nginx
+kubectl create -f nginx-deployment.yaml
+kubectl apply -f nginx-svc.yaml
+
+kubectl get pods -o wide
+NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                      NOMINATED NODE   READINESS GATES
+nginx-deployment-558fc78868-fh5hg   1/1     Running   0          10m   10.96.0.15   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;
+nginx-deployment-558fc78868-wrskf   1/1     Running   0          10m   10.96.0.16   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;
+
+kubectl get svc
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP   10.1.0.1     &lt;none&gt;        443/TCP          23h
+nginx-svc    NodePort    10.1.22.28   &lt;none&gt;        8080:30765/TCP   37m
+
+curl 10.96.0.15:80 # pod
+curl 10.96.0.16:80 # pod
+curl 10.1.22.28:8080 # 集群内
+curl 139.196.224.165:30765 # 集群外<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h2><h3 id="master节点不允许部署pod"><a href="#master节点不允许部署pod" class="headerlink" title="master节点不允许部署pod"></a>master节点不允许部署pod</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl describe pod nginx | tail -n 3
+  Type     Reason            Age                  From               Message
+  ----     ------            ----                 ----               -------
+  Warning  FailedScheduling  24s (x8 over 8m56s)  default-scheduler  0/1 nodes are available: 1 node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn't tolerate.
+
+# k8s默认master node不允许部署pod，取消该限制
+kubectl taint nodes --all node-role.kubernetes.io/master-
+# 还原命令
+# kubectl taint nodes k8s node-role.kubernetes.io/master=true:NoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="cni0网卡已分配ip段与当前不一致"><a href="#cni0网卡已分配ip段与当前不一致" class="headerlink" title="cni0网卡已分配ip段与当前不一致"></a>cni0网卡已分配ip段与当前不一致</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl get pods
+NAME    READY   STATUS              RESTARTS   AGE
+nginx   0/1     ContainerCreating   0          11m
+
+kubectl describe pod nginx | tail -n 1
+  Warning  FailedCreatePodSandBox  22s (x280 over 5m13s)   kubelet, izuf6h1cr4n27ctdyzruy1z  (combined from similar events): Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "053ca6b0dcd9801ddd6cbc6384e56e5b435ae6bacfeb96fe67f9347ca7d1aa38" network for pod "nginx": networkPlugin cni failed to set up pod "nginx_default" network: failed to set bridge addr: "cni0" already has an IP address different from 10.96.0.1/24
+
+ifconfig cni0
+cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
+        inet 10.244.0.1  netmask 255.255.255.0  broadcast 0.0.0.0
+
+# 确认无人使用，删除网卡，由pod自动重建
+ifconfig cni0 down
+ip link delete cni0
+ifconfig cni0
+cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
+        inet 10.96.0.1  netmask 255.255.255.0  broadcast 0.0.0.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="外网无法访问阿里云ECS，端口不通"><a href="#外网无法访问阿里云ECS，端口不通" class="headerlink" title="外网无法访问阿里云ECS，端口不通"></a>外网无法访问阿里云ECS，端口不通</h3>
 
 

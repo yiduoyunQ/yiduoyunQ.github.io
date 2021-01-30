@@ -484,6 +484,9 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
@@ -521,8 +524,45 @@
 <li>将redo操作加入组提交，提升性能</li>
 <li>通过将锁粒度细化，3个阶段可并行执行，提升性能</li>
 </ul>
-<h3 id="XA"><a href="#XA" class="headerlink" title="XA"></a>XA</h3><figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; XA START 'abc','def',2;</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t1 values(1,1);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA END 'abc','def',2;</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA PREPARE 'abc','def',2;</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA RECOVER;</span><br><span class="line">+----------+--------------+--------------+--------+</span><br><span class="line">| formatID | gtrid_length | bqual_length | data   |</span><br><span class="line">+----------+--------------+--------------+--------+</span><br><span class="line">|        2 |            3 |            3 | abcdef |</span><br><span class="line">+----------+--------------+--------------+--------+</span><br><span class="line">1 row in set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA COMMIT 'abc','def',2;</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; XA START 'xatest';</span><br><span class="line">Query OK, 0 rows affected (0.01 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; insert into t1 values(2,2);</span><br><span class="line">Query OK, 1 row affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA END 'xatest';</span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA RECOVER;</span><br><span class="line">Empty set (0.00 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA COMMIT 'xatest' one phase;</span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">mysql&gt; XA RECOVER;</span><br><span class="line">Empty set (0.00 sec)</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="XA"><a href="#XA" class="headerlink" title="XA"></a>XA</h3><pre class="line-numbers language-mysql" data-language="mysql"><code class="language-mysql">mysql&gt; XA START 'abc','def',2;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql&gt; insert into t1 values(1,1);
+Query OK, 1 row affected (0.00 sec)
+
+mysql&gt; XA END 'abc','def',2;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql&gt; XA PREPARE 'abc','def',2;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql&gt; XA RECOVER;
++----------+--------------+--------------+--------+
+| formatID | gtrid_length | bqual_length | data   |
++----------+--------------+--------------+--------+
+|        2 |            3 |            3 | abcdef |
++----------+--------------+--------------+--------+
+1 row in set (0.00 sec)
+
+mysql&gt; XA COMMIT 'abc','def',2;
+Query OK, 0 rows affected (0.02 sec)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-mysql" data-language="mysql"><code class="language-mysql">mysql&gt; XA START 'xatest';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql&gt; insert into t1 values(2,2);
+Query OK, 1 row affected (0.00 sec)
+
+mysql&gt; XA END 'xatest';
+Query OK, 0 rows affected (0.00 sec)
+
+mysql&gt; XA RECOVER;
+Empty set (0.00 sec)
+
+mysql&gt; XA COMMIT 'xatest' one phase;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql&gt; XA RECOVER;
+Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="最终一致性-应用层"><a href="#最终一致性-应用层" class="headerlink" title="最终一致性 (应用层)"></a>最终一致性 (应用层)</h2><p>A系统扣钱，发送信息给中间件，B系统接收信息加钱</p>
 <h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>A先update DB，后发送消息，若发送失败，B无法加钱<br>A先发送消息，后update DB，若update DB失败，已发送消息无法撤回</p>
 <p>将网络和DB事务放在同一个事务中，导致DB长事务</p>

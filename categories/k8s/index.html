@@ -453,7 +453,15 @@
 
 V2
 
-结构12345678910111213141516# ls /sys/fs/cgroup/ |grep cpucpucpuacctcpu,cpuacctcpuset# cat /sys/fs/cgroup/cpu/user.
+结构# ls /sys/fs/cgroup/ |grep cpu
+cpu
+cpuacct
+cpu,cpuacct
+cpuset
+
+# cat /sys/fs/cgroup/cpu/user.slice/tasks
+4872
+
                             
                         </div>
                         <div class="publish-info">
@@ -552,7 +560,10 @@ V2
                         <div class="summary block-with-text">
                             
                                 TODOdocker rmdocker rmidocker pulldocker pushdocker run
-命令12345678910111213141516docker ps -adocker inspect $iddocker st
+命令docker ps -a
+docker inspect $id
+docker stats $id
+docker top $i
                             
                         </div>
                         <div class="publish-info">
@@ -650,7 +661,8 @@ n
                     <div class="card-content article-content">
                         <div class="summary block-with-text">
                             
-                                组件安装阿里yum源设置12mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backupwget -O /etc/yum.repos.d/Cent
+                                组件安装阿里yum源设置mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+wget -O /etc/yum.repos.d/CentO
                             
                         </div>
                         <div class="publish-info">

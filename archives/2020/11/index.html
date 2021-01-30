@@ -553,7 +553,15 @@ net.Listen通过 netFD.init -&gt; FD.Init -&gt; pollDesc.init -&gt; 最终调用
 
 V2
 
-结构12345678910111213141516# ls /sys/fs/cgroup/ |grep cpucpucpuacctcpu,cpuacctcpuset# cat /sys/fs/cgroup/cpu/user.
+结构# ls /sys/fs/cgroup/ |grep cpu
+cpu
+cpuacct
+cpu,cpuacct
+cpuset
+
+# cat /sys/fs/cgroup/cpu/user.slice/tasks
+4872
+
                                 
                             </div>
                             <div class="publish-info">

@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    1.1k
+                    1.2k
                 </div>
                 
 
@@ -483,6 +483,9 @@
         </div>
         <hr class="clearfix">
 
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
         
 
         
@@ -507,7 +510,10 @@
 <li>priority：优先级排序，选择优先级最高的节点</li>
 </ul>
 <p>代码入口：pkg/scheduler，cmd/kube-scheduler</p>
-<h3 id="滚动扩容升级-TODO"><a href="#滚动扩容升级-TODO" class="headerlink" title="滚动扩容升级 TODO"></a>滚动扩容升级 TODO</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl scale --replicas=3 deployment/nginx-app</span><br><span class="line">kubectl rolling-update frontend-v1 frontend-v2 --image=image:v2</span><br><span class="line">kubectl rolling-update frontend-v1 frontend-v2 --rollback</span><br><span class="line">kubectl set image deployment/nginx-app nginx-app=nginx:1.9.1</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="滚动扩容升级-TODO"><a href="#滚动扩容升级-TODO" class="headerlink" title="滚动扩容升级 TODO"></a>滚动扩容升级 TODO</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl scale --replicas=3 deployment/nginx-app
+kubectl rolling-update frontend-v1 frontend-v2 --image=image:v2
+kubectl rolling-update frontend-v1 frontend-v2 --rollback
+kubectl set image deployment/nginx-app nginx-app=nginx:1.9.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="Etcd，Zookeeper，Consul-比较"><a href="#Etcd，Zookeeper，Consul-比较" class="headerlink" title="Etcd，Zookeeper，Consul 比较"></a>Etcd，Zookeeper，Consul 比较</h2><p>Etcd 和 Zookeeper 提供的是分布式一致性存储能力，具体的业务场景需要用户自己实现，比如服务发现，比如配置变更。而 Consul 则以服务发现和配置变更为主要目标，同时附带了 kv 存储。</p>
 <hr>
 <h2 id="阿里云镜像加速"><a href="#阿里云镜像加速" class="headerlink" title="阿里云镜像加速"></a>阿里云镜像加速</h2><p><a target="_blank" rel="noopener" href="https://cr.console.aliyun.com/cn/instances/images">https://cr.console.aliyun.com/cn/instances/images</a></p>
@@ -535,7 +541,11 @@
 <li>互补可组合，高内聚松耦合</li>
 <li>操作复杂度不应高于O(N)，满足水平伸缩性</li>
 </ul>
-<h2 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h2><h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">kubectl config set-credentials myself --username=admin --password=secret</span><br><span class="line">kubectl config set-cluster local-server --server=http://localhost:8080</span><br><span class="line">kubectl config set-context default-context --cluster=local-server --user=myself --namespace=default</span><br><span class="line">kubectl config use-context default-context</span><br><span class="line">kubectl config view</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h2><h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl config set-credentials myself --username=admin --password=secret
+kubectl config set-cluster local-server --server=http://localhost:8080
+kubectl config set-context default-context --cluster=local-server --user=myself --namespace=default
+kubectl config use-context default-context
+kubectl config view<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="基本命令"><a href="#基本命令" class="headerlink" title="基本命令"></a>基本命令</h3><ul>
 <li><code>journalctl -f -u kubelet.service</code></li>
 <li>可用api: <code>kubectl api-resources</code></li>
@@ -549,8 +559,9 @@
 <li>导出服务：<code>kubectl expose deploy &lt;name&gt; --port=80</code></li>
 <li>查看描述: <code>kubectl describe</code></li>
 </ul>
-<h3 id="命令自动补全"><a href="#命令自动补全" class="headerlink" title="命令自动补全"></a>命令自动补全</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">source /usr/share/bash-completion/bash_completion</span><br><span class="line">source &lt;(kubectl completion bash)</span><br></pre></td></tr></tbody></table></figure>
-<h3 id="自定义输出列"><a href="#自定义输出列" class="headerlink" title="自定义输出列"></a>自定义输出列</h3><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --all-namespaces -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,"CPU(requests)":.spec.containers[*].resources.requests.cpu,"CPU(limits)":.spec.containers[*].resources.limits.cpu,"MEMORY(requests)":.spec.containers[*].resources.requests.memory,"MEMORY(limits)":.spec.containers[*].resources.limits.memory</span><br></pre></td></tr></tbody></table></figure>
+<h3 id="命令自动补全"><a href="#命令自动补全" class="headerlink" title="命令自动补全"></a>命令自动补全</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">source /usr/share/bash-completion/bash_completion
+source &lt;(kubectl completion bash)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="自定义输出列"><a href="#自定义输出列" class="headerlink" title="自定义输出列"></a>自定义输出列</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl get pods --all-namespaces -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,"CPU(requests)":.spec.containers[*].resources.requests.cpu,"CPU(limits)":.spec.containers[*].resources.limits.cpu,"MEMORY(requests)":.spec.containers[*].resources.requests.memory,"MEMORY(limits)":.spec.containers[*].resources.limits.memory<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <h3 id="端口转发"><a href="#端口转发" class="headerlink" title="端口转发"></a>端口转发</h3><p>kubectl port-forward</p>
 <h2 id="Autoscaling"><a href="#Autoscaling" class="headerlink" title="Autoscaling"></a>Autoscaling</h2><p>kubectl run php-apache –image={阿里云镜像加速}/hpa-example –requests=cpu=200m –expose –port=80<br>kubectl autoscale deployment php-apache –cpu-percent=50 –min=1 –max=10<br>kubectl describe pod php-apach</p>
 <p>kubectl delete svc php-apache<br>kubectl delete pod php-apache</p>
@@ -564,12 +575,82 @@
 <li>设置容器命令行参数</li>
 <li>Volume中直接挂载文件或目录</li>
 </ul>
-<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">special-config</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">special.how:</span> <span class="string">very</span></span><br><span class="line">  <span class="attr">special.type:</span> <span class="string">charm</span></span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">env-config</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">default</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">log_level:</span> <span class="string">INFO</span></span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">test-pod</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">test-container</span></span><br><span class="line">      <span class="attr">image:</span> <span class="string">busybox</span></span><br><span class="line">      <span class="comment">#command: ["/bin/sh", "-c", "env"]</span></span><br><span class="line">      <span class="attr">command:</span> [<span class="string">"/bin/sh"</span>, <span class="string">"-c"</span>, <span class="string">"echo $(SPECIAL_LEVEL_KEY) $(SPECIAL_TYPE_KEY)"</span> ]</span><br><span class="line">      <span class="comment">#command: ["/bin/sh", "-c", "cat /etc/config/special.how"]</span></span><br><span class="line">      <span class="attr">volumeMounts:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config-volume</span></span><br><span class="line">        <span class="attr">mountPath:</span> <span class="string">/etc/config</span></span><br><span class="line">      <span class="attr">env:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">SPECIAL_LEVEL_KEY</span></span><br><span class="line">          <span class="attr">valueFrom:</span></span><br><span class="line">            <span class="attr">configMapKeyRef:</span></span><br><span class="line">              <span class="attr">name:</span> <span class="string">special-config</span></span><br><span class="line">              <span class="attr">key:</span> <span class="string">special.how</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">SPECIAL_TYPE_KEY</span></span><br><span class="line">          <span class="attr">valueFrom:</span></span><br><span class="line">            <span class="attr">configMapKeyRef:</span></span><br><span class="line">              <span class="attr">name:</span> <span class="string">special-config</span></span><br><span class="line">              <span class="attr">key:</span> <span class="string">special.type</span></span><br><span class="line">      <span class="attr">envFrom:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">configMapRef:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">env-config</span></span><br><span class="line">  <span class="attr">volumes:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config-volume</span></span><br><span class="line">      <span class="attr">configMap:</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">special-config</span></span><br><span class="line">  <span class="attr">restartPolicy:</span> <span class="string">Never</span></span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f special-config.yaml</span><br><span class="line">kubectl create -f env-config.yaml</span><br><span class="line">kubectl create -f pod.yaml</span><br></pre></td></tr></tbody></table></figure>
-<h2 id="CronJob"><a href="#CronJob" class="headerlink" title="CronJob"></a>CronJob</h2><figure class="highlight yaml"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">batch/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">CronJob</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">schedule:</span> <span class="string">"*/1 * * * *"</span></span><br><span class="line">  <span class="attr">jobTemplate:</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">template:</span></span><br><span class="line">        <span class="attr">spec:</span></span><br><span class="line">          <span class="attr">containers:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">hello</span></span><br><span class="line">            <span class="attr">image:</span> <span class="string">busybox</span></span><br><span class="line">            <span class="attr">args:</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">/bin/sh</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">-c</span></span><br><span class="line">            <span class="bullet">-</span> <span class="string">date;</span> <span class="string">echo</span> <span class="string">Hello</span> <span class="string">from</span> <span class="string">the</span> <span class="string">Kubernetes</span> <span class="string">cluster</span></span><br><span class="line">          <span class="attr">restartPolicy:</span> <span class="string">OnFailure</span></span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f cronjob.yaml</span><br><span class="line"></span><br><span class="line">kubectl get cronjob</span><br><span class="line">kubectl get jobs</span><br><span class="line">kubectl logs hello-1593447840-ns2z7</span><br><span class="line"></span><br><span class="line">kubectl delete cronjob hello</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> special<span class="token punctuation">-</span>config
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">data</span><span class="token punctuation">:</span>
+  <span class="token key atrule">special.how</span><span class="token punctuation">:</span> very
+  <span class="token key atrule">special.type</span><span class="token punctuation">:</span> charm<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> ConfigMap
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> env<span class="token punctuation">-</span>config
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">data</span><span class="token punctuation">:</span>
+  <span class="token key atrule">log_level</span><span class="token punctuation">:</span> INFO<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>pod
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> test<span class="token punctuation">-</span>container
+      <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox
+      <span class="token comment">#command: ["/bin/sh", "-c", "env"]</span>
+      <span class="token key atrule">command</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/bin/sh"</span><span class="token punctuation">,</span> <span class="token string">"-c"</span><span class="token punctuation">,</span> <span class="token string">"echo $(SPECIAL_LEVEL_KEY) $(SPECIAL_TYPE_KEY)"</span> <span class="token punctuation">]</span>
+      <span class="token comment">#command: ["/bin/sh", "-c", "cat /etc/config/special.how"]</span>
+      <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> config<span class="token punctuation">-</span>volume
+        <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /etc/config
+      <span class="token key atrule">env</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> SPECIAL_LEVEL_KEY
+          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+            <span class="token key atrule">configMapKeyRef</span><span class="token punctuation">:</span>
+              <span class="token key atrule">name</span><span class="token punctuation">:</span> special<span class="token punctuation">-</span>config
+              <span class="token key atrule">key</span><span class="token punctuation">:</span> special.how
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> SPECIAL_TYPE_KEY
+          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+            <span class="token key atrule">configMapKeyRef</span><span class="token punctuation">:</span>
+              <span class="token key atrule">name</span><span class="token punctuation">:</span> special<span class="token punctuation">-</span>config
+              <span class="token key atrule">key</span><span class="token punctuation">:</span> special.type
+      <span class="token key atrule">envFrom</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">configMapRef</span><span class="token punctuation">:</span>
+            <span class="token key atrule">name</span><span class="token punctuation">:</span> env<span class="token punctuation">-</span>config
+  <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> config<span class="token punctuation">-</span>volume
+      <span class="token key atrule">configMap</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> special<span class="token punctuation">-</span>config
+  <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> Never<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl create -f special-config.yaml
+kubectl create -f env-config.yaml
+kubectl create -f pod.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="CronJob"><a href="#CronJob" class="headerlink" title="CronJob"></a>CronJob</h2><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> batch/v1beta1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> CronJob
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> hello
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">schedule</span><span class="token punctuation">:</span> <span class="token string">"*/1 * * * *"</span>
+  <span class="token key atrule">jobTemplate</span><span class="token punctuation">:</span>
+    <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+      <span class="token key atrule">template</span><span class="token punctuation">:</span>
+        <span class="token key atrule">spec</span><span class="token punctuation">:</span>
+          <span class="token key atrule">containers</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> hello
+            <span class="token key atrule">image</span><span class="token punctuation">:</span> busybox
+            <span class="token key atrule">args</span><span class="token punctuation">:</span>
+            <span class="token punctuation">-</span> /bin/sh
+            <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+            <span class="token punctuation">-</span> date; echo Hello from the Kubernetes cluster
+          <span class="token key atrule">restartPolicy</span><span class="token punctuation">:</span> OnFailure<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl create -f cronjob.yaml
+
+kubectl get cronjob
+kubectl get jobs
+kubectl logs hello-1593447840-ns2z7
+
+kubectl delete cronjob hello<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="CustomResourceDefinition"><a href="#CustomResourceDefinition" class="headerlink" title="CustomResourceDefinition"></a>CustomResourceDefinition</h2><p>Kubernetes API扩展</p>
 <h3 id="Finalizer"><a href="#Finalizer" class="headerlink" title="Finalizer"></a>Finalizer</h3><h3 id="Validation"><a href="#Validation" class="headerlink" title="Validation"></a>Validation</h3><h3 id="Subresources"><a href="#Subresources" class="headerlink" title="Subresources"></a>Subresources</h3><h3 id="Categories"><a href="#Categories" class="headerlink" title="Categories"></a>Categories</h3><h2 id="DaemonSet"><a href="#DaemonSet" class="headerlink" title="DaemonSet"></a>DaemonSet</h2><h3 id="滚动更新"><a href="#滚动更新" class="headerlink" title="滚动更新"></a>滚动更新</h3><ul>
 <li>OnDelete：默认策略，更新模板后，只有手动删除了旧的 Pod 后才会创建新的 Pod</li>
@@ -594,19 +675,34 @@
 <blockquote>
 <p>rs名字总是 <code>&lt;Deployment 的名字&gt;-&lt;pod template 的 hash 值 &gt;</code></p>
 </blockquote>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">kubectl get deploy</span><br><span class="line">NAME               READY   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">nginx-deployment   1/1     1            1           10d</span><br><span class="line"></span><br><span class="line">kubectl get rs</span><br><span class="line">NAME                          DESIRED   CURRENT   READY   AGE</span><br><span class="line">nginx-deployment-678645bf77   1         1         1       24h</span><br><span class="line"></span><br><span class="line">kubectl get pods</span><br><span class="line">NAME                                READY   STATUS    RESTARTS   AGE</span><br><span class="line">nginx-deployment-678645bf77-zxbdq   1/1     Running   1          24h</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl get deploy
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   1/1     1            1           10d
+
+kubectl get rs
+NAME                          DESIRED   CURRENT   READY   AGE
+nginx-deployment-678645bf77   1         1         1       24h
+
+kubectl get pods
+NAME                                READY   STATUS    RESTARTS   AGE
+nginx-deployment-678645bf77-zxbdq   1/1     Running   1          24h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p>更新</p>
 </blockquote>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl set image deployment/nginx-deployment nginx=nginx:1.9.1</span><br><span class="line">kubectl rollout status/history deployment/nginx-deployment</span><br><span class="line">kubectl rollout undo deployment/nginx-deployment</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl set image deployment/nginx-deployment nginx=nginx:1.9.1
+kubectl rollout status/history deployment/nginx-deployment
+kubectl rollout undo deployment/nginx-deployment<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <blockquote>
 <p>扩容</p>
 </blockquote>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl scale deployment nginx-deployment --replicas 10</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl scale deployment nginx-deployment --replicas 10<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <blockquote>
 <p>暂停更新恢复</p>
 </blockquote>
-<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl rollout pause deployment/nginx-deployment</span><br><span class="line">kubectl set image deploy/nginx nginx=nginx:1.9.0</span><br><span class="line">kubectl rollout history deployment/nginx-deployment</span><br><span class="line">kubectl rollout resume deployment/nginx-deployment</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl rollout pause deployment/nginx-deployment
+kubectl set image deploy/nginx nginx=nginx:1.9.0
+kubectl rollout history deployment/nginx-deployment
+kubectl rollout resume deployment/nginx-deployment<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>

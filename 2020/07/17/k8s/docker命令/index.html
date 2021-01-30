@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    52
+                    61
                 </div>
                 
 
@@ -484,13 +484,31 @@
         <hr class="clearfix">
 
         
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
+        
 
         
 
         <div class="card-content article-card-content">
             <div id="articleContent">
                 <h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>docker rm<br>docker rmi<br>docker pull<br>docker push<br>docker run</p>
-<h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">docker ps -a</span><br><span class="line">docker inspect $id</span><br><span class="line">docker stats $id</span><br><span class="line">docker top $id</span><br><span class="line"></span><br><span class="line">docker start $id</span><br><span class="line">docker stop $id</span><br><span class="line"></span><br><span class="line">docker exec -it $id bash</span><br><span class="line"></span><br><span class="line">docker kill --signal=1 $id</span><br><span class="line">docker rename $id {new_name}</span><br><span class="line">docker update --cpuset-cpus=0-3 $id</span><br><span class="line"></span><br><span class="line">docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]</span><br><span class="line">docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">docker ps -a
+docker inspect $id
+docker stats $id
+docker top $id
+
+docker start $id
+docker stop $id
+
+docker exec -it $id bash
+
+docker kill --signal=1 $id
+docker rename $id {new_name}
+docker update --cpuset-cpus=0-3 $id
+
+docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
+docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>

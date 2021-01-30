@@ -467,7 +467,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    974
+                    978
                 </div>
                 
 
@@ -483,6 +483,9 @@
         </div>
         <hr class="clearfix">
 
+        
+        <!-- 是否加载使用自带的 prismjs. -->
+        <link rel="stylesheet" href="/libs/prism/prism.css">
         
 
         
@@ -517,27 +520,85 @@
 <li>处理完proto后触发dispatchTCP()写对应reply</li>
 </ol>
 <h2 id="RenewOnline逻辑"><a href="#RenewOnline逻辑" class="headerlink" title="RenewOnline逻辑"></a>RenewOnline逻辑</h2><p>comet侧go onlineproc统计所有bucket的所有room的online<br>调用rpc RenewOnline<br>logic侧根据roomId计算hashKey, redis存储格式server -&gt; hashKey:online, hashKey使用CityHash32放64个桶</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Online <span class="keyword">struct</span> {</span><br><span class="line">    Server    <span class="keyword">string</span>           <span class="string">`json:"server"`</span></span><br><span class="line">    RoomCount <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int32</span> <span class="string">`json:"room_count"`</span></span><br><span class="line">    <span class="comment">// logic侧5分钟未更新则DEL server</span></span><br><span class="line">    Updated   <span class="keyword">int64</span>            <span class="string">`json:"updated"`</span> </span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Online struct {
+    Server    string           `json:"server"`
+    RoomCount map[string]int32 `json:"room_count"`
+    // logic侧5分钟未更新则DEL server
+    Updated   int64            `json:"updated"` 
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="Round"><a href="#Round" class="headerlink" title="Round"></a>Round</h2><p>reader/writer/timer资源池, 轮询获取降低高并发资源争用</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Round <span class="keyword">struct</span> {</span><br><span class="line">    readers []bytes.Pool</span><br><span class="line">    writers []bytes.Pool</span><br><span class="line">    timers  []time.Timer</span><br><span class="line">    options RoundOptions</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Round struct {
+    readers []bytes.Pool
+    writers []bytes.Pool
+    timers  []time.Timer
+    options RoundOptions
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="pool"><a href="#pool" class="headerlink" title="pool"></a>pool</h2><p>链表栈, 顶出顶入, 若无buf可用, 调用grow, 若入速度小于出速度会有内存溢出</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Buffer <span class="keyword">struct</span> {</span><br><span class="line">    buf  []<span class="keyword">byte</span></span><br><span class="line">    next *Buffer <span class="comment">// next free buffer</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Pool <span class="keyword">struct</span> {</span><br><span class="line">    lock sync.Mutex</span><br><span class="line">    free *Buffer</span><br><span class="line">    max  <span class="keyword">int</span></span><br><span class="line">    num  <span class="keyword">int</span></span><br><span class="line">    size <span class="keyword">int</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Buffer struct {
+    buf  []byte
+    next *Buffer // next free buffer
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Pool struct {
+    lock sync.Mutex
+    free *Buffer
+    max  int
+    num  int
+    size int
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 
 
 <h2 id="ring"><a href="#ring" class="headerlink" title="ring"></a>ring</h2><p>Proto的缓冲池，data数组大小[0:num-1], 游标wp比游标rp快会导致rp脏读</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Ring <span class="keyword">struct</span> {</span><br><span class="line">    <span class="comment">// read</span></span><br><span class="line">    rp   <span class="keyword">uint64</span>   <span class="comment">// rp&amp;mask寻址data</span></span><br><span class="line">    num  <span class="keyword">uint64</span>   <span class="comment">// 2^N</span></span><br><span class="line">    mask <span class="keyword">uint64</span>   <span class="comment">// num-1</span></span><br><span class="line">    <span class="comment">// write</span></span><br><span class="line">    wp   <span class="keyword">uint64</span>   <span class="comment">// wp&amp;mask寻址data</span></span><br><span class="line">    data []grpc.Proto</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Ring struct {
+    // read
+    rp   uint64   // rp&amp;mask寻址data
+    num  uint64   // 2^N
+    mask uint64   // num-1
+    // write
+    wp   uint64   // wp&amp;mask寻址data
+    data []grpc.Proto
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 
 <h2 id="channel"><a href="#channel" class="headerlink" title="channel"></a>channel</h2><p>memberId绑定的channel, 保存Proto的缓冲池Ring<br>通过Signal()通知有一个proto待处理; 通过开一个goroutin的Ready()通知处理一个proto写wr<br>若proto写wr太慢, rp游标移动比wp慢, 可能导致rp脏读<br>广播/房播/单播 的proto直接写wr</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Channel <span class="keyword">struct</span> {</span><br><span class="line">    Room     *Room</span><br><span class="line">    CliProto Ring</span><br><span class="line">    signal   <span class="keyword">chan</span> *grpc.Proto</span><br><span class="line">    Writer   bufio.Writer</span><br><span class="line">    Reader   bufio.Reader</span><br><span class="line">    Next     *Channel</span><br><span class="line">    Prev     *Channel</span><br><span class="line"></span><br><span class="line">    Mid      <span class="keyword">int64</span></span><br><span class="line">    Key      <span class="keyword">string</span></span><br><span class="line">    IP       <span class="keyword">string</span></span><br><span class="line">    watchOps <span class="keyword">map</span>[<span class="keyword">int32</span>]<span class="keyword">struct</span>{}   <span class="comment">// Watch(ops)添加ops; UnWatch(ops)删除ops; NeedPush(op)检查op in watch</span></span><br><span class="line">    mutex    sync.RWMutex   <span class="comment">// lock for watchOps</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Channel struct {
+    Room     *Room
+    CliProto Ring
+    signal   chan *grpc.Proto
+    Writer   bufio.Writer
+    Reader   bufio.Reader
+    Next     *Channel
+    Prev     *Channel
+
+    Mid      int64
+    Key      string
+    IP       string
+    watchOps map[int32]struct{}   // Watch(ops)添加ops; UnWatch(ops)删除ops; NeedPush(op)检查op in watch
+    mutex    sync.RWMutex   // lock for watchOps
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="room"><a href="#room" class="headerlink" title="room"></a>room</h2><p>保存channel链表</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Room <span class="keyword">struct</span> {</span><br><span class="line">    ID        <span class="keyword">string</span></span><br><span class="line">    rLock     sync.RWMutex</span><br><span class="line">    next      *Channel</span><br><span class="line">    drop      <span class="keyword">bool</span>   <span class="comment">// true if Online-- == 0</span></span><br><span class="line">    Online    <span class="keyword">int32</span></span><br><span class="line">    AllOnline <span class="keyword">int32</span>   <span class="comment">// dirty read because Bucket.UpRoomsCount with RLock</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Room struct {
+    ID        string
+    rLock     sync.RWMutex
+    next      *Channel
+    drop      bool   // true if Online-- == 0
+    Online    int32
+    AllOnline int32   // dirty read because Bucket.UpRoomsCount with RLock
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 
 <h2 id="Bucket"><a href="#Bucket" class="headerlink" title="Bucket"></a>Bucket</h2><p>存放room和channel, channel可以change/put room, 自动创建new room<br>所有channel广播 或 指定room房播<br>routines处理job kafka rpc</p>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Bucket <span class="keyword">struct</span> {</span><br><span class="line">    c     *conf.Bucket</span><br><span class="line">    cLock sync.RWMutex          <span class="comment">// lock for chs/rooms</span></span><br><span class="line">    chs   <span class="keyword">map</span>[<span class="keyword">string</span>]*Channel   <span class="comment">// 1024</span></span><br><span class="line">    <span class="comment">// room</span></span><br><span class="line">    rooms       <span class="keyword">map</span>[<span class="keyword">string</span>]*Room   <span class="comment">// 1024</span></span><br><span class="line">    routines    []<span class="keyword">chan</span> *grpc.BroadcastRoomReq   <span class="comment">// 32 (go b.roomproc((chan *grpc.BroadcastRoomReq, 1024)))</span></span><br><span class="line">    routinesNum <span class="keyword">uint64</span>   <span class="comment">// routinesNum % 32</span></span><br><span class="line"></span><br><span class="line">    ipCnts <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int32</span>   <span class="comment">// ip counter</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Bucket struct {
+    c     *conf.Bucket
+    cLock sync.RWMutex          // lock for chs/rooms
+    chs   map[string]*Channel   // 1024
+    // room
+    rooms       map[string]*Room   // 1024
+    routines    []chan *grpc.BroadcastRoomReq   // 32 (go b.roomproc((chan *grpc.BroadcastRoomReq, 1024)))
+    routinesNum uint64   // routinesNum % 32
+
+    ipCnts map[string]int32   // ip counter
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <img src="/2020/04/30/go/goim/%E6%88%BF%E9%97%B4%E4%BF%A1%E6%81%AF%E6%8E%A8%E9%80%81%E6%B5%81%E7%A8%8B.png" class="">
 
 <h2 id="Server"><a href="#Server" class="headerlink" title="Server"></a>Server</h2><p>根据SubKey获取Bucket</p>
@@ -547,7 +608,15 @@
 <li>channel.Watch</li>
 <li>channel.UnWatch</li>
 </ul>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Server <span class="keyword">struct</span> {</span><br><span class="line">    c         *conf.Config</span><br><span class="line">    round     *Round      <span class="comment">// accept round store</span></span><br><span class="line">    buckets   []*Bucket   <span class="comment">// 32</span></span><br><span class="line">    bucketIdx <span class="keyword">uint32</span>      <span class="comment">// 32</span></span><br><span class="line"></span><br><span class="line">    serverID  <span class="keyword">string</span></span><br><span class="line">    rpcClient logic.LogicClient</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">type Server struct {
+    c         *conf.Config
+    round     *Round      // accept round store
+    buckets   []*Bucket   // 32
+    bucketIdx uint32      // 32
+
+    serverID  string
+    rpcClient logic.LogicClient
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="job"><a href="#job" class="headerlink" title="job"></a>job</h2><p>job从kafka consume, 通过rpc调用comet</p>
 <p>根据pushMsg.Type分:</p>
 <ul>
@@ -555,7 +624,36 @@
 <li>房播</li>
 <li>广播</li>
 </ul>
-<figure class="highlight golang"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// clinet</span></span><br><span class="line"><span class="keyword">var</span> XXXRoutineSize <span class="keyword">int</span></span><br><span class="line"><span class="keyword">var</span> XXXChanSize <span class="keyword">int</span></span><br><span class="line"><span class="keyword">var</span> XXXChan = <span class="built_in">make</span>([]<span class="keyword">chan</span> *server.XXXReq, XXXRoutineSize)</span><br><span class="line"><span class="keyword">var</span> XXXChanCursor <span class="keyword">uint64</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; XXXRoutineSize; i++ {</span><br><span class="line">    XXXChan[i] = <span class="built_in">make</span>(<span class="keyword">chan</span> *server.XXXReq, XXXChanSize)</span><br><span class="line">    <span class="keyword">go</span> process(XXXChan[i])</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *client)</span> <span class="title">process</span><span class="params">(XXXChan <span class="keyword">chan</span> *server.XXXReq)</span></span>{</span><br><span class="line">    <span class="keyword">for</span> {</span><br><span class="line">        <span class="keyword">select</span> XXXArg := &lt;- XXXChan:</span><br><span class="line">            reply, err := c.serverClient.XXX(context.Background(), &amp;server.XXXReq{</span><br><span class="line">                key: XXXArg.value,</span><br><span class="line">            })</span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *client)</span> <span class="title">XXXFunc</span><span class="params">(arg *server.XXXReq)</span></span> {</span><br><span class="line">    idx := atomic.AddUint64(&amp;XXXChanCursor, <span class="number">1</span>) % XXXRoutineSize</span><br><span class="line">    XXXChan[idx] &lt;- arg</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="comment">// server</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *server)</span> <span class="title">XXX</span><span class="params">(ctx context.Context, req *server.XXXReq)</span> <span class="params">(reply *server.XXXReply, err error)</span></span>{</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
+<pre class="line-numbers language-golang" data-language="golang"><code class="language-golang">// clinet
+var XXXRoutineSize int
+var XXXChanSize int
+var XXXChan = make([]chan *server.XXXReq, XXXRoutineSize)
+var XXXChanCursor uint64
+
+for i := 0; i &lt; XXXRoutineSize; i++ {
+    XXXChan[i] = make(chan *server.XXXReq, XXXChanSize)
+    go process(XXXChan[i])
+}
+
+func (c *client) process(XXXChan chan *server.XXXReq){
+    for {
+        select XXXArg := &lt;- XXXChan:
+            reply, err := c.serverClient.XXX(context.Background(), &amp;server.XXXReq{
+                key: XXXArg.value,
+            })
+        ...
+    }
+}
+
+func (c *client) XXXFunc(arg *server.XXXReq) {
+    idx := atomic.AddUint64(&amp;XXXChanCursor, 1) % XXXRoutineSize
+    XXXChan[idx] &lt;- arg
+}
+
+// server
+func (s *server) XXX(ctx context.Context, req *server.XXXReq) (reply *server.XXXReply, err error){
+    ...
+}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="job-room-kafka房播msg流程"><a href="#job-room-kafka房播msg流程" class="headerlink" title="job.room kafka房播msg流程"></a>job.room kafka房播msg流程</h2><ol>
 <li>根据msg.roomId调用getRoom(), 若没有则NewRoom() -&gt; go pushproc()监听, 然后Push()</li>
 <li>pushproc:  SigTime=1S, Batch=20, Idle=15M</li>

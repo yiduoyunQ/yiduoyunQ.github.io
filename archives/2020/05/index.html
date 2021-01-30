@@ -737,7 +737,14 @@ goroutine入口newproc，
                             <div class="summary block-with-text">
                                 
                                     栗子执行顺序先进后出的栈，在return后倒序执行
-123456789101112131415161718192021package mainimport "fmt"func main() {    defer func1()    def
+package main
+
+import "fmt"
+
+func main() {
+    defer func1()
+    defer func2()
+    defer func3(
                                 
                             </div>
                             <div class="publish-info">
