@@ -27,7 +27,7 @@
 <meta property="og:site_name" content="yiduoyunQ">
 <meta property="og:description" content="mutex 并发模型中，可能存在N个g同时竞争1个锁对象 mutexWaiterShift用于计数锁等待g数量，使用sudog结构保存在semaRoot的平衡树的叶子中 semaRoot平衡树的叶子保存每一个unique sema，一个mutex对象的sema只保存在一个叶子中，使用单向FIFO链表形式保存竞争该sema的所有sudog 若没有spin机制，锁一旦释放，当前运行g会更大概率得到锁。">
 <meta property="article:published_time" content="2020-05-27T22:14:59.000Z">
-<meta property="article:modified_time" content="2021-01-30T18:31:31.508Z">
+<meta property="article:modified_time" content="2021-01-30T18:48:53.756Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -180,7 +180,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-30 18:31:31" itemprop="dateModified" datetime="2021-01-30T18:31:31+00:00">2021-01-30</time>
+                <time title="Modified: 2021-01-30 18:48:53" itemprop="dateModified" datetime="2021-01-30T18:48:53+00:00">2021-01-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
