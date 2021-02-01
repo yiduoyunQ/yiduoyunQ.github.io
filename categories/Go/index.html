@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="分类: zookeeper, yiduoyunQ">
+    <meta name="keywords" content="分类: Go, yiduoyunQ">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>分类: zookeeper | yiduoyunQ</title>
+    <title>分类: Go | yiduoyunQ</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
@@ -408,7 +408,7 @@
                 
                 <a href="/categories/Go/" title="Go: 1">
                     <span class="chip center-align waves-effect waves-light
-                             chip-default "
+                             chip-active "
                             style="background-color: #FEF9E7;">Go
                         <span class="tag-length">1</span>
                     </span>
@@ -417,7 +417,7 @@
                 
                 <a href="/categories/zookeeper/" title="zookeeper: 7">
                     <span class="chip center-align waves-effect waves-light
-                             chip-active "
+                             chip-default "
                             style="background-color: #F8F9F9;">zookeeper
                         <span class="tag-length">7</span>
                     </span>
@@ -446,37 +446,39 @@
             
             <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_db/">
+                    <a href="/2021/01/30/yuque/Tidb%20parser%20test/">
                         <div class="card-image tag-image">
                             
                             
-                            <img src="/medias/featureimages/7.jpg" class="responsive-img" alt="zookeeper源码-6.数据库和日志">
+                            <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="Tidb parser test">
                             
-                            <span class="card-title">zookeeper源码-6.数据库和日志</span>
+                            <span class="card-title">Tidb parser test</span>
                         </div>
                     </a>
                     <div class="card-content article-content">
                         <div class="summary block-with-text">
                             
-                                数据库格式ZKDatabase负责记录节点的数据信息，事务日志以及Snapshot日志，以及watch的管理，相关类图如下:
+                                Import Dependencies
+go get -v github.com/pingcap/tidb/types/parser_driver@328b6d0
 
+testpackage main
 
-主要的类信息如下:
+import (
+  "fmt"
 
-ZKDatabase 数据库类的封装
-FileTxnSnapLog 日志类封装，包括事务
+ 
                             
                         </div>
                         <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-01-30
                             </span>
                             <span class="publish-author">
                                 
                                 <i class="fas fa-bookmark fa-fw icon-category"></i>
                                 
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
+                                <a href="/categories/Go/" class="post-category">
+                                    Go
                                 </a>
                                 
                                 
@@ -491,299 +493,8 @@ FileTxnSnapLog 日志类封装，包括事务
                             <span class="chip bg-color">源码</span>
                         </a>
                         
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_processPacket/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/13.jpg" class="responsive-img" alt="zookeeper源码-5.客户端响应请求">
-                            
-                            <span class="card-title">zookeeper源码-5.客户端响应请求</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                NIOServerCnxn / NettyServerCnxn 调用ZooKeeperServer.processPacket，内部会调用submitRequest，最后submitRequest会将Request派发到firstProce
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_serverCnxn/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="zookeeper源码-4.客户端连接管理">
-                            
-                            <span class="card-title">zookeeper源码-4.客户端连接管理</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                默认使用NIO，可配置为Netty
-
-
-configure在QuorumPeerMain中调用，入口在QuorumPeer.startServerCnxnFactory
-Factory使用Set&lt;ServerCnxn&gt;保存所有S
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_state/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="zookeeper源码-3.状态转换">
-                            
-                            <span class="card-title">zookeeper源码-3.状态转换</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                在选举完成后，进入FOLLOWING或LEADING状态。在其能对外提供服务之前，需要对各个服务器之间状态进行同步，使服务器的数据保持一致。
-
-Leader同步
-
-在创建Leader对象时，会创建Leader监听的socket，在Leane
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_election/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="zookeeper源码-2.启动和选举">
-                            
-                            <span class="card-title">zookeeper源码-2.启动和选举</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                启动流程
-QuorumPeerMain读取config
-调用QuorumPeer.start()
-1 loadDataBase() 载入当前节点的数据库
-2 startServerCnxnFactory() 启动客户端连接监听
-3 star
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_arch/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/5.jpg" class="responsive-img" alt="zookeeper源码-1.架构">
-                            
-                            <span class="card-title">zookeeper源码-1.架构</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                节点架构
-
-
-QuorumPeerMain服务器启动main入口，创建DatadirCleanupManager，按照config启动QuorumPeer  
-QuorumPeer节点类，根据节点类型管理和启动对应服务，管理选举算法及客户端
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/04/29/zk/zkSrc_debug/">
-                        <div class="card-image tag-image">
-                            
-                            
-                            <img src="/medias/featureimages/16.jpg" class="responsive-img" alt="zookeeper源码-0.调试">
-                            
-                            <span class="card-title">zookeeper源码-0.调试</span>
-                        </div>
-                    </a>
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                使用intelliJ IDEA调试 zookeeper源码zookeeper之前版本使用ant build，目前master的3.7.0版本开始改用mvn管理
-将源码导入IDEA，导入方式选择maven
-构建IDEA右侧maven菜单，点击
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-04-29
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/zookeeper/" class="post-category">
-                                    zookeeper
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
+                        <a href="/tags/Tidb/">
+                            <span class="chip bg-color">Tidb</span>
                         </a>
                         
                     </div>
