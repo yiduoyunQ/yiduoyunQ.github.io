@@ -472,7 +472,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    815
+                    822
                 </div>
                 
 
@@ -500,30 +500,30 @@
                 <h2 id="Chunk"><a href="#Chunk" class="headerlink" title="Chunk"></a>Chunk</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Chunk <span class="token keyword">struct</span> <span class="token punctuation">{</span>
     <span class="token comment">// 此 chunk 选择的行号</span>
     <span class="token comment">// for example, if the Sel is [1, 5, 6], then</span>
-  <span class="token comment">//	logical 0 -&gt; physical 1,</span>
-  <span class="token comment">//	logical 1 -&gt; physical 5,</span>
-  <span class="token comment">//	logical 2 -&gt; physical 6.</span>
+    <span class="token comment">//    logical 0 -&gt; physical 1,</span>
+    <span class="token comment">//    logical 1 -&gt; physical 5,</span>
+    <span class="token comment">//    logical 2 -&gt; physical 6.</span>
     <span class="token comment">//  GetRow(1) will return physical row 5</span>
-  sel <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">int</span>
+    sel <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">int</span>
 
-  columns <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Column <span class="token comment">// chunk 包含的列</span>
-  numVirtualRows <span class="token builtin">int</span>
-  capacity <span class="token builtin">int</span>
+    columns <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Column <span class="token comment">// chunk 包含的列</span>
+    numVirtualRows <span class="token builtin">int</span>
+    capacity <span class="token builtin">int</span>
 
-  <span class="token comment">// requiredRows indicates how many rows the parent executor want.</span>
-  requiredRows <span class="token builtin">int</span>
+    <span class="token comment">// requiredRows indicates how many rows the parent executor want.</span>
+    requiredRows <span class="token builtin">int</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Next is a wrapper function on e.Next(), it handles some common codes.</span>
 <span class="token keyword">func</span> <span class="token function">Next</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> e Executor<span class="token punctuation">,</span> req <span class="token operator">*</span>chunk<span class="token punctuation">.</span>Chunk<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
-  <span class="token operator">...</span>
+    <span class="token operator">...</span>
     err <span class="token operator">:=</span> e<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> req<span class="token punctuation">)</span>
     <span class="token operator">...</span>
-  <span class="token keyword">return</span> err
+    <span class="token keyword">return</span> err
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="Delete-Executor"><a href="#Delete-Executor" class="headerlink" title="Delete Executor"></a>Delete Executor</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Next implements the Executor Next interface.</span>
 <span class="token keyword">func</span> <span class="token punctuation">(</span>e <span class="token operator">*</span>DeleteExec<span class="token punctuation">)</span> <span class="token function">Next</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> req <span class="token operator">*</span>chunk<span class="token punctuation">.</span>Chunk<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
-  req<span class="token punctuation">.</span><span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-  <span class="token keyword">return</span> e<span class="token punctuation">.</span><span class="token function">deleteSingleTableByChunk</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
+    req<span class="token punctuation">.</span><span class="token function">Reset</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> e<span class="token punctuation">.</span><span class="token function">deleteSingleTableByChunk</span><span class="token punctuation">(</span>ctx<span class="token punctuation">)</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// DeleteExec 以 chunk 为单位删除数据</span>
 <span class="token keyword">func</span> <span class="token punctuation">(</span>e <span class="token operator">*</span>DeleteExec<span class="token punctuation">)</span> <span class="token function">deleteSingleTableByChunk</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
@@ -531,31 +531,31 @@
     <span class="token comment">// newFirstChunk creates a new chunk to buffer current executor's result</span>
     chk <span class="token operator">:=</span> <span class="token function">newFirstChunk</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span>children<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
     <span class="token keyword">for</span> <span class="token punctuation">{</span>
-    iter <span class="token operator">:=</span> chunk<span class="token punctuation">.</span><span class="token function">NewIterator4Chunk</span><span class="token punctuation">(</span>chk<span class="token punctuation">)</span>
+        iter <span class="token operator">:=</span> chunk<span class="token punctuation">.</span><span class="token function">NewIterator4Chunk</span><span class="token punctuation">(</span>chk<span class="token punctuation">)</span>
         <span class="token comment">// Delete Executor 的 children 为 selection executor，结果赋值给 chk</span>
-    err <span class="token operator">:=</span> <span class="token function">Next</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> e<span class="token punctuation">.</span>children<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> chk<span class="token punctuation">)</span>
-    <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-      <span class="token keyword">return</span> err
-    <span class="token punctuation">}</span>
-    <span class="token keyword">if</span> chk<span class="token punctuation">.</span><span class="token function">NumRows</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-      <span class="token keyword">break</span>
-    <span class="token punctuation">}</span>
+        err <span class="token operator">:=</span> <span class="token function">Next</span><span class="token punctuation">(</span>ctx<span class="token punctuation">,</span> e<span class="token punctuation">.</span>children<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> chk<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> err
+        <span class="token punctuation">}</span>
+        <span class="token keyword">if</span> chk<span class="token punctuation">.</span><span class="token function">NumRows</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+            <span class="token keyword">break</span>
+        <span class="token punctuation">}</span>
         <span class="token comment">// chunkRow 代表一行 row</span>
-    <span class="token keyword">for</span> chunkRow <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> chunkRow <span class="token operator">!=</span> iter<span class="token punctuation">.</span><span class="token function">End</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> chunkRow <span class="token operator">=</span> iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-      <span class="token comment">// 遍历 row 中的 column， 根据 fields 转换为一行 datum</span>
+        <span class="token keyword">for</span> chunkRow <span class="token operator">:=</span> iter<span class="token punctuation">.</span><span class="token function">Begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> chunkRow <span class="token operator">!=</span> iter<span class="token punctuation">.</span><span class="token function">End</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> chunkRow <span class="token operator">=</span> iter<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// 遍历 row 中的 column， 根据 fields 转换为一行 datum</span>
             datumRow <span class="token operator">:=</span> chunkRow<span class="token punctuation">.</span><span class="token function">GetDatumRow</span><span class="token punctuation">(</span>fields<span class="token punctuation">)</span>
-      err <span class="token operator">=</span> e<span class="token punctuation">.</span><span class="token function">deleteOneRow</span><span class="token punctuation">(</span>tbl<span class="token punctuation">,</span> handleCols<span class="token punctuation">,</span> isExtrahandle<span class="token punctuation">,</span> datumRow<span class="token punctuation">)</span>
-      <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> err
-      <span class="token punctuation">}</span>
-      rowCount<span class="token operator">++</span>
+            err <span class="token operator">=</span> e<span class="token punctuation">.</span><span class="token function">deleteOneRow</span><span class="token punctuation">(</span>tbl<span class="token punctuation">,</span> handleCols<span class="token punctuation">,</span> isExtrahandle<span class="token punctuation">,</span> datumRow<span class="token punctuation">)</span>
+            <span class="token keyword">if</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+                <span class="token keyword">return</span> err
+            <span class="token punctuation">}</span>
+            rowCount<span class="token operator">++</span>
+        <span class="token punctuation">}</span>
+        chk <span class="token operator">=</span> chunk<span class="token punctuation">.</span><span class="token function">Renew</span><span class="token punctuation">(</span>chk<span class="token punctuation">,</span> e<span class="token punctuation">.</span>maxChunkSize<span class="token punctuation">)</span>
     <span class="token punctuation">}</span>
-    chk <span class="token operator">=</span> chunk<span class="token punctuation">.</span><span class="token function">Renew</span><span class="token punctuation">(</span>chk<span class="token punctuation">,</span> e<span class="token punctuation">.</span>maxChunkSize<span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
 
-  <span class="token keyword">return</span> <span class="token boolean">nil</span>
+    <span class="token keyword">return</span> <span class="token boolean">nil</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<p>Chunk 通过 Executor 的 <code>Next</code> 由上至下传递<br><img src="https://cdn.nlark.com/yuque/0/2021/png/12555729/1612283535832-be830be4-4745-4fb7-b49b-d6f5d2510d44.png#align=left&amp;display=inline&amp;height=308&amp;margin=%5Bobject%20Object%5D&amp;name=executor.png&amp;originHeight=308&amp;originWidth=121&amp;size=10352&amp;status=done&amp;style=none&amp;width=121" alt="executor.png"></p>
+<p>Parent Executor 调用 <code>Next</code> 方法，传入 <strong>chunk</strong><br>Child Executor 负责将产出数据写入传入的 <strong>chunk</strong> 中<br><img src="https://cdn.nlark.com/yuque/0/2021/png/12555729/1612283535832-be830be4-4745-4fb7-b49b-d6f5d2510d44.png#align=left&amp;display=inline&amp;height=308&amp;margin=%5Bobject%20Object%5D&amp;name=executor.png&amp;originHeight=308&amp;originWidth=121&amp;size=10352&amp;status=done&amp;style=none&amp;width=121" alt="executor.png"></p>
 <h2 id="Column"><a href="#Column" class="headerlink" title="Column"></a>Column</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Column <span class="token keyword">struct</span> <span class="token punctuation">{</span>
   length     <span class="token builtin">int</span> <span class="token comment">// Column 有多少行数据</span>
     nullBitmap <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span> <span class="token comment">// Column 中每个元素是否为null，bit 0 is null, 1 is not null</span>
@@ -602,7 +602,7 @@
   b         <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>      <span class="token comment">// b can hold string or []byte values.</span>
   x         <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// x hold all other types.</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><h3 id="老框架行取问题（Row-结构体不同）"><a href="#老框架行取问题（Row-结构体不同）" class="headerlink" title="老框架行取问题（Row 结构体不同）"></a>老框架行取问题（Row 结构体不同）</h3><ul>
+<h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><h3 id="老框架行取问题"><a href="#老框架行取问题" class="headerlink" title="老框架行取问题"></a>老框架行取问题</h3><ul>
 <li>数据量多时，循环调用函数开销过大</li>
 <li>Datum 占用过多无效内存，没有重用增加 GC 压力</li>
 <li>每次循环输出一行，数据量过少，无法充分利用 CPU 的 pipeline，要进行更加缓存友好的计算</li>
