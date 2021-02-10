@@ -503,90 +503,90 @@
 <li>进入饥饿模式后，所有新g竞争时不会spin也不会尝试加锁，直接插入链表尾。每次解锁后从链表头唤醒1个g消费锁，若该g等待时间不超过1ms，退出饥饿模式。</li>
 </ul>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Mutex <span class="token keyword">struct</span> <span class="token punctuation">{</span>
-  state <span class="token builtin">int32</span>
-  sema  <span class="token builtin">uint32</span>
+	state <span class="token builtin">int32</span>
+	sema  <span class="token builtin">uint32</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">const</span> <span class="token punctuation">(</span>
-  mutexLocked <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token boolean">iota</span> <span class="token comment">// 0001</span>
-  mutexWoken              <span class="token comment">// 0010</span>
-  mutexStarving           <span class="token comment">// 0100</span>
-  mutexWaiterShift <span class="token operator">=</span> <span class="token boolean">iota</span> <span class="token comment">// 0011</span>
+	mutexLocked <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token boolean">iota</span> <span class="token comment">// 0001</span>
+	mutexWoken              <span class="token comment">// 0010</span>
+	mutexStarving           <span class="token comment">// 0100</span>
+	mutexWaiterShift <span class="token operator">=</span> <span class="token boolean">iota</span> <span class="token comment">// 0011</span>
 
-  starvationThresholdNs <span class="token operator">=</span> <span class="token number">1e6</span> <span class="token comment">// 超过1ms进入饥饿模式</span>
+	starvationThresholdNs <span class="token operator">=</span> <span class="token number">1e6</span> <span class="token comment">// 超过1ms进入饥饿模式</span>
 <span class="token punctuation">)</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>Mutex<span class="token punctuation">)</span> <span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> mutexLocked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span>
-  <span class="token punctuation">}</span>
+	<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> mutexLocked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">}</span>
 
-  m<span class="token punctuation">.</span><span class="token function">lockSlow</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	m<span class="token punctuation">.</span><span class="token function">lockSlow</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>m <span class="token operator">*</span>Mutex<span class="token punctuation">)</span> <span class="token function">lockSlow</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  <span class="token keyword">var</span> waitStartTime <span class="token builtin">int64</span>
-  starving <span class="token operator">:=</span> <span class="token boolean">false</span>
-  awoke <span class="token operator">:=</span> <span class="token boolean">false</span>
-  iter <span class="token operator">:=</span> <span class="token number">0</span>
-  old <span class="token operator">:=</span> m<span class="token punctuation">.</span>state
-  <span class="token keyword">for</span> <span class="token punctuation">{</span>
-    <span class="token comment">// 判断是否为饥饿模式</span>
-    <span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">==</span> mutexLocked <span class="token operator">&amp;&amp;</span> <span class="token function">runtime_canSpin</span><span class="token punctuation">(</span>iter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-      <span class="token comment">// 如果未设置awoke且waiter计数&gt;0，说明其他m在等待锁，cas设置awoke</span>
-      <span class="token keyword">if</span> <span class="token operator">!</span>awoke <span class="token operator">&amp;&amp;</span> old<span class="token operator">&amp;</span>mutexWoken <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> old<span class="token operator">&gt;&gt;</span>mutexWaiterShift <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span>
-        atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> old<span class="token punctuation">,</span> old<span class="token operator">|</span>mutexWoken<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        awoke <span class="token operator">=</span> <span class="token boolean">true</span>
-      <span class="token punctuation">}</span>
-      <span class="token function">runtime_doSpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 自旋30次</span>
-      iter<span class="token operator">++</span>
-      old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
-      <span class="token keyword">continue</span>
-    <span class="token punctuation">}</span>
-    <span class="token builtin">new</span> <span class="token operator">:=</span> old
-    <span class="token comment">// 非starving模式，设置new的locked</span>
-    <span class="token keyword">if</span> old<span class="token operator">&amp;</span>mutexStarving <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-      <span class="token builtin">new</span> <span class="token operator">|=</span> mutexLocked
-    <span class="token punctuation">}</span>
-    <span class="token comment">// 已上锁或饥饿状态，waiter计数+1</span>
-    <span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-      <span class="token builtin">new</span> <span class="token operator">+=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> mutexWaiterShift
-    <span class="token punctuation">}</span>
-    <span class="token comment">// 处于饥饿模式并且已上锁，将starving置1</span>
-    <span class="token keyword">if</span> starving <span class="token operator">&amp;&amp;</span> old<span class="token operator">&amp;</span>mutexLocked <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-      <span class="token builtin">new</span> <span class="token operator">|=</span> mutexStarving
-    <span class="token punctuation">}</span>
-    <span class="token keyword">if</span> awoke <span class="token punctuation">{</span>
-      <span class="token builtin">new</span> <span class="token operator">&amp;^=</span> mutexWoken <span class="token comment">// 如果当前g是被唤醒的，清除woken</span>
-    <span class="token punctuation">}</span>
-    <span class="token comment">// 如果state!=old，说明有其他g抢锁，重新进入for循环</span>
-    <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> old<span class="token punctuation">,</span> <span class="token builtin">new</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-      <span class="token comment">// 如果old没上锁且是普通模式，抢锁成功，退出</span>
-      <span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-        <span class="token keyword">break</span>
-      <span class="token punctuation">}</span>
-      queueLifo <span class="token operator">:=</span> waitStartTime <span class="token operator">!=</span> <span class="token number">0</span> <span class="token comment">// 第一次循环固定false</span>
-      <span class="token keyword">if</span> waitStartTime <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-        waitStartTime <span class="token operator">=</span> <span class="token function">runtime_nanotime</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-      <span class="token punctuation">}</span>
-      <span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>sema<span class="token punctuation">,</span> queueLifo<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
-      starving <span class="token operator">=</span> starving <span class="token operator">||</span> <span class="token function">runtime_nanotime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-</span>waitStartTime <span class="token operator">&gt;</span> starvationThresholdNs
-      old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
-      <span class="token keyword">if</span> old<span class="token operator">&amp;</span>mutexStarving <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-        delta <span class="token operator">:=</span> <span class="token function">int32</span><span class="token punctuation">(</span>mutexLocked <span class="token operator">-</span> <span class="token number">1</span><span class="token operator">&lt;&lt;</span>mutexWaiterShift<span class="token punctuation">)</span>
-        <span class="token comment">// 如果在饥饿模式并且自己是最后一个，清除starving标示</span>
-        <span class="token keyword">if</span> <span class="token operator">!</span>starving <span class="token operator">||</span> old<span class="token operator">&gt;&gt;</span>mutexWaiterShift <span class="token operator">==</span> <span class="token number">1</span> <span class="token punctuation">{</span>
-          delta <span class="token operator">-=</span> mutexStarving
-        <span class="token punctuation">}</span>
-        atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> delta<span class="token punctuation">)</span>
-        <span class="token keyword">break</span>
-      <span class="token punctuation">}</span>
-      awoke <span class="token operator">=</span> <span class="token boolean">true</span>
-      iter <span class="token operator">=</span> <span class="token number">0</span>
-    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
-      old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span>
+	<span class="token keyword">var</span> waitStartTime <span class="token builtin">int64</span>
+	starving <span class="token operator">:=</span> <span class="token boolean">false</span>
+	awoke <span class="token operator">:=</span> <span class="token boolean">false</span>
+	iter <span class="token operator">:=</span> <span class="token number">0</span>
+	old <span class="token operator">:=</span> m<span class="token punctuation">.</span>state
+	<span class="token keyword">for</span> <span class="token punctuation">{</span>
+		<span class="token comment">// 判断是否为饥饿模式</span>
+		<span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">==</span> mutexLocked <span class="token operator">&amp;&amp;</span> <span class="token function">runtime_canSpin</span><span class="token punctuation">(</span>iter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			<span class="token comment">// 如果未设置awoke且waiter计数&gt;0，说明其他m在等待锁，cas设置awoke</span>
+			<span class="token keyword">if</span> <span class="token operator">!</span>awoke <span class="token operator">&amp;&amp;</span> old<span class="token operator">&amp;</span>mutexWoken <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> old<span class="token operator">&gt;&gt;</span>mutexWaiterShift <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span>
+				atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> old<span class="token punctuation">,</span> old<span class="token operator">|</span>mutexWoken<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				awoke <span class="token operator">=</span> <span class="token boolean">true</span>
+			<span class="token punctuation">}</span>
+			<span class="token function">runtime_doSpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 自旋30次</span>
+			iter<span class="token operator">++</span>
+			old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
+			<span class="token keyword">continue</span>
+		<span class="token punctuation">}</span>
+		<span class="token builtin">new</span> <span class="token operator">:=</span> old
+		<span class="token comment">// 非starving模式，设置new的locked</span>
+		<span class="token keyword">if</span> old<span class="token operator">&amp;</span>mutexStarving <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+			<span class="token builtin">new</span> <span class="token operator">|=</span> mutexLocked
+		<span class="token punctuation">}</span>
+		<span class="token comment">// 已上锁或饥饿状态，waiter计数+1</span>
+		<span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+			<span class="token builtin">new</span> <span class="token operator">+=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> mutexWaiterShift
+		<span class="token punctuation">}</span>
+		<span class="token comment">// 处于饥饿模式并且已上锁，将starving置1</span>
+		<span class="token keyword">if</span> starving <span class="token operator">&amp;&amp;</span> old<span class="token operator">&amp;</span>mutexLocked <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+			<span class="token builtin">new</span> <span class="token operator">|=</span> mutexStarving
+		<span class="token punctuation">}</span>
+		<span class="token keyword">if</span> awoke <span class="token punctuation">{</span>
+			<span class="token builtin">new</span> <span class="token operator">&amp;^=</span> mutexWoken <span class="token comment">// 如果当前g是被唤醒的，清除woken</span>
+		<span class="token punctuation">}</span>
+		<span class="token comment">// 如果state!=old，说明有其他g抢锁，重新进入for循环</span>
+		<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> old<span class="token punctuation">,</span> <span class="token builtin">new</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			<span class="token comment">// 如果old没上锁且是普通模式，抢锁成功，退出</span>
+			<span class="token keyword">if</span> old<span class="token operator">&amp;</span><span class="token punctuation">(</span>mutexLocked<span class="token operator">|</span>mutexStarving<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">}</span>
+			queueLifo <span class="token operator">:=</span> waitStartTime <span class="token operator">!=</span> <span class="token number">0</span> <span class="token comment">// 第一次循环固定false</span>
+			<span class="token keyword">if</span> waitStartTime <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+				waitStartTime <span class="token operator">=</span> <span class="token function">runtime_nanotime</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			<span class="token punctuation">}</span>
+			<span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>sema<span class="token punctuation">,</span> queueLifo<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+			starving <span class="token operator">=</span> starving <span class="token operator">||</span> <span class="token function">runtime_nanotime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-</span>waitStartTime <span class="token operator">&gt;</span> starvationThresholdNs
+			old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
+			<span class="token keyword">if</span> old<span class="token operator">&amp;</span>mutexStarving <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+				delta <span class="token operator">:=</span> <span class="token function">int32</span><span class="token punctuation">(</span>mutexLocked <span class="token operator">-</span> <span class="token number">1</span><span class="token operator">&lt;&lt;</span>mutexWaiterShift<span class="token punctuation">)</span>
+				<span class="token comment">// 如果在饥饿模式并且自己是最后一个，清除starving标示</span>
+				<span class="token keyword">if</span> <span class="token operator">!</span>starving <span class="token operator">||</span> old<span class="token operator">&gt;&gt;</span>mutexWaiterShift <span class="token operator">==</span> <span class="token number">1</span> <span class="token punctuation">{</span>
+					delta <span class="token operator">-=</span> mutexStarving
+				<span class="token punctuation">}</span>
+				atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>m<span class="token punctuation">.</span>state<span class="token punctuation">,</span> delta<span class="token punctuation">)</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">}</span>
+			awoke <span class="token operator">=</span> <span class="token boolean">true</span>
+			iter <span class="token operator">=</span> <span class="token number">0</span>
+		<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+			old <span class="token operator">=</span> m<span class="token punctuation">.</span>state
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>是否自旋判断逻辑：</p>
 <ol>
@@ -595,13 +595,13 @@
 <li>本地g队列为空</li>
 </ol>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">sync_runtime_canSpin</span><span class="token punctuation">(</span>i <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">{</span>
-  <span class="token keyword">if</span> i <span class="token operator">&gt;=</span> active_spin <span class="token operator">||</span> ncpu <span class="token operator">&lt;=</span> <span class="token number">1</span> <span class="token operator">||</span> gomaxprocs <span class="token operator">&lt;=</span> <span class="token function">int32</span><span class="token punctuation">(</span>sched<span class="token punctuation">.</span>npidle<span class="token operator">+</span>sched<span class="token punctuation">.</span>nmspinning<span class="token punctuation">)</span><span class="token operator">+</span><span class="token number">1</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span> <span class="token boolean">false</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">if</span> p <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>m<span class="token punctuation">.</span>p<span class="token punctuation">.</span><span class="token function">ptr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">!</span><span class="token function">runqempty</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span> <span class="token boolean">false</span>
-  <span class="token punctuation">}</span>
-  <span class="token keyword">return</span> <span class="token boolean">true</span>
+	<span class="token keyword">if</span> i <span class="token operator">&gt;=</span> active_spin <span class="token operator">||</span> ncpu <span class="token operator">&lt;=</span> <span class="token number">1</span> <span class="token operator">||</span> gomaxprocs <span class="token operator">&lt;=</span> <span class="token function">int32</span><span class="token punctuation">(</span>sched<span class="token punctuation">.</span>npidle<span class="token operator">+</span>sched<span class="token punctuation">.</span>nmspinning<span class="token punctuation">)</span><span class="token operator">+</span><span class="token number">1</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">}</span>
+	<span class="token keyword">if</span> p <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>m<span class="token punctuation">.</span>p<span class="token punctuation">.</span><span class="token function">ptr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token operator">!</span><span class="token function">runqempty</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token boolean">false</span>
+	<span class="token punctuation">}</span>
+	<span class="token keyword">return</span> <span class="token boolean">true</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="sema"><a href="#sema" class="headerlink" title="sema"></a>sema</h3><p>略</p>
 <h2 id="rwmutex"><a href="#rwmutex" class="headerlink" title="rwmutex"></a>rwmutex</h2><ul>
@@ -612,51 +612,51 @@
 <li>readerWait： w加锁时已有r的计数，在最后一个r解锁后FIFO唤醒w</li>
 </ul>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> RWMutex <span class="token keyword">struct</span> <span class="token punctuation">{</span>
-  w           Mutex  <span class="token comment">// held if there are pending writers</span>
-  writerSem   <span class="token builtin">uint32</span> <span class="token comment">// semaphore for writers to wait for completing readers</span>
-  readerSem   <span class="token builtin">uint32</span> <span class="token comment">// semaphore for readers to wait for completing writers</span>
-  readerCount <span class="token builtin">int32</span>  <span class="token comment">// number of pending readers</span>
-  readerWait  <span class="token builtin">int32</span>  <span class="token comment">// number of departing readers</span>
+	w           Mutex  <span class="token comment">// held if there are pending writers</span>
+	writerSem   <span class="token builtin">uint32</span> <span class="token comment">// semaphore for writers to wait for completing readers</span>
+	readerSem   <span class="token builtin">uint32</span> <span class="token comment">// semaphore for readers to wait for completing writers</span>
+	readerCount <span class="token builtin">int32</span>  <span class="token comment">// number of pending readers</span>
+	readerWait  <span class="token builtin">int32</span>  <span class="token comment">// number of departing readers</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">const</span> rwmutexMaxReaders <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">&lt;&lt;</span> <span class="token number">30</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>rw <span class="token operator">*</span>RWMutex<span class="token punctuation">)</span> <span class="token function">RLock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-    <span class="token comment">// readerSem叶链表尾=当前g</span>
-    <span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
+	<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		<span class="token comment">// readerSem叶链表尾=当前g</span>
+		<span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>rw <span class="token operator">*</span>RWMutex<span class="token punctuation">)</span> <span class="token function">RUnlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  <span class="token keyword">if</span> r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> r <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-    <span class="token comment">// 有w在等锁</span>
-    rw<span class="token punctuation">.</span><span class="token function">rUnlockSlow</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
+	<span class="token keyword">if</span> r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> r <span class="token operator">&lt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		<span class="token comment">// 有w在等锁</span>
+		rw<span class="token punctuation">.</span><span class="token function">rUnlockSlow</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>rw <span class="token operator">*</span>RWMutex<span class="token punctuation">)</span> <span class="token function">rUnlockSlow</span><span class="token punctuation">(</span>r <span class="token builtin">int32</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerWait<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-    <span class="token comment">// 最后一个r锁释放，从writerSem叶链表头唤醒等待的w锁</span>
-    <span class="token function">runtime_Semrelease</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>writerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
+	<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerWait<span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		<span class="token comment">// 最后一个r锁释放，从writerSem叶链表头唤醒等待的w锁</span>
+		<span class="token function">runtime_Semrelease</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>writerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>rw <span class="token operator">*</span>RWMutex<span class="token punctuation">)</span> <span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  rw<span class="token punctuation">.</span>w<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-  r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token operator">-</span>rwmutexMaxReaders<span class="token punctuation">)</span> <span class="token operator">+</span> rwmutexMaxReaders <span class="token comment">// readerCount设一个大负数</span>
-  <span class="token comment">// Wait for active readers.</span>
-  <span class="token keyword">if</span> r <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerWait<span class="token punctuation">,</span> r<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-    <span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>writerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
+	rw<span class="token punctuation">.</span>w<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> <span class="token operator">-</span>rwmutexMaxReaders<span class="token punctuation">)</span> <span class="token operator">+</span> rwmutexMaxReaders <span class="token comment">// readerCount设一个大负数</span>
+	<span class="token comment">// Wait for active readers.</span>
+	<span class="token keyword">if</span> r <span class="token operator">!=</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerWait<span class="token punctuation">,</span> r<span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		<span class="token function">runtime_SemacquireMutex</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>writerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token punctuation">(</span>rw <span class="token operator">*</span>RWMutex<span class="token punctuation">)</span> <span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> rwmutexMaxReaders<span class="token punctuation">)</span> <span class="token comment">// 还原readerCount设置的大负数</span>
-  <span class="token comment">// readerSem叶链表头-&gt;尾循环唤醒等待的r</span>
-  <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">int</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
-    <span class="token function">runtime_Semrelease</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
-  <span class="token punctuation">}</span>
-  rw<span class="token punctuation">.</span>w<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	r <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">AddInt32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerCount<span class="token punctuation">,</span> rwmutexMaxReaders<span class="token punctuation">)</span> <span class="token comment">// 还原readerCount设置的大负数</span>
+	<span class="token comment">// readerSem叶链表头-&gt;尾循环唤醒等待的r</span>
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">int</span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+		<span class="token function">runtime_Semrelease</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>rw<span class="token punctuation">.</span>readerSem<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+	rw<span class="token punctuation">.</span>w<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="runtime-mutex"><a href="#runtime-mutex" class="headerlink" title="runtime.mutex"></a>runtime.mutex</h2><ul>
 <li>lock流程</li>
@@ -677,102 +677,102 @@
 <li>当前m.lock–，如果lock=0并且可抢占，设置抢占标记</li>
 </ol>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> mutex <span class="token keyword">struct</span> <span class="token punctuation">{</span>
-  key <span class="token builtin">uintptr</span>
+	key <span class="token builtin">uintptr</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">const</span> <span class="token punctuation">(</span>
-  locked <span class="token builtin">uintptr</span> <span class="token operator">=</span> <span class="token number">1</span>
+	locked <span class="token builtin">uintptr</span> <span class="token operator">=</span> <span class="token number">1</span>
 
-  active_spin     <span class="token operator">=</span> <span class="token number">4</span> <span class="token comment">// 多核loop 4次</span>
-  active_spin_cnt <span class="token operator">=</span> <span class="token number">30</span> <span class="token comment">// 每次loop自旋30次</span>
-  passive_spin    <span class="token operator">=</span> <span class="token number">1</span>
+	active_spin     <span class="token operator">=</span> <span class="token number">4</span> <span class="token comment">// 多核loop 4次</span>
+	active_spin_cnt <span class="token operator">=</span> <span class="token number">30</span> <span class="token comment">// 每次loop自旋30次</span>
+	passive_spin    <span class="token operator">=</span> <span class="token number">1</span>
 <span class="token punctuation">)</span>
 
 <span class="token keyword">func</span> <span class="token function">lock</span><span class="token punctuation">(</span>l <span class="token operator">*</span>mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  gp <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-  gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks<span class="token operator">++</span>
+	gp <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks<span class="token operator">++</span>
 
-  <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token keyword">return</span>
-  <span class="token punctuation">}</span>
-  <span class="token function">semacreate</span><span class="token punctuation">(</span>gp<span class="token punctuation">.</span>m<span class="token punctuation">)</span> <span class="token comment">// 创建OS信号量</span>
+	<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span>
+	<span class="token punctuation">}</span>
+	<span class="token function">semacreate</span><span class="token punctuation">(</span>gp<span class="token punctuation">.</span>m<span class="token punctuation">)</span> <span class="token comment">// 创建OS信号量</span>
 
-  spin <span class="token operator">:=</span> <span class="token number">0</span>
-  <span class="token keyword">if</span> ncpu <span class="token operator">&gt;</span> <span class="token number">1</span> <span class="token punctuation">{</span>
-    spin <span class="token operator">=</span> active_spin <span class="token comment">// 多核loop 4次</span>
-  <span class="token punctuation">}</span>
+	spin <span class="token operator">:=</span> <span class="token number">0</span>
+	<span class="token keyword">if</span> ncpu <span class="token operator">&gt;</span> <span class="token number">1</span> <span class="token punctuation">{</span>
+		spin <span class="token operator">=</span> active_spin <span class="token comment">// 多核loop 4次</span>
+	<span class="token punctuation">}</span>
 Loop<span class="token punctuation">:</span>
-  <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
-    v <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
-    <span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-      <span class="token comment">// Unlocked. Try to lock.</span>
-      <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> v<span class="token operator">|</span>locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span>
-      <span class="token punctuation">}</span>
-      i <span class="token operator">=</span> <span class="token number">0</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">if</span> i <span class="token operator">&lt;</span> spin <span class="token punctuation">{</span>
-      <span class="token function">procyield</span><span class="token punctuation">(</span>active_spin_cnt<span class="token punctuation">)</span> <span class="token comment">// 自旋30次</span>
-    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> i <span class="token operator">&lt;</span> spin<span class="token operator">+</span>passive_spin <span class="token punctuation">{</span>
-      <span class="token function">osyield</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+	<span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> <span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+		v <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+			<span class="token comment">// Unlocked. Try to lock.</span>
+			<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> v<span class="token operator">|</span>locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				<span class="token keyword">return</span>
+			<span class="token punctuation">}</span>
+			i <span class="token operator">=</span> <span class="token number">0</span>
+		<span class="token punctuation">}</span>
+		<span class="token keyword">if</span> i <span class="token operator">&lt;</span> spin <span class="token punctuation">{</span>
+			<span class="token function">procyield</span><span class="token punctuation">(</span>active_spin_cnt<span class="token punctuation">)</span> <span class="token comment">// 自旋30次</span>
+		<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> i <span class="token operator">&lt;</span> spin<span class="token operator">+</span>passive_spin <span class="token punctuation">{</span>
+			<span class="token function">osyield</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+		<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
             <span class="token comment">// 其他g已获得lock，gp.m.nextwaitm-&gt;muintptr(0)，l.key-&gt;gp.m</span>
-      <span class="token keyword">for</span> <span class="token punctuation">{</span>
-        gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>nextwaitm <span class="token operator">=</span> <span class="token function">muintptr</span><span class="token punctuation">(</span>v <span class="token operator">&amp;^</span> locked<span class="token punctuation">)</span>
-        <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span>gp<span class="token punctuation">.</span>m<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">|</span>locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-          <span class="token keyword">break</span>
-        <span class="token punctuation">}</span>
-        v <span class="token operator">=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
-        <span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-          <span class="token keyword">continue</span> Loop
-        <span class="token punctuation">}</span>
-      <span class="token punctuation">}</span>
-      <span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
-        <span class="token comment">// Queued. Wait.</span>
-        <span class="token function">semasleep</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
-        i <span class="token operator">=</span> <span class="token number">0</span>
-      <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span>
+			<span class="token keyword">for</span> <span class="token punctuation">{</span>
+				gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>nextwaitm <span class="token operator">=</span> <span class="token function">muintptr</span><span class="token punctuation">(</span>v <span class="token operator">&amp;^</span> locked<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span>gp<span class="token punctuation">.</span>m<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">|</span>locked<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+					<span class="token keyword">break</span>
+				<span class="token punctuation">}</span>
+				v <span class="token operator">=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
+				<span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+					<span class="token keyword">continue</span> Loop
+				<span class="token punctuation">}</span>
+			<span class="token punctuation">}</span>
+			<span class="token keyword">if</span> v<span class="token operator">&amp;</span>locked <span class="token operator">!=</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+				<span class="token comment">// Queued. Wait.</span>
+				<span class="token function">semasleep</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+				i <span class="token operator">=</span> <span class="token number">0</span>
+			<span class="token punctuation">}</span>
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span>
 
 <span class="token keyword">func</span> <span class="token function">unlock</span><span class="token punctuation">(</span>l <span class="token operator">*</span>mutex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-  gp <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-  <span class="token keyword">var</span> mp <span class="token operator">*</span>m
-  <span class="token keyword">for</span> <span class="token punctuation">{</span>
-    v <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
-    <span class="token keyword">if</span> v <span class="token operator">==</span> locked <span class="token punctuation">{</span>
-      <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> locked<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">break</span>
+	gp <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">var</span> mp <span class="token operator">*</span>m
+	<span class="token keyword">for</span> <span class="token punctuation">{</span>
+		v <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">Loaduintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> v <span class="token operator">==</span> locked <span class="token punctuation">{</span>
+			<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> locked<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				<span class="token keyword">break</span>
             <span class="token punctuation">}</span>
         <span class="token comment">// l.key是其他等待m</span>
-    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+		<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
             <span class="token comment">// 获取等待m</span>
             mp <span class="token operator">=</span> <span class="token function">muintptr</span><span class="token punctuation">(</span>v <span class="token operator">&amp;^</span> locked<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ptr</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
             <span class="token comment">// key换为等待m.nextwaitm</span>
-      <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>mp<span class="token punctuation">.</span>nextwaitm<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token comment">// Dequeued an M.  Wake it.</span>
-        <span class="token function">semawakeup</span><span class="token punctuation">(</span>mp<span class="token punctuation">)</span>
-        <span class="token keyword">break</span>
-      <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
-  <span class="token punctuation">}</span>
-  gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks<span class="token operator">--</span>
-  <span class="token keyword">if</span> gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> gp<span class="token punctuation">.</span>preempt <span class="token punctuation">{</span> <span class="token comment">// 重置抢占标示，在newstack栈分配中判断</span>
-    gp<span class="token punctuation">.</span>stackguard0 <span class="token operator">=</span> stackPreempt
-  <span class="token punctuation">}</span>
+			<span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">Casuintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>l<span class="token punctuation">.</span>key<span class="token punctuation">,</span> v<span class="token punctuation">,</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>mp<span class="token punctuation">.</span>nextwaitm<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+				<span class="token comment">// Dequeued an M.  Wake it.</span>
+				<span class="token function">semawakeup</span><span class="token punctuation">(</span>mp<span class="token punctuation">)</span>
+				<span class="token keyword">break</span>
+			<span class="token punctuation">}</span>
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
+	gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks<span class="token operator">--</span>
+	<span class="token keyword">if</span> gp<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> gp<span class="token punctuation">.</span>preempt <span class="token punctuation">{</span> <span class="token comment">// 重置抢占标示，在newstack栈分配中判断</span>
+		gp<span class="token punctuation">.</span>stackguard0 <span class="token operator">=</span> stackPreempt
+	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="yield"><a href="#yield" class="headerlink" title="yield"></a>yield</h3><p><code>procyield</code>通过pause自旋</p>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go">TEXT runtime·<span class="token function">procyield</span><span class="token punctuation">(</span>SB<span class="token punctuation">)</span><span class="token punctuation">,</span>NOSPLIT<span class="token punctuation">,</span>$<span class="token number">0</span><span class="token operator">-</span><span class="token number">0</span>
-  MOVL	cycles<span class="token operator">+</span><span class="token function">0</span><span class="token punctuation">(</span>FP<span class="token punctuation">)</span><span class="token punctuation">,</span> AX
+	MOVL	cycles<span class="token operator">+</span><span class="token function">0</span><span class="token punctuation">(</span>FP<span class="token punctuation">)</span><span class="token punctuation">,</span> AX
 again<span class="token punctuation">:</span>
-  PAUSE
-  SUBL	$<span class="token number">1</span><span class="token punctuation">,</span> AX
-  JNZ	again
+	PAUSE
+	SUBL	$<span class="token number">1</span><span class="token punctuation">,</span> AX
+	JNZ	again
     RET<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p><code>osyield</code>调用系统<strong>sched_yield</strong></p>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go">TEXT runtime·<span class="token function">osyield</span><span class="token punctuation">(</span>SB<span class="token punctuation">)</span><span class="token punctuation">,</span>NOSPLIT<span class="token punctuation">,</span>$<span class="token number">0</span>
-  MOVL	$SYS_sched_yield<span class="token punctuation">,</span> AX
-  SYSCALL
+	MOVL	$SYS_sched_yield<span class="token punctuation">,</span> AX
+	SYSCALL
     RET<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="TODO-java"><a href="#TODO-java" class="headerlink" title="TODO java"></a>TODO java</h2>
                 

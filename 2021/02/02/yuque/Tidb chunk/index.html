@@ -594,13 +594,13 @@
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// Datum is a data box holds different kind of data.</span>
 <span class="token comment">// It has better performance and is easier to use than `interface{}`.</span>
 <span class="token keyword">type</span> Datum <span class="token keyword">struct</span> <span class="token punctuation">{</span>
-  k         <span class="token builtin">byte</span>        <span class="token comment">// datum kind.</span>
-  decimal   <span class="token builtin">uint16</span>      <span class="token comment">// decimal can hold uint16 values.</span>
-  length    <span class="token builtin">uint32</span>      <span class="token comment">// length can hold uint32 values.</span>
-  i         <span class="token builtin">int64</span>       <span class="token comment">// i can hold int64 uint64 float64 values.</span>
-  collation <span class="token builtin">string</span>      <span class="token comment">// collation hold the collation information for string value.</span>
-  b         <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>      <span class="token comment">// b can hold string or []byte values.</span>
-  x         <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// x hold all other types.</span>
+	k         <span class="token builtin">byte</span>        <span class="token comment">// datum kind.</span>
+	decimal   <span class="token builtin">uint16</span>      <span class="token comment">// decimal can hold uint16 values.</span>
+	length    <span class="token builtin">uint32</span>      <span class="token comment">// length can hold uint32 values.</span>
+	i         <span class="token builtin">int64</span>       <span class="token comment">// i can hold int64 uint64 float64 values.</span>
+	collation <span class="token builtin">string</span>      <span class="token comment">// collation hold the collation information for string value.</span>
+	b         <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span>      <span class="token comment">// b can hold string or []byte values.</span>
+	x         <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// x hold all other types.</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="对比"><a href="#对比" class="headerlink" title="对比"></a>对比</h2><h3 id="老框架行取问题"><a href="#老框架行取问题" class="headerlink" title="老框架行取问题"></a>老框架行取问题</h3><ul>
 <li>数据量多时，循环调用函数开销过大</li>
