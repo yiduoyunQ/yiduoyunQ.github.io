@@ -405,7 +405,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    966
+                    985
                 </div>
                 
 
@@ -679,8 +679,17 @@ top<span class="token punctuation">:</span>
 	<span class="token function">runqput</span><span class="token punctuation">(</span>pp<span class="token punctuation">,</span> gp<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span> <span class="token comment">// 加入本地队列然后调度本地g</span>
 	<span class="token function">schedule</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="1-16"><a href="#1-16" class="headerlink" title="1.16"></a>1.16</h2><h3 id="embed"><a href="#embed" class="headerlink" title="embed"></a>embed</h3><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">package</span> main
 
+<span class="token keyword">import</span> <span class="token boolean">_</span> <span class="token string">"embed"</span>
 
+<span class="token comment">//go:embed hello.txt</span>
+<span class="token keyword">var</span> s <span class="token builtin">string</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	<span class="token function">print</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="io-fs"><a href="#io-fs" class="headerlink" title="io/fs"></a>io/fs</h3>
                 
             </div>
             <hr/>
