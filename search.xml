@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>go escape</title>
+      <link href="2021/03/03/go/escape/"/>
+      <url>2021/03/03/go/escape/</url>
+      
+        <content type="html"><![CDATA[<img src="/2021/03/03/go/escape/escape.001.jpeg" class=""><img src="/2021/03/03/go/escape/escape.002.jpeg" class=""><img src="/2021/03/03/go/escape/escape.003.jpeg" class=""><img src="/2021/03/03/go/escape/escape.005.jpeg" class=""><img src="/2021/03/03/go/escape/escape.006.jpeg" class=""><img src="/2021/03/03/go/escape/escape.007.jpeg" class=""><img src="/2021/03/03/go/escape/escape.008.jpeg" class=""><img src="/2021/03/03/go/escape/escape.009.jpeg" class="">]]></content>
+      
+      
+      <categories>
+          
+          <category> go </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 源码 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>tidb源码-1.架构</title>
       <link href="2021/02/27/tidb/arch/"/>
       <url>2021/02/27/tidb/arch/</url>
@@ -281,7 +306,7 @@
       <link href="2020/10/14/mysql/latch/"/>
       <url>2020/10/14/mysql/latch/</url>
       
-        <content type="html"><![CDATA[<h2 id="mysql5-6-modify-leaf"><a href="#mysql5-6-modify-leaf" class="headerlink" title="mysql5.6 modify leaf"></a>mysql5.6 modify leaf</h2><img src="/2020/10/14/mysql/latch/5.6modifyleaf.jpg" class=""><h2 id="mysql5-6-modify-tree"><a href="#mysql5-6-modify-tree" class="headerlink" title="mysql5.6 modify tree"></a>mysql5.6 modify tree</h2><img src="/2020/10/14/mysql/latch/5.6modifytree.jpg" class=""><h2 id="mysql5-7-select-amp-modify-leaf"><a href="#mysql5-7-select-amp-modify-leaf" class="headerlink" title="mysql5.7 select &amp; modify leaf"></a>mysql5.7 select &amp; modify leaf</h2><img src="/2020/10/14/mysql/latch/5.7select_modifyleaf.jpg" class=""><h2 id="mysql5-7-modify-tree"><a href="#mysql5-7-modify-tree" class="headerlink" title="mysql5.7 modify tree"></a>mysql5.7 modify tree</h2><img src="/2020/10/14/mysql/latch/5.7modifytree.jpg" class=""><h2 id="5-6-gt-5-7"><a href="#5-6-gt-5-7" class="headerlink" title="5.6 -> 5.7"></a>5.6 -&gt; 5.7</h2><ul><li>引入sx lock</li><li>引入non-leaf page lock</li></ul>]]></content>
+        <content type="html"><![CDATA[<h2 id="mysql5-6-modify-leaf"><a href="#mysql5-6-modify-leaf" class="headerlink" title="mysql5.6 modify leaf"></a>mysql5.6 modify leaf</h2><img src="/2020/10/14/mysql/latch/5.6modifyleaf.jpg" class=""><h2 id="mysql5-6-modify-tree"><a href="#mysql5-6-modify-tree" class="headerlink" title="mysql5.6 modify tree"></a>mysql5.6 modify tree</h2><img src="/2020/10/14/mysql/latch/5.6modifytree.jpg" class=""><h2 id="mysql5-7-select-amp-modify-leaf"><a href="#mysql5-7-select-amp-modify-leaf" class="headerlink" title="mysql5.7 select &amp; modify leaf"></a>mysql5.7 select &amp; modify leaf</h2><img src="/2020/10/14/mysql/latch/5.7select_modifyleaf.jpg" class=""><h2 id="mysql5-7-modify-tree"><a href="#mysql5-7-modify-tree" class="headerlink" title="mysql5.7 modify tree"></a>mysql5.7 modify tree</h2><img src="/2020/10/14/mysql/latch/5.7modifytree.jpg" class=""><h2 id="5-6-gt-5-7"><a href="#5-6-gt-5-7" class="headerlink" title="5.6 -> 5.7"></a>5.6 -&gt; 5.7</h2><ul><li>sx lock</li><li>non-leaf page lock</li></ul><h2 id="锁兼容"><a href="#锁兼容" class="headerlink" title="锁兼容"></a>锁兼容</h2><table><thead><tr><th>锁</th><th>IS</th><th>IX</th><th>S</th><th>X</th></tr></thead><tbody><tr><td>IS</td><td>兼容</td><td>兼容</td><td>兼容</td><td>互斥</td></tr><tr><td>IX</td><td>兼容</td><td>兼容</td><td>互斥</td><td>互斥</td></tr></tbody></table><h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><ul><li><a href="https://zhuanlan.zhihu.com/p/151397269" title="" target="">InnoDB btree latch 优化历程</a></li></ul>]]></content>
       
       
       <categories>
@@ -356,7 +381,7 @@
       <link href="2020/07/21/mysql/backup/"/>
       <url>2020/07/21/mysql/backup/</url>
       
-        <content type="html"><![CDATA[<h2 id="mysqlbackup-MBE-amp-xtrabackup"><a href="#mysqlbackup-MBE-amp-xtrabackup" class="headerlink" title="mysqlbackup(MBE) &amp; xtrabackup"></a>mysqlbackup(MBE) &amp; xtrabackup</h2><p>利用mysql crash recover使用redo log恢复机制<br>FTWRL复制获取binlog点或gtid</p><h3 id="xtrabackup"><a href="#xtrabackup" class="headerlink" title="xtrabackup"></a>xtrabackup</h3><p>backup innoDB tables and files &amp; undo file<br>Executing FLUSH NO_WRITE_TO_BINLOG TABLES<br>Executing FLUSH TABLES WITH READ LOCK<br>backup non-InnoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS<br>The latest check point (for incremental): ‘68809340’<br>Executing UNLOCK TABLES<br>backup bufferpool<br>xtrabackup: Transaction log of lsn (68809340) to (68809349) was copied</p><h4 id="Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS"><a href="#Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS" class="headerlink" title="Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS"></a>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS</h4><p>通过切换binlog并拷贝最后一个binlog，恢复时使用最后一个binlog恢复至一致点<br>若存在大事务可能无法切换binlog(flush被长时间阻塞)</p><h3 id="MBE"><a href="#MBE" class="headerlink" title="MBE"></a>MBE</h3><p>Starting log scan from lsn = 68824576 at offset = 66322432 and checkpoint = 68824590 in file /DBAASLOG/RED/ib_logfile0<br>backup innoDB tables and files &amp; undo file<br>backup bufferpool<br>FTWRL<br>backup non-innodb tables and files<br>Scanned log up to lsn 68824890<br>All tables unlocked</p><h2 id="二级备份技术"><a href="#二级备份技术" class="headerlink" title="二级备份技术"></a>二级备份技术</h2><blockquote><p>RTO: 灾难恢复时长<br>RPO: 灾难丢失数据时长</p></blockquote><table><thead><tr><th>技术点</th><th>RTO</th><th>RPO</th><th>消耗资源</th></tr></thead><tbody><tr><td>逻辑全量</td><td>小时级</td><td>天级</td><td>高</td></tr><tr><td>逻辑全量+逻辑日志</td><td>小时级</td><td>秒级</td><td>高</td></tr><tr><td>物理全量</td><td>小时级</td><td>天级</td><td>中</td></tr><tr><td>物理全量+物理增量</td><td>小时级</td><td>小时级</td><td>低</td></tr><tr><td>物理全量+物理增量+逻辑日志</td><td>小时级</td><td>秒级</td><td>低</td></tr></tbody></table>]]></content>
+        <content type="html"><![CDATA[<h2 id="mysqlbackup-MBE-amp-xtrabackup"><a href="#mysqlbackup-MBE-amp-xtrabackup" class="headerlink" title="mysqlbackup(MBE) &amp; xtrabackup"></a>mysqlbackup(MBE) &amp; xtrabackup</h2><p>利用mysql crash recover使用redo log恢复机制<br>FTWRL复制获取binlog点或gtid</p><h3 id="xtrabackup"><a href="#xtrabackup" class="headerlink" title="xtrabackup"></a>xtrabackup</h3><p>get LSN checkpoint &amp; backup undo file &amp; innoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG TABLES<br>Executing FLUSH TABLES WITH READ LOCK<br>backup non-InnoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS<br>The latest check point (for incremental): ‘68809340’<br>Executing UNLOCK TABLES<br>backup bufferpool dump<br>xtrabackup: Transaction log of lsn (68809340) to (68809349) was copied</p><h4 id="Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS"><a href="#Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS" class="headerlink" title="Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS"></a>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS</h4><p>通过切换binlog并拷贝最后一个binlog，恢复时使用最后一个binlog恢复至一致点<br>若存在大事务可能无法切换binlog(flush被长时间阻塞)</p><h3 id="MBE"><a href="#MBE" class="headerlink" title="MBE"></a>MBE</h3><p>Starting log scan from lsn = 68824576 at offset = 66322432 and checkpoint = 68824590 in file /DBAASLOG/RED/ib_logfile0<br>backup innoDB tables and files &amp; undo file<br>backup bufferpool<br>FTWRL<br>backup non-innodb tables and files<br>Scanned log up to lsn 68824890<br>All tables unlocked</p><h2 id="二级备份技术"><a href="#二级备份技术" class="headerlink" title="二级备份技术"></a>二级备份技术</h2><blockquote><p>RTO: 灾难恢复时长<br>RPO: 灾难丢失数据时长</p></blockquote><table><thead><tr><th>技术点</th><th>RTO</th><th>RPO</th><th>消耗资源</th></tr></thead><tbody><tr><td>逻辑全量</td><td>小时级</td><td>天级</td><td>高</td></tr><tr><td>逻辑全量+逻辑日志</td><td>小时级</td><td>秒级</td><td>高</td></tr><tr><td>物理全量</td><td>小时级</td><td>天级</td><td>中</td></tr><tr><td>物理全量+物理增量</td><td>小时级</td><td>小时级</td><td>低</td></tr><tr><td>物理全量+物理增量+逻辑日志</td><td>小时级</td><td>秒级</td><td>低</td></tr></tbody></table>]]></content>
       
       
       <categories>

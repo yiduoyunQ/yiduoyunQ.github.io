@@ -405,7 +405,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    251
+                    256
                 </div>
                 
 
@@ -431,7 +431,7 @@
         <div class="card-content article-card-content">
             <div id="articleContent">
                 <h2 id="mysqlbackup-MBE-amp-xtrabackup"><a href="#mysqlbackup-MBE-amp-xtrabackup" class="headerlink" title="mysqlbackup(MBE) &amp; xtrabackup"></a>mysqlbackup(MBE) &amp; xtrabackup</h2><p>利用mysql crash recover使用redo log恢复机制<br>FTWRL复制获取binlog点或gtid</p>
-<h3 id="xtrabackup"><a href="#xtrabackup" class="headerlink" title="xtrabackup"></a>xtrabackup</h3><p>backup innoDB tables and files &amp; undo file<br>Executing FLUSH NO_WRITE_TO_BINLOG TABLES<br>Executing FLUSH TABLES WITH READ LOCK<br>backup non-InnoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS<br>The latest check point (for incremental): ‘68809340’<br>Executing UNLOCK TABLES<br>backup bufferpool<br>xtrabackup: Transaction log of lsn (68809340) to (68809349) was copied</p>
+<h3 id="xtrabackup"><a href="#xtrabackup" class="headerlink" title="xtrabackup"></a>xtrabackup</h3><p>get LSN checkpoint &amp; backup undo file &amp; innoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG TABLES<br>Executing FLUSH TABLES WITH READ LOCK<br>backup non-InnoDB tables and files<br>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS<br>The latest check point (for incremental): ‘68809340’<br>Executing UNLOCK TABLES<br>backup bufferpool dump<br>xtrabackup: Transaction log of lsn (68809340) to (68809349) was copied</p>
 <h4 id="Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS"><a href="#Executing-FLUSH-NO-WRITE-TO-BINLOG-ENGINE-LOGS" class="headerlink" title="Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS"></a>Executing FLUSH NO_WRITE_TO_BINLOG ENGINE LOGS</h4><p>通过切换binlog并拷贝最后一个binlog，恢复时使用最后一个binlog恢复至一致点<br>若存在大事务可能无法切换binlog(flush被长时间阻塞)</p>
 <h3 id="MBE"><a href="#MBE" class="headerlink" title="MBE"></a>MBE</h3><p>Starting log scan from lsn = 68824576 at offset = 66322432 and checkpoint = 68824590 in file /DBAASLOG/RED/ib_logfile0<br>backup innoDB tables and files &amp; undo file<br>backup bufferpool<br>FTWRL<br>backup non-innodb tables and files<br>Scanned log up to lsn 68824890<br>All tables unlocked</p>
 <h2 id="二级备份技术"><a href="#二级备份技术" class="headerlink" title="二级备份技术"></a>二级备份技术</h2><blockquote>

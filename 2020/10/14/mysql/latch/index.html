@@ -405,7 +405,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    33
+                    63
                 </div>
                 
 
@@ -439,8 +439,37 @@
 <h2 id="mysql5-7-modify-tree"><a href="#mysql5-7-modify-tree" class="headerlink" title="mysql5.7 modify tree"></a>mysql5.7 modify tree</h2><img src="/2020/10/14/mysql/latch/5.7modifytree.jpg" class="">
 
 <h2 id="5-6-gt-5-7"><a href="#5-6-gt-5-7" class="headerlink" title="5.6 -> 5.7"></a>5.6 -&gt; 5.7</h2><ul>
-<li>引入sx lock</li>
-<li>引入non-leaf page lock</li>
+<li>sx lock</li>
+<li>non-leaf page lock</li>
+</ul>
+<h2 id="锁兼容"><a href="#锁兼容" class="headerlink" title="锁兼容"></a>锁兼容</h2><table>
+<thead>
+<tr>
+<th>锁</th>
+<th>IS</th>
+<th>IX</th>
+<th>S</th>
+<th>X</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IS</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>互斥</td>
+</tr>
+<tr>
+<td>IX</td>
+<td>兼容</td>
+<td>兼容</td>
+<td>互斥</td>
+<td>互斥</td>
+</tr>
+</tbody></table>
+<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/151397269" title="" target="">InnoDB btree latch 优化历程</a>
+</li>
 </ul>
 
                 
