@@ -33,7 +33,7 @@
       <link href="2021/02/27/tidb/arch/"/>
       <url>2021/02/27/tidb/arch/</url>
       
-        <content type="html"><![CDATA[<h2 id="关系图"><a href="#关系图" class="headerlink" title="关系图"></a>关系图</h2><img src="/2021/02/27/tidb/arch/arch.jpg" class=""><p>TODO</p>]]></content>
+        <content type="html"><![CDATA[<h2 id="关系图"><a href="#关系图" class="headerlink" title="关系图"></a>关系图</h2><img src="/2021/02/27/tidb/arch/arch.jpg" class=""><h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><img src="/2021/02/27/tidb/arch/flow.jpg" class=""><p>TODO</p>]]></content>
       
       
       <categories>
@@ -302,7 +302,7 @@
     
     
     <entry>
-      <title>innodb btree latch</title>
+      <title>innodb btree latch 学习</title>
       <link href="2020/10/14/mysql/latch/"/>
       <url>2020/10/14/mysql/latch/</url>
       
