@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="yiduoyunQ">
+    <meta name="keywords" content="operator实操记录, yiduoyunQ">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>yiduoyunQ</title>
+    <title>operator实操记录 | yiduoyunQ</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
@@ -250,12 +250,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/0.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/8.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title"></h1>
+                    <h1 class="description center-align post-title">operator实操记录</h1>
                 </div>
             </div>
         </div>
@@ -369,12 +369,25 @@
             <div class="row tag-cate">
                 <div class="col s7">
                     
-                          <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
-                          </div>
+                    <div class="article-tag">
+                        
+                            <a href="/tags/k8s/">
+                                <span class="chip bg-color">k8s</span>
+                            </a>
+                        
+                    </div>
                     
                 </div>
                 <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/k8s/" class="post-category">
+                                k8s
+                            </a>
+                        
+                    </div>
                     
                 </div>
             </div>
@@ -383,7 +396,7 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2021-06-18
+                    2021-06-17
                 </div>
                 
 
@@ -417,7 +430,7 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="operator实操记录"><a href="#operator实操记录" class="headerlink" title="operator实操记录"></a>operator实操记录</h1><h2 id="0-部署环境"><a href="#0-部署环境" class="headerlink" title="0. 部署环境"></a>0. 部署环境</h2><ul>
+                <h2 id="0-部署环境"><a href="#0-部署环境" class="headerlink" title="0. 部署环境"></a>0. 部署环境</h2><ul>
 <li>8C16G VM * 3</li>
 <li>docker version: 20.10.6</li>
 <li>kubeadm version: v1.21.1</li>
@@ -442,7 +455,7 @@
 <td>172.16.6.188</td>
 </tr>
 </tbody></table>
-<h3 id="firewall"><a href="#firewall" class="headerlink" title="firewall"></a>firewall</h3><p>systemctl status firewalld<br>systemctl stop firewalld</p>
+<h3 id="firewallcluster1-pd-0"><a href="#firewallcluster1-pd-0" class="headerlink" title="firewallcluster1-pd-0"></a>firewallcluster1-pd-0</h3><p>systemctl status firewalld<br>systemctl stop firewalld</p>
 <h3 id="iptables"><a href="#iptables" class="headerlink" title="iptables"></a>iptables</h3><p>iptables -P FORWARD ACCEPT<br>iptables-save</p>
 <h3 id="disable-SELinux"><a href="#disable-SELinux" class="headerlink" title="disable SELinux"></a>disable SELinux</h3><p>setenforce 0<br>/etc/selinux/config disable SELinux</p>
 <h3 id="disable-swap"><a href="#disable-swap" class="headerlink" title="disable swap"></a>disable swap</h3><p>sync; swapoff -a; sync;<br>/etc/fstab 注释 swap</p>
@@ -455,6 +468,7 @@ net.core.somaxconn = 32768
 vm.swappiness = 0
 net.ipv4.tcp_syncookies = 0
 net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
 fs.file-max = 1000000
 fs.inotify.max_user_watches = 1048576
 fs.inotify.max_user_instances = 1024
@@ -462,15 +476,25 @@ net.ipv4.conf.all.rp_filter = 1
 net.ipv4.neigh.default.gc_thresh1 = 80000
 net.ipv4.neigh.default.gc_thresh2 = 90000
 net.ipv4.neigh.default.gc_thresh3 = 100000
-EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>sysctl –system</p>
 <h3 id="irqbalance"><a href="#irqbalance" class="headerlink" title="irqbalance"></a>irqbalance</h3><p>systemctl enable irqbalance<br>systemctl start irqbalance<br>systemctl status irqbalance</p>
 <h3 id="CPUFreq-performance"><a href="#CPUFreq-performance" class="headerlink" title="CPUFreq performance"></a>CPUFreq performance</h3><p>虚拟机可跳过此步<br>cpupower frequency-info<br>cpupower frequency-set –governor performance</p>
 <h3 id="ulimit"><a href="#ulimit" class="headerlink" title="ulimit"></a>ulimit</h3><p>ulimit -a<br>按需调整 /etc/security/limits.conf</p>
-<h3 id="aliyun-repo"><a href="#aliyun-repo" class="headerlink" title="aliyun repo"></a>aliyun repo</h3><p>[root@centos76_vm ~]# yum-config-manager –add-repo <a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo">https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo</a><br>[root@centos76_vm ~]# cat /etc/yum.repos.d/kubernetes.repo<br>[kubernetes]<br>name=Kubernetes<br>baseurl=<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/">https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/</a><br>enabled=1<br>gpgcheck=1<br>repo_gpgcheck=1<br>gpgkey=<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg">https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg</a> <a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg">https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg</a></p>
+<h3 id="aliyun-repo"><a href="#aliyun-repo" class="headerlink" title="aliyun repo"></a>aliyun repo</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+cat &lt;&lt;EOF &gt;  /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h2 id="1-install-docker"><a href="#1-install-docker" class="headerlink" title="1. install docker"></a>1. install docker</h2><p>yum install -y yum-utils<br>yum install -y docker-ce</p>
 <p>修改 cgroup driver 为 systemd</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat /etc/docker/daemon.json
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt;  /etc/docker/daemon.json
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
   "log-driver": "json-file",
@@ -479,7 +503,8 @@ EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
   },
   "storage-driver": "overlay2",
   "data-root": "/home/docker"
-}<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+}
+EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>systemctl enable docker</p>
 <blockquote>
 <p>若docker service已启动，可通过 systemctl status docker | grep -i docker.service 确认 service 文件路径</p>
@@ -524,6 +549,7 @@ kubeadm join 172.16.6.188:6443 --token sd2lhv.7hbkznxww3eknymv \
 <p>允许 master 节点调度 Pod</p>
 <pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl taint node 172.16.6.188 node-role.kubernetes.io/master:NoSchedule-
 node/172.16.6.188 untainted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h4 id="3-1-1-IPv6"><a href="#3-1-1-IPv6" class="headerlink" title="3.1.1 IPv6"></a>3.1.1 IPv6</h4><p>kubeadm init –apiserver-advertise-address=2600:1f13:c89:8900:150d:1ed:13c8:e90d</p>
 <h3 id="3-2-worker"><a href="#3-2-worker" class="headerlink" title="3.2 worker"></a>3.2 worker</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubeadm join 172.16.6.188:6443 --token sd2lhv.7hbkznxww3eknymv \
 	--discovery-token-ca-cert-hash sha256:86554a381b1d023d6812002060c6e70e00cf19c8a7a7e5e2a37394630cb874a2 \
     --node-name='172.16.6.187'
@@ -663,6 +689,7 @@ kubectl -n tidb-cluster1 delete tc/cluster1
 kubectl -n tidb-cluster1 edit tm/basic
 
 # 迁移完成<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="7-1-grafana-多集群监控问题"><a href="#7-1-grafana-多集群监控问题" class="headerlink" title="7.1 grafana 多集群监控问题"></a>7.1 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/monitor-a-tidb-cluster#%E4%BD%BF%E7%94%A8-grafana-%E6%9F%A5%E7%9C%8B%E5%A4%9A%E9%9B%86%E7%BE%A4%E7%9B%91%E6%8E%A7">grafana 多集群监控问题</a></h3><p>也可以在 new-tc.metadata 增加:<br>labels:<br>  app.kubernetes.io/instance: {origin_cluster_name}</p>
 <h2 id="9-问题记录"><a href="#9-问题记录" class="headerlink" title="9. 问题记录"></a>9. 问题记录</h2><h3 id="docker-change-cgroup-driver"><a href="#docker-change-cgroup-driver" class="headerlink" title="docker change cgroup driver"></a>docker change cgroup driver</h3><p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker">change runtime cgroup driver 为 systemd</a></p>
 <pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# docker info |grep cgroup
  Cgroup Driver: cgroupfs
@@ -701,7 +728,6 @@ error execution phase preflight: [preflight] Some fatal errors occurred:
 	[ERROR Port-2380]: Port 2380 is in use
 	[ERROR DirAvailable--var-lib-etcd]: /var/lib/etcd is not empty
 
-
 [root@centos76_vm ~]# kubeadm reset
 [reset] Reading configuration from the cluster...
 [reset] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
@@ -725,7 +751,7 @@ If your cluster was setup to utilize IPVS, run ipvsadm --clear (or similar)
 to reset your system's IPVS tables.
 
 The reset process does not clean your kubeconfig files and you must remove them manually.
-Please, check the contents of the $HOME/.kube/config file.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+Please, check the contents of the $HOME/.kube/config file.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <p>kubeadm reset 不会清理 iptables 和 cni 等信息， 手动清理</p>
 <pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">iptables -F
 
@@ -764,20 +790,16 @@ tidb-cluster1   cluster1-tikv-3                            0/1     CrashLoopBack
 <h3 id="operator-v1-1-12-配置-topologySpreadConstraints-无效果"><a href="#operator-v1-1-12-配置-topologySpreadConstraints-无效果" class="headerlink" title="operator v1.1.12 配置 topologySpreadConstraints 无效果"></a>operator v1.1.12 配置 topologySpreadConstraints 无效果</h3><p>确认 v1.1.12 tc.spec 代码中无该变量，未实现该功能</p>
 <h2 id="99-tidb-集群创建简化命令"><a href="#99-tidb-集群创建简化命令" class="headerlink" title="99. tidb 集群创建简化命令"></a>99. tidb 集群创建简化命令</h2><ul>
 <li>完成 k8s node cluster 创建</li>
-<li>完成 helm3 安装</li>
+<li>完成 helm3 安装, helm repo add pingcap <a target="_blank" rel="noopener" href="https://charts.pingcap.org/">https://charts.pingcap.org/</a></li>
 </ul>
-<h3 id="pv-disk"><a href="#pv-disk" class="headerlink" title="pv disk"></a>pv disk</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">DISK_UUID=$(blkid -s UUID -o value /dev/sda2)
+<h3 id="mount-pv-disk"><a href="#mount-pv-disk" class="headerlink" title="mount pv disk"></a>mount pv disk</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">DISK_UUID=$(blkid -s UUID -o value /dev/sda2)
 for i in $(seq 1 3); do
   mkdir -p /home/mnt/${DISK_UUID}/vol${i}
   mkdir -p /home/mnt/disks/${DISK_UUID}_vol${i}
   mount --bind /home/mnt/${DISK_UUID}/vol${i} /home/mnt/disks/${DISK_UUID}_vol${i}
 done<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-<h3 id="provisioner"><a href="#provisioner" class="headerlink" title="provisioner"></a>provisioner</h3><blockquote>
-<p>operator provisioner，修改路径为 /home/mnt/disks</p>
-</blockquote>
-<p>wget <a target="_blank" rel="noopener" href="https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/local-dind/local-volume-provisioner.yaml">https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/local-dind/local-volume-provisioner.yaml</a></p>
 <ul>
-<li>tidb-cluster</li>
+<li>tc yaml</li>
 </ul>
 <p>参考 github sample， 修改 namespace 等参数<br><a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb-operator/blob/master/examples/multi-cluster/tidb-cluster-1.yaml">https://github.com/pingcap/tidb-operator/blob/master/examples/multi-cluster/tidb-cluster-1.yaml</a><br><a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb-operator/blob/master/examples/advanced/tidb-cluster.yaml">https://github.com/pingcap/tidb-operator/blob/master/examples/advanced/tidb-cluster.yaml</a></p>
 <h3 id="重建集群脚本-root-recreate-sh"><a href="#重建集群脚本-root-recreate-sh" class="headerlink" title="重建集群脚本 /root/recreate.sh"></a>重建集群脚本 /root/recreate.sh</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">#!/bin/bash
@@ -789,7 +811,8 @@ operator_v=v1.2.0-rc.1
 
 lvp_dir=/root/local-volume-provisioner.yaml
 operator_dir=${HOME}/tidb-operator/values-tidb-operator.yaml
-tidb_cluser_dir=/root/tidb-cluster-1.yaml
+tidb_cluser_file=/root/tidb-cluster-1.yaml
+tidb_monitor_file=/root/tidb-monitor.yaml
 
 master=172.16.6.188
 worker1=172.16.6.186
@@ -828,14 +851,13 @@ kubectl create ns $operator_ns
 
 kubectl apply -f https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/crd.yaml
 # 使用operator provisioner，修改路径为 /home/mnt/disks
-rm -f /root/local-volume-provisioner.yaml
-wget https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/local-dind/local-volume-provisioner.yaml -O /root/local-volume-provisioner.yaml
-sed -i "s/\/mnt\/disks/\/home\/mnt\/disks/g" local-volume-provisioner.yaml
-kubectl apply -f /root/local-volume-provisioner.yaml
+rm -f $lvp_dir
+wget https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/local-dind/local-volume-provisioner.yaml -O $lvp_dir
+sed -i "s/\/mnt\/disks/\/home\/mnt\/disks/g" $lvp_dir
 
 # 按需修改 value
 mkdir -p ${HOME}/tidb-operator &amp;&amp; \
-helm inspect values pingcap/tidb-operator --version=$operator_v &gt; ${HOME}/tidb-operator/values-tidb-operator.yaml
+helm inspect values pingcap/tidb-operator --version=$operator_v &gt; $operator_dir
 helm install tidb-operator pingcap/tidb-operator --namespace $operator_ns --version $operator_v -f $operator_dir\
     --set operatorImage=registry.cn-beijing.aliyuncs.com/tidb/tidb-operator:$operator_v \
     --set tidbBackupManagerImage=registry.cn-beijing.aliyuncs.com/tidb/tidb-backup-manager:$operator_v \
@@ -844,9 +866,10 @@ helm install tidb-operator pingcap/tidb-operator --namespace $operator_ns --vers
 kubectl apply -f $lvp_dir
 kubectl patch storageclass local-storage -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
-kubectl -n $tidb_cluster_ns apply -f $tidb_cluser_dir
+kubectl -n $tidb_cluster_ns apply -f $tidb_cluser_file
+kubectl -n $tidb_cluster_ns apply -f $tidb_monitor_file
 
-echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>
@@ -872,7 +895,7 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://yiduoyunQ.github.io/2021/06/18/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/">https://yiduoyunQ.github.io/2021/06/18/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/</a>
+                    <a href="https://yiduoyunQ.github.io/2021/06/17/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/">https://yiduoyunQ.github.io/2021/06/17/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -909,7 +932,11 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                 <div class="post-meta__tag-list" style="display: inline-block;">
                     
                         <div class="article-tag">
-                            <span class="chip bg-color">无标签</span>
+                            
+                                <a href="/tags/k8s/">
+                                    <span class="chip bg-color">k8s</span>
+                                </a>
+                            
                         </div>
                     
                 </div>
@@ -950,18 +977,17 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="far fa-dot-circle"></i>&nbsp;本篇
-            </div>
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2021/06/18/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/">
+                <a href="/2021/07/12/tidb/pd-tso/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/0.jpg" class="responsive-img" alt="">
+                        <img src="/medias/featureimages/0.jpg" class="responsive-img" alt="TSO">
                         
-                        <span class="card-title"></span>
+                        <span class="card-title">TSO</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -971,9 +997,9 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                         
                     </div>
                     <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-06-18
-                            </span>
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-07-12
+                        </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-user fa-fw"></i>
@@ -982,7 +1008,6 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                         </span>
                     </div>
                 </div>
-
                 
             </div>
         </div>

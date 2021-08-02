@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="tcpdump, yiduoyunQ">
+    <meta name="keywords" content="TSO, yiduoyunQ">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>tcpdump | yiduoyunQ</title>
+    <title>TSO | yiduoyunQ</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
@@ -250,12 +250,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/19.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/0.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">tcpdump</h1>
+                    <h1 class="description center-align post-title">TSO</h1>
                 </div>
             </div>
         </div>
@@ -369,25 +369,12 @@
             <div class="row tag-cate">
                 <div class="col s7">
                     
-                    <div class="article-tag">
-                        
-                            <a href="/tags/linux/">
-                                <span class="chip bg-color">linux</span>
-                            </a>
-                        
-                    </div>
+                          <div class="article-tag">
+                            <span class="chip bg-color">无标签</span>
+                          </div>
                     
                 </div>
                 <div class="col s5 right-align">
-                    
-                    <div class="post-cate">
-                        <i class="fas fa-bookmark fa-fw icon-category"></i>
-                        
-                            <a href="/categories/%E7%B3%BB%E7%BB%9F/" class="post-category">
-                                系统
-                            </a>
-                        
-                    </div>
                     
                 </div>
             </div>
@@ -396,7 +383,7 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2020-07-19
+                    2021-07-12
                 </div>
                 
 
@@ -405,14 +392,14 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    639
+                    307
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    2 分
+                    1 分
                 </div>
                 
 
@@ -430,100 +417,76 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">#!/usr/bin/sh
-set -o errexit
-nohup tcpdump -i eth0 -C 512 -W 4 -w /tmp/tcpdump.cap &amp;
-sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-<h2 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h2><p>client &amp; server 互相确认对方receive和send</p>
-<img src="/2020/07/19/sys/tcpdump/%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.jpg" class="">
-
-<ul>
-<li>第一次握手 server： client send ok，server receive ok</li>
-<li>第二次握手 client： client receive&amp;send ok， server receive&amp;send ok</li>
-<li>第三次握手 server： client receive&amp;send ok， server receive&amp;send ok</li>
+                <h2 id="metric"><a href="#metric" class="headerlink" title="metric"></a>metric</h2><ul>
+<li>pd_tso_events</li>
+<li>pd_tso_role</li>
+<li>pd_cluster_tso</li>
 </ul>
-<h3 id="两次握手问题"><a href="#两次握手问题" class="headerlink" title="两次握手问题"></a>两次握手问题</h3><ol>
-<li>client first SYNC delayed</li>
-<li>client second SYNC</li>
-<li>server receive second SYNC &amp; ACK， conn established</li>
-<li>client and server normally close conn</li>
-<li>server receive delayed first SYNC &amp; ACK， conn established</li>
-<li>client refuse first SYNC &amp; ACK， conn on server side will never close</li>
+<h2 id="tsoObject-struct"><a href="#tsoObject-struct" class="headerlink" title="tsoObject struct"></a>tsoObject struct</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// pd/server/tso/tso.go</span>
+	physical time<span class="token punctuation">.</span>Time
+	logical  <span class="token builtin">int64</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="TSO-update-logic"><a href="#TSO-update-logic" class="headerlink" title="TSO update logic"></a>TSO update logic</h2><ul>
+<li>默认50ms调用一次 updateFunc</li>
+<li>normal logic:  步进 = 50ms</li>
+<li>slow logic:   步进 = 1ms</li>
+</ul>
+<h3 id="case1-now-gt-prevPhysical-1ms-normal-logic"><a href="#case1-now-gt-prevPhysical-1ms-normal-logic" class="headerlink" title="case1: now > prevPhysical + 1ms  (normal logic)"></a>case1: now &gt; prevPhysical + 1ms  (normal logic)</h3><ol>
+<li>save <strong>now</strong> to etcd  &amp;&amp;  store to lastSavedTime</li>
+<li>update tso.physical = now</li>
 </ol>
-<h3 id="半队列和全队列"><a href="#半队列和全队列" class="headerlink" title="半队列和全队列"></a>半队列和全队列</h3><ul>
-<li>内核层队列默认参数net.core.somaxconn = 128</li>
-<li>server端SYNC-RCVD状态连接存入半队列，不能大于内核somaxconn<ul>
-<li>半队列默认参数net.ipv4.tcp_max_syn_backlog = 1024，当net.ipv4.tcp_syncookies = 1时半连接队列逻辑上无上限，该参数无效。</li>
-<li>取min(backlog, tcp_max_syn_backlog, somaxconn)</li>
-</ul>
-</li>
-<li>server端ESTABLISHED状态连接存入全队列，不能大于内核somaxconn<ul>
-<li>全队列backlog参数由应用调用系统底层API: int listen(int sockfd, int backlog)时传入</li>
-</ul>
-</li>
-</ul>
-<h3 id="sync攻击"><a href="#sync攻击" class="headerlink" title="sync攻击"></a>sync攻击</h3><p>client短时间内伪造大量不存在ip来源sync包，server端ack由于ip不存在不断重发直至超时，占用半队列。</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">netstat -n -p TCP | grep SYN_RECV<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-<h3 id="系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies"><a href="#系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies" class="headerlink" title="系统message打印kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies."></a>系统message打印<code>kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies.</code></h3><p>client短时间大量SYN包，半队列无法及时处理，服务器自动启用net.ipv4.tcp_syncookies = 1</p>
-<h2 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h2><img src="/2020/07/19/sys/tcpdump/%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B.jpg" class="">
+<h3 id="case2-now-lt-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-2-slow-logic"><a href="#case2-now-lt-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-2-slow-logic" class="headerlink" title="case2: now <= prevPhysical + 1ms &amp;&amp; logical > maxLogical/2  (slow logic)"></a>case2: now &lt;= prevPhysical + 1ms &amp;&amp; logical &gt; maxLogical/2  (slow logic)</h3><ol>
+<li>save <strong>prePhysical+1ms</strong> to etcd  &amp;&amp;  store to lastSavedTime</li>
+<li>update tso.physical = <strong>prePhysical+1ms</strong></li>
+</ol>
+<h3 id="case3-now-lt-prevPhysical-1ms-amp-amp-logical-lt-maxLogical-2-slow-logic"><a href="#case3-now-lt-prevPhysical-1ms-amp-amp-logical-lt-maxLogical-2-slow-logic" class="headerlink" title="case3: now <= prevPhysical + 1ms &amp;&amp; logical <= maxLogical/2  (slow logic)"></a>case3: now &lt;= prevPhysical + 1ms &amp;&amp; logical &lt;= maxLogical/2  (slow logic)</h3><p>no change</p>
+<h2 id="系统时钟发生异常时"><a href="#系统时钟发生异常时" class="headerlink" title="系统时钟发生异常时"></a>系统时钟发生异常时</h2><h3 id="系统时钟异常往前调，然后恢复"><a href="#系统时钟异常往前调，然后恢复" class="headerlink" title="系统时钟异常往前调，然后恢复"></a>系统时钟异常往前调，然后恢复</h3><p>异常: case3 &amp;&amp; case2<br>恢复: case1</p>
+<h3 id="系统时钟异常往后调，然后恢复"><a href="#系统时钟异常往后调，然后恢复" class="headerlink" title="系统时钟异常往后调，然后恢复"></a>系统时钟异常往后调，然后恢复</h3><p>异常: case1<br>恢复: case3 &amp;&amp; case2<br>跟上异常点后： case1</p>
+<h2 id="简化代码"><a href="#简化代码" class="headerlink" title="简化代码"></a>简化代码</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// pd/server/tso/tso.go</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>t <span class="token operator">*</span>timestampOracle<span class="token punctuation">)</span> <span class="token function">UpdateTimestamp</span><span class="token punctuation">(</span>leadership <span class="token operator">*</span>election<span class="token punctuation">.</span>Leadership<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+	prevPhysical<span class="token punctuation">,</span> prevLogical <span class="token operator">:=</span> t<span class="token punctuation">.</span><span class="token function">getTSO</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 
-<ul>
-<li>第一次挥手： client发送FIN，处于FIN_WAIT1</li>
-<li>第二次挥手：<ul>
-<li>server收到FIN，发送ACK，处于CLOSE_WAIT</li>
-<li>client收到ACK，进入FIN_WAIT2，等待server</li>
-</ul>
-</li>
-<li>第三次挥手： server发送FIN，进入LAST_ACK</li>
-<li>第四次挥手：<ul>
-<li>client收到FIN，发送ACK，进入TIME_WAIT(2MSL)</li>
-<li>server收到ACK，进入CLOSED</li>
-</ul>
-</li>
-</ul>
-<h3 id="为什么四次挥手"><a href="#为什么四次挥手" class="headerlink" title="为什么四次挥手"></a>为什么四次挥手</h3><p>第一次+第二次： client主动发送FIN要求断开conn，server ACK确认收到FIN<br>第三次+第四次： server完成必要动作后，发送FIN确认可断开conn，client ACK确认</p>
-<h3 id="TIME-WAIT（2MSL）"><a href="#TIME-WAIT（2MSL）" class="headerlink" title="TIME_WAIT（2MSL）"></a>TIME_WAIT（2MSL）</h3><p>client ACK后若不等待2MSL而直接close conn，假设ACK丢失，server FIN超时重发，由于client已close conn会响应RST，server收到RST后无法正常close conn。</p>
-<h2 id="wireshark"><a href="#wireshark" class="headerlink" title="wireshark"></a>wireshark</h2><ul>
-<li>property(displayed/caputured)</li>
-<li>filter<ul>
-<li>frame.time</li>
-<li>ip.src/dst</li>
-<li>tcp.port/srcport/dstport</li>
-</ul>
-</li>
-<li>ayalyze<ul>
-<li>expert information</li>
-</ul>
-</li>
-<li>statistic<ul>
-<li>protocol hierarchy</li>
-<li>conversation<ul>
-<li>endpoint</li>
-</ul>
-</li>
-<li>io graph</li>
-<li>flow graph</li>
-</ul>
-</li>
-</ul>
-<h2 id="UDP"><a href="#UDP" class="headerlink" title="UDP"></a>UDP</h2><blockquote>
-<p>结构数据小<br>无需建立连接，直接发送接收数据<br>TCP保证数据顺序有效，UDP不保证顺序且可能丢包</p>
-</blockquote>
-<h2 id="http2-wireshark"><a href="#http2-wireshark" class="headerlink" title="http2 wireshark"></a>http2 wireshark</h2><p>analyze -&gt; enabled protocols -&gt; 选中HTTP2<br>analyze -&gt; decode as -&gt; tcp port 的[current] 设置为HTTP2</p>
-<img src="/2020/07/19/sys/tcpdump/http2_req.png" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res.png" class="">
+	now <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 
-<img src="/2020/07/19/sys/tcpdump/http2_req_head.jpeg" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res_head_false.jpeg" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res_head_true.jpeg" class="">
+	jetLag <span class="token operator">:=</span> typeutil<span class="token punctuation">.</span><span class="token function">SubRealTimeByWallClock</span><span class="token punctuation">(</span>now<span class="token punctuation">,</span> prevPhysical<span class="token punctuation">)</span>
+	
+	<span class="token keyword">var</span> next time<span class="token punctuation">.</span>Time
+	<span class="token keyword">if</span> jetLag <span class="token operator">&gt;</span> updateTimestampGuard <span class="token punctuation">{</span>
+		next <span class="token operator">=</span> now
+	<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> prevLogical <span class="token operator">&gt;</span> maxLogical<span class="token operator">/</span><span class="token number">2</span> <span class="token punctuation">{</span>
+		next <span class="token operator">=</span> prevPhysical<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span>Millisecond<span class="token punctuation">)</span>
+	<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+		<span class="token keyword">return</span> <span class="token boolean">nil</span>
+	<span class="token punctuation">}</span>
 
-<h2 id="How-to-get-tcpdump-for-containers-inside-Kubernetes-pods-How-to-get-tcpdump-for-containers-inside-Kubernetes-pods"><a href="#How-to-get-tcpdump-for-containers-inside-Kubernetes-pods-How-to-get-tcpdump-for-containers-inside-Kubernetes-pods" class="headerlink" title="[How to get tcpdump for containers inside Kubernetes pods](How to get tcpdump for containers inside Kubernetes pods)"></a>[How to get tcpdump for containers inside Kubernetes pods](<a target="_blank" rel="noopener" href="https://pvtl.force.com/s/article/How-to-get-tcpdump-for-containers-inside-Kubernetes-pods?language=en_US">How to get tcpdump for containers inside Kubernetes pods</a>)</h2><p>kubectl -n ns exec -it pod – sh<br>cat /sys/class/net/eth0/iflink<br>ip link |grep ^xx</p>
-<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><a href="https://mp.weixin.qq.com/s/-Q1AkxUr9xzGKwUMV-FQhQ" title="" target="">云网络丢包故障定位</a>
-<a href="https://cilium.io/blog/2018/04/17/why-is-the-kernel-community-replacing-iptables" title="" target="">why-is-the-kernel-community-replacing-iptables</a>
+	<span class="token keyword">if</span> typeutil<span class="token punctuation">.</span><span class="token function">SubRealTimeByWallClock</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span>lastSavedTime<span class="token punctuation">.</span><span class="token function">Load</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token punctuation">(</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">)</span><span class="token punctuation">,</span> next<span class="token punctuation">)</span> <span class="token operator">&lt;=</span> updateTimestampGuard <span class="token punctuation">{</span>
+		save <span class="token operator">:=</span> next<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span>saveInterval<span class="token punctuation">)</span>
+		<span class="token keyword">if</span> err <span class="token operator">:=</span> t<span class="token punctuation">.</span><span class="token function">saveTimestamp</span><span class="token punctuation">(</span>leadership<span class="token punctuation">,</span> save<span class="token punctuation">)</span><span class="token punctuation">;</span> err <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+			<span class="token keyword">return</span> err
+		<span class="token punctuation">}</span>
+	<span class="token punctuation">}</span>
+	<span class="token comment">// save into memory</span>
+	t<span class="token punctuation">.</span><span class="token function">setTSOPhysical</span><span class="token punctuation">(</span>next<span class="token punctuation">)</span>
 
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">}</span>
 
-<p>TODO SSL</p>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>t <span class="token operator">*</span>timestampOracle<span class="token punctuation">)</span> <span class="token function">saveTimestamp</span><span class="token punctuation">(</span>leadership <span class="token operator">*</span>election<span class="token punctuation">.</span>Leadership<span class="token punctuation">,</span> ts time<span class="token punctuation">.</span>Time<span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+	<span class="token comment">// save ts to etcd</span>
+	<span class="token operator">...</span>
 
+	t<span class="token punctuation">.</span>lastSavedTime<span class="token punctuation">.</span><span class="token function">Store</span><span class="token punctuation">(</span>ts<span class="token punctuation">)</span>
+	<span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>t <span class="token operator">*</span>timestampOracle<span class="token punctuation">)</span> <span class="token function">setTSOPhysical</span><span class="token punctuation">(</span>next time<span class="token punctuation">.</span>Time<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token comment">// make sure the ts won't fall back</span>
+	<span class="token keyword">if</span> typeutil<span class="token punctuation">.</span><span class="token function">SubTSOPhysicalByWallClock</span><span class="token punctuation">(</span>next<span class="token punctuation">,</span> t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span>physical<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span>physical <span class="token operator">=</span> next
+		t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span>logical <span class="token operator">=</span> <span class="token number">0</span>
+	<span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>
@@ -549,7 +512,7 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://yiduoyunQ.github.io/2020/07/19/sys/tcpdump/">https://yiduoyunQ.github.io/2020/07/19/sys/tcpdump/</a>
+                    <a href="https://yiduoyunQ.github.io/2021/07/12/tidb/pd-tso/">https://yiduoyunQ.github.io/2021/07/12/tidb/pd-tso/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -586,11 +549,7 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
                 <div class="post-meta__tag-list" style="display: inline-block;">
                     
                         <div class="article-tag">
-                            
-                                <a href="/tags/linux/">
-                                    <span class="chip bg-color">linux</span>
-                                </a>
-                            
+                            <span class="chip bg-color">无标签</span>
                         </div>
                     
                 </div>
@@ -635,13 +594,13 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
             <div class="article-badge left-badge text-color">
                 <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2020/07/21/mysql/mysqldump/">
+                <a href="/2021/07/30/tidb/eks-gp3/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="mysqldump">
+                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="EKS gp3 部署步骤">
                         
-                        <span class="card-title">mysqldump</span>
+                        <span class="card-title">EKS gp3 部署步骤</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -652,27 +611,15 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
                     </div>
                     <div class="publish-info">
                         <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2020-07-21
+                            <i class="far fa-clock fa-fw icon-date"></i>2021-07-30
                         </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/categories/mysql/" class="post-category">
-                                    mysql
-                                </a>
-                            
+                            <i class="fas fa-user fa-fw"></i>
+                            yiduoyunQ
                             
                         </span>
                     </div>
-                </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/tags/mysql/">
-                        <span class="chip bg-color">mysql</span>
-                    </a>
-                    
                 </div>
                 
             </div>
@@ -684,13 +631,13 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/2020/07/17/k8s/docker%E5%91%BD%E4%BB%A4/">
+                <a href="/2021/06/17/k8s/operator%E5%AE%9E%E6%93%8D%E8%AE%B0%E5%BD%95/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/15.jpg" class="responsive-img" alt="docker命令">
+                        <img src="/medias/featureimages/8.jpg" class="responsive-img" alt="operator实操记录">
                         
-                        <span class="card-title">docker命令</span>
+                        <span class="card-title">operator实操记录</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -701,7 +648,7 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-07-17
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-06-17
                             </span>
                         <span class="publish-author">
                             
