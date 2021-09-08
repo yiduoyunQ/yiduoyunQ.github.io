@@ -307,6 +307,58 @@
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
+                    <a href="/2020/07/02/sys/inode/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/3.jpg" class="responsive-img" alt="文件系统">
+                            
+                            <span class="card-title">文件系统</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                文件名和文件系统
+
+
+inode 和 文件名 映射关系保存在 文件名目录 中，文件名 的变动不会修改文件inode信息
+通过 inode table 找到文件 元数据 和 文件内容， 包含 引用计数 等信息
+i_count 是文件被进程引用
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-07-02
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fas fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/%E7%B3%BB%E7%BB%9F/" class="post-category">
+                                    系统
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/linux/">
+                            <span class="chip bg-color">linux</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
                     <a href="/2020/06/23/git/">
                         <div class="card-image">
                             
@@ -847,61 +899,6 @@ goroutine入口newproc，
 
 
 变量.(类型) // 判断是不是某个具体类型switch 变量.(type) // 返回具体类型的值拷贝，必须搭配s
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-05-07
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/go/" class="post-category">
-                                    go
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2020/05/07/go/defer/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="go defer">
-                            
-                            <span class="card-title">go defer</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                栗子执行顺序先进后出的栈，在return后倒序执行
-package main
-
-import "fmt"
-
-func main() {
-    defer func1()
-    defer func2()
-    defer func3(
                             
                         </div>
                         <div class="publish-info">

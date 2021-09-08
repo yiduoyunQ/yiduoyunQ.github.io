@@ -392,14 +392,14 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    307
+                    399
                 </div>
                 
 
                 
                 <div class="info-break-policy">
                     <i class="far fa-clock fa-fw"></i>阅读时长:&nbsp;&nbsp;
-                    1 分
+                    2 分
                 </div>
                 
 
@@ -487,6 +487,26 @@
 		t<span class="token punctuation">.</span>tsoMux<span class="token punctuation">.</span>logical <span class="token operator">=</span> <span class="token number">0</span>
 	<span class="token punctuation">}</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="TSO-lt-gt-timestamp-转换"><a href="#TSO-lt-gt-timestamp-转换" class="headerlink" title="TSO <-> timestamp 转换"></a>TSO &lt;-&gt; timestamp 转换</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// pd/pkg/tsoutil/tso.go</span>
+<span class="token keyword">const</span> <span class="token punctuation">(</span>
+	physicalShiftBits <span class="token operator">=</span> <span class="token number">18</span>
+	logicalBits       <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token number">1</span> <span class="token operator">&lt;&lt;</span> physicalShiftBits<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment">// ParseTS parses the ts to (physical,logical).</span>
+<span class="token keyword">func</span> <span class="token function">ParseTS</span><span class="token punctuation">(</span>ts <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">,</span> <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	logical <span class="token operator">:=</span> ts <span class="token operator">&amp;</span> logicalBits
+	physical <span class="token operator">:=</span> ts <span class="token operator">&gt;&gt;</span> physicalShiftBits
+	physicalTime <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Unix</span><span class="token punctuation">(</span><span class="token function">int64</span><span class="token punctuation">(</span>physical<span class="token operator">/</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">int64</span><span class="token punctuation">(</span>physical<span class="token punctuation">)</span><span class="token operator">%</span><span class="token number">1000</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Millisecond<span class="token punctuation">.</span><span class="token function">Nanoseconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> physicalTime<span class="token punctuation">,</span> logical
+<span class="token punctuation">}</span>
+
+<span class="token comment">// ParseTimestamp parses `pdpb.Timestamp` to `time.Time`</span>
+<span class="token keyword">func</span> <span class="token function">ParseTimestamp</span><span class="token punctuation">(</span>ts pdpb<span class="token punctuation">.</span>Timestamp<span class="token punctuation">)</span> <span class="token punctuation">(</span>time<span class="token punctuation">.</span>Time<span class="token punctuation">,</span> <span class="token builtin">uint64</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	logical <span class="token operator">:=</span> <span class="token function">uint64</span><span class="token punctuation">(</span>ts<span class="token punctuation">.</span><span class="token function">GetLogical</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	physicalTime <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Unix</span><span class="token punctuation">(</span>ts<span class="token punctuation">.</span><span class="token function">GetPhysical</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">/</span><span class="token number">1000</span><span class="token punctuation">,</span> ts<span class="token punctuation">.</span><span class="token function">GetPhysical</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">%</span><span class="token number">1000</span><span class="token operator">*</span>time<span class="token punctuation">.</span>Millisecond<span class="token punctuation">.</span><span class="token function">Nanoseconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token keyword">return</span> physicalTime<span class="token punctuation">,</span> logical
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>
