@@ -4,6 +4,56 @@
   
     
     <entry>
+      <title>metrics in TiDB -- Connection Idle Duration</title>
+      <link href="2021/11/10/tidb/ConnectionIdleDuration/"/>
+      <url>2021/11/10/tidb/ConnectionIdleDuration/</url>
+      
+        <content type="html"><![CDATA[<h2 id="grafana"><a href="#grafana" class="headerlink" title="grafana"></a>grafana</h2><img src="/2021/11/10/tidb/ConnectionIdleDuration/Connection_Idle_Duration.jpg" class=""><h2 id="metric"><a href="#metric" class="headerlink" title="metric"></a>metric</h2><ul><li>tidb_server_conn_idle_duration_seconds</li></ul><h2 id="source"><a href="#source" class="headerlink" title="source"></a>source</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// tidb/server/conn.go</span><span class="token keyword">func</span> <span class="token punctuation">(</span>cc <span class="token operator">*</span>clientConn<span class="token punctuation">)</span> <span class="token function">dispatch</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>t <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token keyword">if</span> <span class="token punctuation">(</span>cc<span class="token punctuation">.</span>ctx<span class="token punctuation">.</span><span class="token function">Status</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> mysql<span class="token punctuation">.</span>ServerStatusInTrans<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>connIdleDurationHistogramInTxn<span class="token punctuation">.</span><span class="token function">Observe</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span><span class="token function">Sub</span><span class="token punctuation">(</span>cc<span class="token punctuation">.</span>lastActive<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Seconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>connIdleDurationHistogramNotInTxn<span class="token punctuation">.</span><span class="token function">Observe</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span><span class="token function">Sub</span><span class="token punctuation">(</span>cc<span class="token punctuation">.</span>lastActive<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Seconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">}</span>token <span class="token operator">:=</span> cc<span class="token punctuation">.</span>server<span class="token punctuation">.</span><span class="token function">getToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token keyword">defer</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token operator">...</span>cc<span class="token punctuation">.</span>server<span class="token punctuation">.</span><span class="token function">releaseToken</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span>cc<span class="token punctuation">.</span>lastActive <span class="token operator">=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>    <span class="token keyword">switch</span> cmd <span class="token punctuation">{</span>        <span class="token keyword">case</span> mysql<span class="token punctuation">.</span>ComQuery<span class="token punctuation">:</span>            <span class="token function">handleQuery</span><span class="token punctuation">(</span>cmd<span class="token punctuation">)</span>    <span class="token punctuation">}</span>    <span class="token operator">...</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre><h2 id="sketch"><a href="#sketch" class="headerlink" title="sketch"></a>sketch</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">client session connect to tidbreq query packet <span class="token punctuation">[</span>in txn<span class="token punctuation">]</span> <span class="token operator">-</span><span class="token operator">&gt;</span>handle query packet<span class="token operator">-</span><span class="token operator">&gt;</span> execut query <span class="token punctuation">(</span>tikv connectionlock key <span class="token keyword">if</span> needed<span class="token operator">&lt;-</span> <span class="token keyword">return</span> response packet<span class="token operator">&lt;-</span> response packet# Connection Idle Duration metricsreq query packet <span class="token punctuation">[</span>in txn<span class="token punctuation">]</span> <span class="token operator">-</span><span class="token operator">&gt;</span><span class="token operator">...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      
+      
+      <categories>
+          
+          <category> tidb </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 源码 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>metrics in TiDB -- TokenLimit</title>
+      <link href="2021/11/10/tidb/TokenLimit/"/>
+      <url>2021/11/10/tidb/TokenLimit/</url>
+      
+        <content type="html"><![CDATA[<h2 id="grafana"><a href="#grafana" class="headerlink" title="grafana"></a>grafana</h2><img src="/2021/11/10/tidb/TokenLimit/Get_Token_Duration.png" class=""><h2 id="metric"><a href="#metric" class="headerlink" title="metric"></a>metric</h2><ul><li>tidb_server_tokens</li><li>tidb_server_get_token_duration_seconds</li></ul><h2 id="source"><a href="#source" class="headerlink" title="source"></a>source</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// tidb/server/tokenlimiter.go</span><span class="token keyword">type</span> Token <span class="token keyword">struct</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token keyword">type</span> TokenLimiter <span class="token keyword">struct</span> <span class="token punctuation">{</span>    count <span class="token builtin">uint</span>    ch    <span class="token keyword">chan</span> <span class="token operator">*</span>Token <span class="token comment">// make(chan *Token, 1000)</span><span class="token punctuation">}</span><span class="token keyword">func</span> <span class="token function">dispatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>    <span class="token operator">...</span>    token <span class="token operator">:=</span> <span class="token function">getToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span>    <span class="token keyword">defer</span> <span class="token function">releaseToken</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span>    <span class="token keyword">switch</span> cmd <span class="token punctuation">{</span>        <span class="token keyword">case</span> mysql<span class="token punctuation">.</span>ComQuery<span class="token punctuation">:</span>            <span class="token function">handleQuery</span><span class="token punctuation">(</span>cmd<span class="token punctuation">)</span>    <span class="token punctuation">}</span>    <span class="token operator">...</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>]]></content>
+      
+      
+      <categories>
+          
+          <category> tidb </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 源码 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>gossip</title>
       <link href="2021/09/07/tidb/gossip/"/>
       <url>2021/09/07/tidb/gossip/</url>

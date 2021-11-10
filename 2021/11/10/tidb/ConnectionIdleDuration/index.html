@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="gossip, yiduoyunQ">
+    <meta name="keywords" content="metrics in TiDB -- Connection Idle Duration, yiduoyunQ">
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -16,7 +16,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>gossip | yiduoyunQ</title>
+    <title>metrics in TiDB -- Connection Idle Duration | yiduoyunQ</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
@@ -250,12 +250,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/9.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/15.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">gossip</h1>
+                    <h1 class="description center-align post-title">metrics in TiDB -- Connection Idle Duration</h1>
                 </div>
             </div>
         </div>
@@ -371,8 +371,8 @@
                     
                     <div class="article-tag">
                         
-                            <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">
-                                <span class="chip bg-color">分布式</span>
+                            <a href="/tags/%E6%BA%90%E7%A0%81/">
+                                <span class="chip bg-color">源码</span>
                             </a>
                         
                     </div>
@@ -396,7 +396,7 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2021-09-07
+                    2021-11-10
                 </div>
                 
 
@@ -405,7 +405,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    0
+                    106
                 </div>
                 
 
@@ -430,17 +430,49 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <img src="/2021/09/07/tidb/gossip/1.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/2.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/3.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/4.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/5.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/6.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/7.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/8.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/9.jpg" class="">
-<img src="/2021/09/07/tidb/gossip/10.jpg" class="">
+                <h2 id="grafana"><a href="#grafana" class="headerlink" title="grafana"></a>grafana</h2><img src="/2021/11/10/tidb/ConnectionIdleDuration/Connection_Idle_Duration.jpg" class="">
 
+<h2 id="metric"><a href="#metric" class="headerlink" title="metric"></a>metric</h2><ul>
+<li>tidb_server_conn_idle_duration_seconds</li>
+</ul>
+<h2 id="source"><a href="#source" class="headerlink" title="source"></a>source</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// tidb/server/conn.go</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>cc <span class="token operator">*</span>clientConn<span class="token punctuation">)</span> <span class="token function">dispatch</span><span class="token punctuation">(</span>ctx context<span class="token punctuation">.</span>Context<span class="token punctuation">,</span> data <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">byte</span><span class="token punctuation">)</span> <span class="token builtin">error</span> <span class="token punctuation">{</span>
+	t <span class="token operator">:=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">if</span> <span class="token punctuation">(</span>cc<span class="token punctuation">.</span>ctx<span class="token punctuation">.</span><span class="token function">Status</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> mysql<span class="token punctuation">.</span>ServerStatusInTrans<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+		connIdleDurationHistogramInTxn<span class="token punctuation">.</span><span class="token function">Observe</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span><span class="token function">Sub</span><span class="token punctuation">(</span>cc<span class="token punctuation">.</span>lastActive<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Seconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+		connIdleDurationHistogramNotInTxn<span class="token punctuation">.</span><span class="token function">Observe</span><span class="token punctuation">(</span>t<span class="token punctuation">.</span><span class="token function">Sub</span><span class="token punctuation">(</span>cc<span class="token punctuation">.</span>lastActive<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Seconds</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+
+
+	token <span class="token operator">:=</span> cc<span class="token punctuation">.</span>server<span class="token punctuation">.</span><span class="token function">getToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token keyword">defer</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+		<span class="token operator">...</span>
+
+		cc<span class="token punctuation">.</span>server<span class="token punctuation">.</span><span class="token function">releaseToken</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span>
+		cc<span class="token punctuation">.</span>lastActive <span class="token operator">=</span> time<span class="token punctuation">.</span><span class="token function">Now</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">switch</span> cmd <span class="token punctuation">{</span>
+        <span class="token keyword">case</span> mysql<span class="token punctuation">.</span>ComQuery<span class="token punctuation">:</span>
+            <span class="token function">handleQuery</span><span class="token punctuation">(</span>cmd<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token operator">...</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="sketch"><a href="#sketch" class="headerlink" title="sketch"></a>sketch</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">client session connect to tidb
+
+req query packet <span class="token punctuation">[</span>in txn<span class="token punctuation">]</span> <span class="token operator">-</span><span class="token operator">&gt;</span>
+	handle query packet
+		<span class="token operator">-</span><span class="token operator">&gt;</span> execut query <span class="token punctuation">(</span>tikv connection
+			lock key <span class="token keyword">if</span> needed
+		<span class="token operator">&lt;-</span> <span class="token keyword">return</span> response packet
+<span class="token operator">&lt;-</span> response packet
+
+# Connection Idle Duration metrics
+
+req query packet <span class="token punctuation">[</span>in txn<span class="token punctuation">]</span> <span class="token operator">-</span><span class="token operator">&gt;</span>
+<span class="token operator">...</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
                 
             </div>
             <hr/>
@@ -466,7 +498,7 @@
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://yiduoyunQ.github.io/2021/09/07/tidb/gossip/">https://yiduoyunQ.github.io/2021/09/07/tidb/gossip/</a>
+                    <a href="https://yiduoyunQ.github.io/2021/11/10/tidb/ConnectionIdleDuration/">https://yiduoyunQ.github.io/2021/11/10/tidb/ConnectionIdleDuration/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -504,8 +536,8 @@
                     
                         <div class="article-tag">
                             
-                                <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">
-                                    <span class="chip bg-color">分布式</span>
+                                <a href="/tags/%E6%BA%90%E7%A0%81/">
+                                    <span class="chip bg-color">源码</span>
                                 </a>
                             
                         </div>
@@ -548,9 +580,60 @@
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
+            <div class="card">
+                <a href="/2021/11/10/tidb/ConnectionIdleDuration/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/15.jpg" class="responsive-img" alt="metrics in TiDB -- Connection Idle Duration">
+                        
+                        <span class="card-title">metrics in TiDB -- Connection Idle Duration</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-10
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/tidb/" class="post-category">
+                                    tidb
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/%E6%BA%90%E7%A0%81/">
+                        <span class="chip bg-color">源码</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
             <div class="card">
                 <a href="/2021/11/10/tidb/TokenLimit/">
                     <div class="card-image">
@@ -568,9 +651,9 @@
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-10
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-10
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
@@ -590,43 +673,6 @@
                         <span class="chip bg-color">源码</span>
                     </a>
                     
-                </div>
-                
-            </div>
-        </div>
-        
-        
-        <div class="article col s12 m6" data-aos="fade-up">
-            <div class="article-badge right-badge text-color">
-                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
-            </div>
-            <div class="card">
-                <a href="/2021/07/30/tidb/eks-gp3/">
-                    <div class="card-image">
-                        
-                        
-                        <img src="/medias/featureimages/22.jpg" class="responsive-img" alt="EKS gp3 部署步骤">
-                        
-                        <span class="card-title">EKS gp3 部署步骤</span>
-                    </div>
-                </a>
-                <div class="card-content article-content">
-                    <div class="summary block-with-text">
-                        
-                            
-                        
-                    </div>
-                    <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-07-30
-                            </span>
-                        <span class="publish-author">
-                            
-                            <i class="fas fa-user fa-fw"></i>
-                            yiduoyunQ
-                            
-                        </span>
-                    </div>
                 </div>
                 
             </div>
