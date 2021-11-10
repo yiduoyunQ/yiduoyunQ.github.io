@@ -925,165 +925,6 @@ TODO
             
             <div class="article col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
-                    <a href="/2021/02/02/yuque/Tidb%20chunk/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/16.jpg" class="responsive-img" alt="Tidb chunk">
-                            
-                            <span class="card-title">Tidb chunk</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                Chunktype Chunk struct {
-    // 此 chunk 选择的行号
-    // for example, if the Sel is [1, 5, 6], then
-    //    logical 0 -&gt
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-02-02
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/Go/" class="post-category">
-                                    Go
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                        <a href="/tags/Tidb/">
-                            <span class="chip bg-color">Tidb</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2021/01/30/yuque/%E8%AF%AD%E9%9B%80+Github%20Pages/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/17.jpg" class="responsive-img" alt="语雀+Github Pages">
-                            
-                            <span class="card-title">语雀+Github Pages</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                工具
-部署仓库(private) - Hexo + yuque-hexo + Github Actions
-发布仓库(public) - Github Pages
-腾讯云函数 - 语雀 URL 暂不支持 Http Head，添加明文 Git
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-01-30
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-user fa-fw"></i>
-                                yiduoyunQ
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E8%AF%AD%E9%9B%80/">
-                            <span class="chip bg-color">语雀</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
-                    <a href="/2021/01/30/yuque/Tidb%20parser%20test/">
-                        <div class="card-image">
-                            
-                            
-                            <img src="/medias/featureimages/6.jpg" class="responsive-img" alt="Tidb parser test">
-                            
-                            <span class="card-title">Tidb parser test</span>
-                        </div>
-                    </a>
-
-                    <div class="card-content article-content">
-                        <div class="summary block-with-text">
-                            
-                                Import Dependencies
-go get -v github.com/pingcap/tidb/types/parser_driver@328b6d0
-
-testpackage main
-
-import (
-	"fmt"
-
-	"
-                            
-                        </div>
-                        <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-01-30
-                            </span>
-                            <span class="publish-author">
-                                
-                                <i class="fas fa-bookmark fa-fw icon-category"></i>
-                                
-                                <a href="/categories/Go/" class="post-category">
-                                    Go
-                                </a>
-                                
-                                
-                            </span>
-                        </div>
-                    </div>
-
-                    
-                    <div class="card-action article-tags">
-                        
-                        <a href="/tags/%E6%BA%90%E7%A0%81/">
-                            <span class="chip bg-color">源码</span>
-                        </a>
-                        
-                        <a href="/tags/Tidb/">
-                            <span class="chip bg-color">Tidb</span>
-                        </a>
-                        
-                    </div>
-                    
-                </div>
-            </div>
-            
-            <div class="article col s12 m6 l4" data-aos="zoom-in">
-                <div class="card">
                     <a href="/2021/01/25/go/reflect/">
                         <div class="card-image">
                             
@@ -1125,6 +966,168 @@ pstring := (
                         
                         <a href="/tags/%E6%BA%90%E7%A0%81/">
                             <span class="chip bg-color">源码</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/11/23/go/net/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/18.jpg" class="responsive-img" alt="net poll">
+                            
+                            <span class="card-title">net poll</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                select / poll / epoll
+
+net.Listen
+
+
+net.Listen通过 netFD.init -&gt; FD.Init -&gt; pollDesc.init -&gt; 最终调用 epollcreate1 创建
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-11-23
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fas fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/go/" class="post-category">
+                                    go
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">
+                            <span class="chip bg-color">源码</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/11/23/go/version/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/4.jpg" class="responsive-img" alt="go版本">
+                            
+                            <span class="card-title">go版本</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                1.14defer编译期间确定defer优化为 OpenDefer， 省去栈堆操作和递归调用
+func f() {
+    // 编译时确定defer
+    ch := make(channel, 1)
+    defer close(c
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-11-23
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fas fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/go/" class="post-category">
+                                    go
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/%E6%BA%90%E7%A0%81/">
+                            <span class="chip bg-color">源码</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="article col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/2020/11/18/k8s/cgroup/">
+                        <div class="card-image">
+                            
+                            
+                            <img src="/medias/featureimages/20.jpg" class="responsive-img" alt="cgroup">
+                            
+                            <span class="card-title">cgroup</span>
+                        </div>
+                    </a>
+
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                V1
+
+V2
+
+结构# ls /sys/fs/cgroup/ |grep cpu
+cpu
+cpuacct
+cpu,cpuacct
+cpuset
+
+# cat /sys/fs/cgroup/cpu/user.slice/tasks
+4872
+
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-11-18
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fas fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/categories/k8s/" class="post-category">
+                                    k8s
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/tags/k8s/">
+                            <span class="chip bg-color">k8s</span>
                         </a>
                         
                     </div>
