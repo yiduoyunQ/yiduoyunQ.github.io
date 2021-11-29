@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="enable-old-value 是什么enable-old-value 是 TiCDC 从 v4.0.5 开始支持的参数，从 v5.0 开始默认为 true。该参数是产品架构演进过程中为新特性提供快速回退的一个手段，有理由相信在未来版本中将会直接移除该参数。 为什么需要 enable-old-valueTiCDC 通过读取上游 TiKV 的 key-value change event log">
+<meta property="og:type" content="article">
+<meta property="og:title" content="enable-old-value in TiCDC">
+<meta property="og:url" content="https://yiduoyunq.github.io/2021/11/29/tidb/enable-old-valueInTiCDC/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="enable-old-value 是什么enable-old-value 是 TiCDC 从 v4.0.5 开始支持的参数，从 v5.0 开始默认为 true。该参数是产品架构演进过程中为新特性提供快速回退的一个手段，有理由相信在未来版本中将会直接移除该参数。 为什么需要 enable-old-valueTiCDC 通过读取上游 TiKV 的 key-value change event log">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pingcap-knowledge-base.oss-cn-beijing.aliyuncs.com/u/26/f/image1635155433555.png">
+<meta property="article:published_time" content="2021-11-29T20:32:47.000Z">
+<meta property="article:modified_time" content="2021-11-29T12:36:34.681Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pingcap-knowledge-base.oss-cn-beijing.aliyuncs.com/u/26/f/image1635155433555.png">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2021/11/29/tidb/enable-old-valueInTiCDC/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>enable-old-value in TiCDC | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/11/29/tidb/enable-old-valueInTiCDC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          enable-old-value in TiCDC
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-29 20:32:47 / 修改时间：12:36:34" itemprop="dateCreated datePublished" datetime="2021-11-29T20:32:47+00:00">2021-11-29</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tidb/" itemprop="url" rel="index"><span itemprop="name">tidb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="enable-old-value-是什么"><a href="#enable-old-value-是什么" class="headerlink" title="enable-old-value 是什么"></a>enable-old-value 是什么</h2><p><a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E4%BB%BB%E5%8A%A1%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0">enable-old-value</a> 是 TiCDC 从 v4.0.5 开始支持的参数，从 v5.0 开始默认为 true。该参数是产品架构演进过程中为新特性提供快速回退的一个手段，有理由相信在未来版本中将会直接移除该参数。</p>
+<h2 id="为什么需要-enable-old-value"><a href="#为什么需要-enable-old-value" class="headerlink" title="为什么需要 enable-old-value"></a>为什么需要 enable-old-value</h2><p><a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/ticdc-overview#%E7%B3%BB%E7%BB%9F%E8%A7%92%E8%89%B2">TiCDC</a> 通过读取上游 TiKV 的 key-value change event log 捕获数据的变化，转化为 DDL/DML 语句并同步到下游 Sink。这里首先对 TiKV 的 key-value 做简单说明:</p>
+<h3 id="TiDB-中的-Key-Value"><a href="#TiDB-中的-Key-Value" class="headerlink" title="TiDB 中的 Key-Value"></a>TiDB 中的 Key-Value</h3><ul>
+<li>主键和唯一索引<ul>
+<li>key： tablePrefix{tableID}_indexPrefixSep{indexID}_<strong>indexedColumnsValue</strong></li>
+<li>value： RowID</li>
+</ul>
+</li>
+<li>非唯一索引<ul>
+<li>key： tablePrefix{TableID}_indexPrefixSep{IndexID}_<strong>indexedColumnsValue</strong>_{RowID}</li>
+<li>value： null</li>
+</ul>
+</li>
+</ul>
+<h3 id="启用-new-collations-enabled-on-first-bootstrap-后-TiDB-中的-Key-Value"><a href="#启用-new-collations-enabled-on-first-bootstrap-后-TiDB-中的-Key-Value" class="headerlink" title="启用 new_collations_enabled_on_first_bootstrap 后 TiDB 中的 Key-Value"></a>启用 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tidb-configuration-file#new_collations_enabled_on_first_bootstrap">new_collations_enabled_on_first_bootstrap</a> 后 TiDB 中的 Key-Value</h3><ul>
+<li>主键和唯一索引<ul>
+<li>key： tablePrefix{tableID}_indexPrefixSep{indexID}_<strong>sortKeys</strong></li>
+<li>value： RowID_<strong>indexedColumnsValue</strong></li>
+</ul>
+</li>
+<li>非唯一索引<ul>
+<li>key： tablePrefix{tableID}_indexPrefixSep{indexID}_<strong>sortKeys</strong>_{RowID}</li>
+<li>value： <strong>indexedColumnsValue</strong></li>
+</ul>
+</li>
+</ul>
+<p>可以看到，默认配置下 <strong>indexedColumnsValue</strong> 是存储在 key 中的，但当开启 new collation 特性后变为储存在 value 中。在 v4.0.5 之前这里存在着一个限制，对于 Delete 和 Update 类型的 change log，TiCDC 是无法从 TiKV 获取到 value 的， 因此在开启 new collation 时将会无法获取到 <strong>indexedColumnsValue</strong>，也因此无法还原 Delete 和 Update 事件。</p>
+<p>在 v4.0.5 中 TiKV <a target="_blank" rel="noopener" href="https://github.com/tikv/tikv/pull/8071">实现了输出 old value</a>，对应在 TiCDC 中通过新增 <strong>enable-old-value</strong> 参数来控制是否启用该特性。本文以下部分将采用黑盒测试，对比 <strong>new_collations_enabled_on_first_bootstrap ** 和 **enable-old-value</strong> 在不同配置组合下 TiCDC 的同步行为。TiCDC 默认<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E6%B2%A1%E6%9C%89%E6%9C%89%E6%95%88%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">仅同步有主键或唯一索引</a>的表，这里只讨论该类常见情况。</p>
+<h2 id="黑盒测试"><a href="#黑盒测试" class="headerlink" title="黑盒测试"></a>黑盒测试</h2><p>本次测试使用版本 v5.0.3 (enable-old-value default true)，为方便重复测试这里使用 tidb-operator 进行部署，使用到的测试语句如下：</p>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token comment"># 1.sql</span>
+<span class="token comment"># test new_collations_enabled_on_first_bootstrap = false (default)</span>
+<span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
+
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
+
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a2'</span><span class="token punctuation">,</span><span class="token string">'b2'</span><span class="token punctuation">,</span><span class="token string">'c2'</span><span class="token punctuation">,</span><span class="token string">'d2'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a3'</span><span class="token punctuation">,</span><span class="token string">'b3'</span><span class="token punctuation">,</span><span class="token string">'c3'</span><span class="token punctuation">,</span><span class="token string">'d3'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a4'</span><span class="token punctuation">,</span><span class="token string">'b4'</span><span class="token punctuation">,</span><span class="token string">'c4'</span><span class="token punctuation">,</span><span class="token string">'d4'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c1<span class="token operator">=</span><span class="token string">'a9'</span> <span class="token keyword">where</span> c2<span class="token operator">=</span><span class="token string">'b1'</span><span class="token punctuation">;</span> <span class="token comment"># 更新主键列，条件索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c2<span class="token operator">=</span><span class="token string">'b9'</span> <span class="token keyword">where</span> c4<span class="token operator">=</span><span class="token string">'d2'</span><span class="token punctuation">;</span> <span class="token comment"># 更新索引列，条件非索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c3<span class="token operator">=</span><span class="token string">'c9'</span> <span class="token keyword">where</span> c4<span class="token operator">=</span><span class="token string">'d3'</span><span class="token punctuation">;</span> <span class="token comment"># 更新非索引列，条件非索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c4<span class="token operator">=</span><span class="token string">'d9'</span> <span class="token keyword">where</span> c2<span class="token operator">=</span><span class="token string">'b4'</span><span class="token punctuation">;</span> <span class="token comment"># 更新非索引列，条件索引列</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token comment"># 2.sql</span>
+<span class="token comment"># test new_collations_enabled_on_first_bootstrap = true</span>
+<span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
+
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
+  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8 <span class="token keyword">COLLATE</span> utf8_general_ci<span class="token punctuation">;</span>
+
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a2'</span><span class="token punctuation">,</span><span class="token string">'b2'</span><span class="token punctuation">,</span><span class="token string">'c2'</span><span class="token punctuation">,</span><span class="token string">'d2'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a3'</span><span class="token punctuation">,</span><span class="token string">'b3'</span><span class="token punctuation">,</span><span class="token string">'c3'</span><span class="token punctuation">,</span><span class="token string">'d3'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a4'</span><span class="token punctuation">,</span><span class="token string">'b4'</span><span class="token punctuation">,</span><span class="token string">'c4'</span><span class="token punctuation">,</span><span class="token string">'d4'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c1<span class="token operator">=</span><span class="token string">'a9'</span> <span class="token keyword">where</span> c2<span class="token operator">=</span><span class="token string">'b1'</span><span class="token punctuation">;</span> <span class="token comment"># 更新主键列，条件索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c2<span class="token operator">=</span><span class="token string">'b9'</span> <span class="token keyword">where</span> c4<span class="token operator">=</span><span class="token string">'d2'</span><span class="token punctuation">;</span> <span class="token comment"># 更新索引列，条件非索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c3<span class="token operator">=</span><span class="token string">'c9'</span> <span class="token keyword">where</span> c4<span class="token operator">=</span><span class="token string">'d3'</span><span class="token punctuation">;</span> <span class="token comment"># 更新非索引列，条件非索引列</span>
+<span class="token keyword">update</span> t <span class="token keyword">set</span> c4<span class="token operator">=</span><span class="token string">'d9'</span> <span class="token keyword">where</span> c2<span class="token operator">=</span><span class="token string">'b4'</span><span class="token punctuation">;</span> <span class="token comment"># 更新非索引列，条件索引列</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p> 测试在不同配置下，下游的数据是否符合预期。</p>
+<h3 id="case-1-默认配置"><a href="#case-1-默认配置" class="headerlink" title="case 1. 默认配置"></a>case 1. 默认配置</h3><ul>
+<li><p>new_collations_enabled_on_first_bootstrap = false (default)</p>
+</li>
+<li><p>enable-old-value = true (defalut)</p>
+</li>
+</ul>
+<p>测试结果符合预期：</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
++----+----+------+------+
+| c1 | c2 | c3   | c4   |
++----+----+------+------+
+| a2 | b9 | c2   | d2   |
+| a3 | b3 | c9   | d3   |
+| a4 | b4 | c4   | d9   |
+| a9 | b1 | c1   | d1   |
++----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="case-2-启用-new-collation"><a href="#case-2-启用-new-collation" class="headerlink" title="case 2. 启用 new collation"></a>case 2. 启用 new collation</h3><ul>
+<li><p>new_collations_enabled_on_first_bootstrap = true</p>
+</li>
+<li><p>enable-old-value = true (defalut)</p>
+</li>
+</ul>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| Type | Instance                                                  | Name                                      | Value |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| Type | Instance                                                  | Name                                      | Value |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
++------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>测试结果符合预期：</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
++----+----+------+------+
+| c1 | c2 | c3   | c4   |
++----+----+------+------+
+| a2 | b9 | c2   | d2   |
+| a3 | b3 | c9   | d3   |
+| a4 | b4 | c4   | d9   |
+| a9 | b1 | c1   | d1   |
++----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="case-3-关闭-enable-old-value"><a href="#case-3-关闭-enable-old-value" class="headerlink" title="case 3. 关闭 enable-old-value"></a>case 3. 关闭 enable-old-value</h3><ul>
+<li><p>new_collations_enabled_on_first_bootstrap = false (default)</p>
+</li>
+<li><p>enable-old-value = false</p>
+</li>
+</ul>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
+      "enable-old-value": false,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>测试结果符合预期：</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
++----+----+------+------+
+| c1 | c2 | c3   | c4   |
++----+----+------+------+
+| a2 | b9 | c2   | d2   |
+| a3 | b3 | c9   | d3   |
+| a4 | b4 | c4   | d9   |
+| a9 | b1 | c1   | d1   |
++----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="case-4-关闭-enable-old-value-amp-启用-new-collation"><a href="#case-4-关闭-enable-old-value-amp-启用-new-collation" class="headerlink" title="case 4. 关闭 enable-old-value &amp; 启用 new collation"></a>case 4. 关闭 enable-old-value &amp; 启用 new collation</h3><ul>
+<li><p>new_collations_enabled_on_first_bootstrap = true</p>
+</li>
+<li><p>enable-old-value = false</p>
+</li>
+</ul>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
+      "enable-old-value": false,
+
+mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| Type | Instance                                                  | Name                                      | Value |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| Type | Instance                                                  | Name                                      | Value |
++------+-----------------------------------------------------------+-------------------------------------------+-------+
+| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
++------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>测试结果不符合预期：</p>
+<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
++----+----+------+------+
+| c1 | c2 | c3   | c4   |
++----+----+------+------+
+| a1 | b1 | c1   | d1   |
+| a2 | b2 | c2   | d2   |
+| a2 | b9 | c2   | d2   |
+| a3 | b3 | c9   | d3   |
+| a4 | b4 | c4   | d9   |
+| a9 | b1 | c1   | d1   |
++----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>让我们通过开启 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v4.0/system-variables#tidb_general_log">tidb_general_log</a> 来观察 TiCDC 的同步行为：</p>
+<p><img src="https://pingcap-knowledge-base.oss-cn-beijing.aliyuncs.com/u/26/f/image1635155433555.png"></p>
+<p>TiCDC 固定<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/troubleshoot-ticdc#%E4%BD%BF%E7%94%A8-ticdc-%E5%88%9B%E5%BB%BA%E5%90%8C%E6%AD%A5%E4%BB%BB%E5%8A%A1%E6%97%B6%E5%B0%86-enable-old-value-%E8%AE%BE%E7%BD%AE%E4%B8%BA-true-%E5%90%8E%E4%B8%8A%E6%B8%B8%E7%9A%84-insertupdate-%E8%AF%AD%E5%8F%A5%E7%BB%8F-ticdc-%E5%90%8C%E6%AD%A5%E5%88%B0%E4%B8%8B%E6%B8%B8%E5%90%8E%E5%8F%98%E4%B8%BA-replace-into">将上游 Update 转化为 Delete + Replace Into</a>， 从上图中我们可以看到当设置 enable-old-value 为 false 时，TiCDC 会去解析 key 中的 <strong>indexedColumnsValue</strong>，由于在 new collation 特性下该处存放的是不可读的 binary 格式的 <strong>sortKeys</strong>，最终导致下游无法正确还原上游的 Update 事件。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>其实在<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E8%BE%93%E5%87%BA%E8%A1%8C%E5%8F%98%E6%9B%B4%E7%9A%84%E5%8E%86%E5%8F%B2%E5%80%BC-%E4%BB%8E-v405-%E7%89%88%E6%9C%AC%E5%BC%80%E5%A7%8B%E5%BC%95%E5%85%A5">官网doc</a>中已清楚写到，对于 new collation 框架需要启用 enable-old-value 才能正确解析，并且在 5.0 中也已经<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E4%BB%BB%E5%8A%A1%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0">默认启用</a>，但用户仍然能够组合出 <strong>new collation + 关闭 enable-old-value</strong> 的配置组合，从而导致上下游数据不一致。针对这一点在<a target="_blank" rel="noopener" href="https://github.com/pingcap/ticdc/pull/2268">最新版本</a>中是直接将 enable-old-value 固定开启，从而规避用户组合出错误配置的可能。</p>
+<p>该参数是产品架构演进过程中为新特性提供快速回退的一个手段，虽然目前官网doc中该参数仍未GA (文档滞后)，但该参数已在 5.0 及更高版本中默认开启且已稳定运行，对用户侧而言也不应继续操心产品的底层架构变化，有理由相信在未来版本中将会直接移除该参数。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/11/10/tidb/ConnectionIdleDuration/" rel="prev" title="metrics in TiDB -- Connection Idle Duration">
+      <i class="fa fa-chevron-left"></i> metrics in TiDB -- Connection Idle Duration
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#enable-old-value-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text">enable-old-value 是什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-enable-old-value"><span class="nav-number">2.</span> <span class="nav-text">为什么需要 enable-old-value</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TiDB-%E4%B8%AD%E7%9A%84-Key-Value"><span class="nav-number">2.1.</span> <span class="nav-text">TiDB 中的 Key-Value</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E7%94%A8-new-collations-enabled-on-first-bootstrap-%E5%90%8E-TiDB-%E4%B8%AD%E7%9A%84-Key-Value"><span class="nav-number">2.2.</span> <span class="nav-text">启用 new_collations_enabled_on_first_bootstrap 后 TiDB 中的 Key-Value</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%BB%91%E7%9B%92%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">黑盒测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#case-1-%E9%BB%98%E8%AE%A4%E9%85%8D%E7%BD%AE"><span class="nav-number">3.1.</span> <span class="nav-text">case 1. 默认配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#case-2-%E5%90%AF%E7%94%A8-new-collation"><span class="nav-number">3.2.</span> <span class="nav-text">case 2. 启用 new collation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#case-3-%E5%85%B3%E9%97%AD-enable-old-value"><span class="nav-number">3.3.</span> <span class="nav-text">case 3. 关闭 enable-old-value</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#case-4-%E5%85%B3%E9%97%AD-enable-old-value-amp-%E5%90%AF%E7%94%A8-new-collation"><span class="nav-number">3.4.</span> <span class="nav-text">case 4. 关闭 enable-old-value &amp; 启用 new collation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
