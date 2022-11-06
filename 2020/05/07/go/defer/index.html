@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="栗子执行顺序先进后出的栈，在return后倒序执行 package main  import &quot;fmt&quot;  func main() {     defer func1()     defer func2()     defer func3() }  func func1() {     fmt.Println(&quot;A&quot;) }  func func2() {     fmt.Println(&quot;B&quot;)">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-05-07T13:07:35.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.609Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.682Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -183,7 +183,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -337,8 +337,8 @@ main <span class="token keyword">return</span><span aria-hidden="true" class="li
 
 <pre class="line-numbers language-go" data-language="go"><code class="language-go">a <span class="token comment">// f(f("a"))入栈，执行f("a")结果作为参数传入f(f("a"))</span>
 b <span class="token comment">// f(f("b"))入栈，执行f("b")结果作为参数传入f(f("b"))</span>
-b<span class="token string">' // f(f("b")
-a'</span> <span class="token comment">// f(f("a")</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+b' <span class="token comment">// f(f("b")</span>
+a' <span class="token comment">// f(f("a")</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="defer"><a href="#defer" class="headerlink" title="defer"></a>defer</h2><p>defer在编译阶段转换为<code>runtime.deferproc</code>，创建defer函数并注册到原函数中，使用单向链表保存，新注册defer添加到链表头<br>原函数的exit中插入<code>runtime.deferreturn</code>，负责函数exit返回前执行链表中的defer函数<br>per-P保存本地defer池，sched保存全局defer池，一般defer创建每次先从本地取，若本地池空，从全局池取到本地填满一半，用完后返回池子。如果是大空间defer使用mallocgc新分配空间，用完释放空间，不返回池子。</p>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> _defer <span class="token keyword">struct</span> <span class="token punctuation">{</span>
@@ -464,7 +464,7 @@ a'</span> <span class="token comment">// f(f("a")</span><span aria-hidden="true"
     <span class="token keyword">defer</span> <span class="token function">B2</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h2 id="panic-recover"><a href="#panic-recover" class="headerlink" title="panic / recover"></a>panic / recover</h2><p>panic时，如果g有注册defer链表，使用<code>reflectcall</code>调用defer函数<br>若无recover，调用<code>fatalpanic</code>终止程序<br>若有recover，通过设置<strong>recovered</strong>字段标示，最后调用<code>recovery</code>恢复程序执行</p>
+<h2 id="panic-x2F-recover"><a href="#panic-x2F-recover" class="headerlink" title="panic / recover"></a>panic / recover</h2><p>panic时，如果g有注册defer链表，使用<code>reflectcall</code>调用defer函数<br>若无recover，调用<code>fatalpanic</code>终止程序<br>若有recover，通过设置<strong>recovered</strong>字段标示，最后调用<code>recovery</code>恢复程序执行</p>
 <pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> _panic <span class="token keyword">struct</span> <span class="token punctuation">{</span>
   argp unsafe<span class="token punctuation">.</span>Pointer <span class="token comment">// defer函数指针</span>
   arg <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// panic参数</span>
@@ -630,7 +630,7 @@ a'</span> <span class="token comment">// f(f("a")</span><span aria-hidden="true"
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%97%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">栗子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.1.</span> <span class="nav-text">执行顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%9C%E7%94%A8%E4%BA%8E%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC%E5%8F%82%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">作用于函数返回值参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#panic%E5%92%8Crecover%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.3.</span> <span class="nav-text">panic和recover执行顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#panic%E6%8D%95%E8%8E%B7%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.4.</span> <span class="nav-text">panic捕获顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%85%E5%90%AB%E5%AD%90%E5%87%BD%E6%95%B0"><span class="nav-number">1.5.</span> <span class="nav-text">参数包含子函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#defer"><span class="nav-number">2.</span> <span class="nav-text">defer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B5%8C%E5%A5%97defer"><span class="nav-number">2.1.</span> <span class="nav-text">嵌套defer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#panic-recover"><span class="nav-number">3.</span> <span class="nav-text">panic &#x2F; recover</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%97%E5%AD%90"><span class="nav-number">1.</span> <span class="nav-text">栗子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.1.</span> <span class="nav-text">执行顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%9C%E7%94%A8%E4%BA%8E%E5%87%BD%E6%95%B0%E8%BF%94%E5%9B%9E%E5%80%BC%E5%8F%82%E6%95%B0"><span class="nav-number">1.2.</span> <span class="nav-text">作用于函数返回值参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#panic%E5%92%8Crecover%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.3.</span> <span class="nav-text">panic和recover执行顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#panic%E6%8D%95%E8%8E%B7%E9%A1%BA%E5%BA%8F"><span class="nav-number">1.4.</span> <span class="nav-text">panic捕获顺序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0%E5%8C%85%E5%90%AB%E5%AD%90%E5%87%BD%E6%95%B0"><span class="nav-number">1.5.</span> <span class="nav-text">参数包含子函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#defer"><span class="nav-number">2.</span> <span class="nav-text">defer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B5%8C%E5%A5%97defer"><span class="nav-number">2.1.</span> <span class="nav-text">嵌套defer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#panic-x2F-recover"><span class="nav-number">3.</span> <span class="nav-text">panic &#x2F; recover</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">参考</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -644,7 +644,7 @@ a'</span> <span class="token comment">// f(f("a")</span><span aria-hidden="true"
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -682,7 +682,7 @@ a'</span> <span class="token comment">// f(f("a")</span><span aria-hidden="true"
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

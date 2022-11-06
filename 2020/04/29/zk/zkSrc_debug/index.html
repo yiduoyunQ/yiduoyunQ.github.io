@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_debug/src_resource_config.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_debug/src_debug_config.png">
 <meta property="article:published_time" content="2020-04-29T12:49:04.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.685Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.750Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -187,7 +187,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -217,7 +217,7 @@
 
 <h2 id="修改jre"><a href="#修改jre" class="headerlink" title="修改jre"></a>修改jre</h2><p>打开项目结构<strong>（⌘ + ;）</strong>，指定jdk为<code>1.8</code><br>若使用jdk13，不支持的com.sun.nio.file方法编译报错，<a href="https://github.com/apache/zookeeper/pull/1269" title="com.sun.nio.file.SensitivityWatchEventModifier" target="">issue</a></p>
 <h2 id="修改gitignore文件"><a href="#修改gitignore文件" class="headerlink" title="修改gitignore文件"></a>修改gitignore文件</h2><p>由于开发环境需要进行调试，临时配置文件是不需要进代码仓库的，所以进行排除。</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># Ignore debug conf
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># Ignore debug conf</span>
 conf/zoo.cfg
 conf/zoo*.cfg
 zookeeper-server/src/main/resources/log4j.properties<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
@@ -230,7 +230,7 @@ zookeeper-server/src/main/resources/log4j.properties<span aria-hidden="true" cla
 </ol>
 <img src="/2020/04/29/zk/zkSrc_debug/src_resource_config.png" class="">
 
-<h2 id="debug启动项"><a href="#debug启动项" class="headerlink" title="debug启动项"></a>debug启动项</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">QuorumPeerMain
+<h2 id="debug启动项"><a href="#debug启动项" class="headerlink" title="debug启动项"></a>debug启动项</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">QuorumPeerMain
 org.apache.zookeeper.server.quorum.QuorumPeerMain
 conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
@@ -333,7 +333,7 @@ conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><spa
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -371,7 +371,7 @@ conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><spa
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

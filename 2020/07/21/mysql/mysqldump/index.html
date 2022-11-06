@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同 1 同时lock库中所有表READ锁，使库变为只读 2 show create table + select * from table， 导出 3 unlock tables  2020-11-01T16:02:01.441631Z">
+  <meta name="description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同2.1 同时lock库中所有表READ锁，使库变为只读2.2 show create table + select * from table， 导出2.3 unlock tables  2020-11-01T16:02:01.441631Z">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mysqldump">
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/07/21/mysql/mysqldump/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同 1 同时lock库中所有表READ锁，使库变为只读 2 show create table + select * from table， 导出 3 unlock tables  2020-11-01T16:02:01.441631Z">
+<meta property="og:description" content="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致 获取gtid或file postion 顺序逻辑备份每个库，不同库之间备份时间点不同2.1 同时lock库中所有表READ锁，使库变为只读2.2 show create table + select * from table， 导出2.3 unlock tables  2020-11-01T16:02:01.441631Z">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-07-21T00:54:09.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.665Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.734Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="mysql">
 <meta name="twitter:card" content="summary">
@@ -183,7 +183,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -208,60 +208,57 @@
       
         <h2 id="默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致"><a href="#默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致" class="headerlink" title="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致"></a>默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</h2><ol>
 <li>获取gtid或file postion</li>
-<li>顺序逻辑备份每个库，不同库之间备份时间点不同</li>
-<li>1 同时lock库中所有表READ锁，使库变为只读</li>
-<li>2 show create table + select * from table， 导出</li>
-<li>3 unlock tables</li>
+<li>顺序逻辑备份每个库，不同库之间备份时间点不同<br>2.1 同时lock库中所有表READ锁，使库变为只读<br>2.2 show create table + select * from table， 导出<br>2.3 unlock tables</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:02:01.441631Z	   18 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-2020-11-01T16:02:01.441820Z	   18 Query	show tables
-2020-11-01T16:02:01.442210Z	   18 Query	LOCK TABLES `employees` READ /*!32311 LOCAL */,`t1` READ /*!32311 LOCAL */,`test` READ /*!32311 LOCAL */,`test_auto` READ /*!32311 LOCAL */
-...
-2020-11-01T16:02:04.181862Z	   18 Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441631Z</span>	   <span class="token number">18</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441820Z</span>	   <span class="token number">18</span> Query	show tables
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.442210Z</span>	   <span class="token number">18</span> Query	LOCK TABLES `employees` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`t1` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test_auto` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:04.181862Z</span>	   <span class="token number">18</span> Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="–lock-all-tables-所有库备份点一致"><a href="#–lock-all-tables-所有库备份点一致" class="headerlink" title="–lock-all-tables  所有库备份点一致"></a>–lock-all-tables  所有库备份点一致</h2><p>整个数据库变为只读</p>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:16:57.678240Z	   21 Query	FLUSH TABLES
-2020-11-01T16:16:58.204729Z	   21 Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:16:57.678240Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES
+<span class="token date number">2020-11-01T</span><span class="token time number">16:16:58.204729Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <h2 id="–single-transaction-所有innodb表备份点一致"><a href="#–single-transaction-所有innodb表备份点一致" class="headerlink" title="–single-transaction  所有innodb表备份点一致"></a>–single-transaction  所有innodb表备份点一致</h2><ol>
 <li>设置会话隔离级别为RR</li>
 <li>开启一个MVCC会话，START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */ ，开启会话时自带一次select保证备份点之后的读一致性</li>
 <li>创建SAVEPOINT开始表备份，在ROLLBACK TO SAVEPOINT前对表的DDL阻塞</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:20:35.440889Z	   22 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-2020-11-01T16:20:35.441080Z	   22 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
-...
-2020-11-01T16:20:35.451846Z	   22 Query	UNLOCK TABLES
-...
-2020-11-01T16:20:35.471418Z	   22 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-2020-11-01T16:20:35.471499Z	   22 Query	SAVEPOINT sp
-2020-11-01T16:20:35.478244Z	   22 Query	show tables
-...
-2020-11-01T16:20:35.484877Z	   22 Query	show create table `t1`
-2020-11-01T16:20:35.486464Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `t1`
-2020-11-01T16:20:35.488296Z	   22 Query	ROLLBACK TO SAVEPOINT sp
-...
-2020-11-01T16:20:35.489280Z	   22 Query	show create table `test`
-2020-11-01T16:20:35.497826Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `test`
-2020-11-01T16:20:38.400419Z	   22 Query	ROLLBACK TO SAVEPOINT sp
-...
-2020-11-01T16:20:38.403299Z	   22 Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.440889Z</span>	   <span class="token number">22</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.441080Z</span>	   <span class="token number">22</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.451846Z</span>	   <span class="token number">22</span> Query	UNLOCK TABLES
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471418Z</span>	   <span class="token number">22</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471499Z</span>	   <span class="token number">22</span> Query	SAVEPOINT sp
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.478244Z</span>	   <span class="token number">22</span> Query	show tables
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.484877Z</span>	   <span class="token number">22</span> Query	show create table `t1`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.486464Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `t1`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.488296Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.489280Z</span>	   <span class="token number">22</span> Query	show create table `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.497826Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.400419Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.403299Z</span>	   <span class="token number">22</span> Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h2 id="–single-transaction-–master-data-2-需2次flush关表"><a href="#–single-transaction-–master-data-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
+<h2 id="–single-transaction-–master-data-x3D-2-需2次flush关表"><a href="#–single-transaction-–master-data-x3D-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
 <ol>
 <li>flush tables + FTWRL 整个数据库达到一致</li>
 <li>设置RR，开启一致读会话</li>
 <li>通过show master status获取binlog位点</li>
 <li>UNLOCK TABLES</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:47:40.165353Z	   23 Query	FLUSH /*!40101 LOCAL */ TABLES
-2020-11-01T16:47:40.190316Z	   23 Query	FLUSH TABLES WITH READ LOCK
-2020-11-01T16:47:40.190471Z	   23 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-2020-11-01T16:47:40.190537Z	   23 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
-2020-11-01T16:47:40.190744Z	   23 Query	SHOW VARIABLES LIKE 'gtid\_mode'
-2020-11-01T16:47:40.202013Z	   23 Query	SHOW MASTER STATUS
-2020-11-01T16:47:40.204813Z	   23 Query	UNLOCK TABLES
-...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.165353Z</span>	   <span class="token number">23</span> Query	FLUSH <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40101</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span> TABLES
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190316Z</span>	   <span class="token number">23</span> Query	FLUSH TABLES WITH READ LOCK
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190471Z</span>	   <span class="token number">23</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190537Z</span>	   <span class="token number">23</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190744Z</span>	   <span class="token number">23</span> Query	SHOW VARIABLES LIKE <span class="token string">'gtid\_mode'</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.202013Z</span>	   <span class="token number">23</span> Query	SHOW MASTER <span class="token level info keyword">STATUS</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.204813Z</span>	   <span class="token number">23</span> Query	UNLOCK TABLES
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>mysql –max-allowed-packet=16MB -BNe “SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN (‘mysql’, ‘performance_schema’, ‘information_schema’, ‘sys’)” | tr ‘\n’ ‘ ‘ &gt; dbs.sql<br>mysqldump  –opt –add-drop-database –add-drop-table –complete-insert –default-character-set=utf8 –hex-blob –master-data=2 –quote-names –single-transaction –events –routines –triggers –databases $(cat dbs.sql) &gt; full_dump.sql</p>
 <ul>
@@ -403,7 +400,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%BB%98%E8%AE%A4-%E2%80%93lock-tables-%E5%BA%93%E4%B8%AD%E4%B8%8D%E5%90%8C%E8%A1%A8%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4%EF%BC%8C%E4%B8%8D%E5%90%8C%E5%BA%93%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="nav-number">1.</span> <span class="nav-text">默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93lock-all-tables-%E6%89%80%E6%9C%89%E5%BA%93%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4"><span class="nav-number">2.</span> <span class="nav-text">–lock-all-tables  所有库备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93single-transaction-%E6%89%80%E6%9C%89innodb%E8%A1%A8%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4"><span class="nav-number">3.</span> <span class="nav-text">–single-transaction  所有innodb表备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93single-transaction-%E2%80%93master-data-2-%E9%9C%802%E6%AC%A1flush%E5%85%B3%E8%A1%A8"><span class="nav-number">4.</span> <span class="nav-text">–single-transaction + –master-data&#x3D;2    需2次flush关表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0"><span class="nav-number">5.</span> <span class="nav-text">参数</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%BB%98%E8%AE%A4-%E2%80%93lock-tables-%E5%BA%93%E4%B8%AD%E4%B8%8D%E5%90%8C%E8%A1%A8%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4%EF%BC%8C%E4%B8%8D%E5%90%8C%E5%BA%93%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="nav-number">1.</span> <span class="nav-text">默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93lock-all-tables-%E6%89%80%E6%9C%89%E5%BA%93%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4"><span class="nav-number">2.</span> <span class="nav-text">–lock-all-tables  所有库备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93single-transaction-%E6%89%80%E6%9C%89innodb%E8%A1%A8%E5%A4%87%E4%BB%BD%E7%82%B9%E4%B8%80%E8%87%B4"><span class="nav-number">3.</span> <span class="nav-text">–single-transaction  所有innodb表备份点一致</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%80%93single-transaction-%E2%80%93master-data-x3D-2-%E9%9C%802%E6%AC%A1flush%E5%85%B3%E8%A1%A8"><span class="nav-number">4.</span> <span class="nav-text">–single-transaction + –master-data&#x3D;2    需2次flush关表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E6%95%B0"><span class="nav-number">5.</span> <span class="nav-text">参数</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -417,7 +414,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -455,7 +452,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

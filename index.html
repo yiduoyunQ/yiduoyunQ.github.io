@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -147,6 +147,131 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2022/11/02/tidb/graceful-shutdown/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/02/tidb/graceful-shutdown/" class="post-title-link" itemprop="url">graceful shutdown in TiDB</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-02 22:38:59" itemprop="dateCreated datePublished" datetime="2022-11-02T22:38:59+00:00">2022-11-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tidb/" itemprop="url" rel="index"><span itemprop="name">tidb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h2><p>应用通过负载均衡链接 TiDB，使用 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tiup-component-cluster-upgrade">tiup cluster upgrade</a> 滚动升级集群时，应用报 connection refused。以下基于 TiDB v6.1.2 分析该现象原因。</p>
+<h2 id="只看结论"><a href="#只看结论" class="headerlink" title="只看结论"></a>只看结论</h2><ul>
+<li>当前（v6.1.2 及以下）TiDB 采用带 timeout 的 graceful shutdown 机制。</li>
+<li>无论是否配置 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tidb-configuration-file#graceful-wait-before-shutdown-%E4%BB%8E-v50-%E7%89%88%E6%9C%AC%E5%BC%80%E5%A7%8B%E5%BC%95%E5%85%A5">graceful-wait-before-shutdown</a>，滚动升级期间应用均会感知报错。</li>
+<li>PR <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/pull/37441">#37441</a> 和 Issues <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/issues/32110">#32110</a> 会有优化，但彻底解决问题需要等 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/master/docs/design/2022-07-20-session-manager.md">session manager</a> 实现。</li>
+<li>建议滚动升级操作在运维窗口期或业务低峰期实施，应用端增加错误重试机制。</li>
+</ul>
+<h2 id="TiDB-graceful-shutdown-流程"><a href="#TiDB-graceful-shutdown-流程" class="headerlink" title="TiDB graceful shutdown 流程"></a>TiDB graceful shutdown 流程</h2><p><a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tiup-component-cluster-upgrade">tiup cluster upgrade</a> 通过发送 SIGTERM 信号给 TiDB 实现滚动升级重启，TiDB 接收 SIGTERM 信号后触发 graceful shutdown。</p>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.674 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level info keyword">INFO</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>signal_posix<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">54</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"got signal to exit"</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>signal<span class="token operator">=</span>terminated<span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.674 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level info keyword">INFO</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>server<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">460</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"setting tidb-server to report unhealthy (shutting-down)"</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.674 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level error important">ERROR</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>http_status<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">476</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"start status/rpc server error"</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>error<span class="token operator">=</span><span class="token string">"accept tcp [::]:10080: use of closed network connection"</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.674 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level error important">ERROR</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>http_status<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">471</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"http server error"</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>error<span class="token operator">=</span><span class="token string">"http: Server closed"</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.674 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level error important">ERROR</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>http_status<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">466</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"grpc server error"</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>error<span class="token operator">=</span><span class="token string">"mux: server closed"</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span><span class="token date number">2022/11/03</span> <span class="token time number">14:11:19.675 +08:00</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token level info keyword">INFO</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>server<span class="token punctuation">.</span>go<span class="token operator">:</span><span class="token number">767</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token string">"[server] graceful shutdown."</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>当前（v6.1.2 及以下） TiDB 处理 SIGTERM 信号时，<a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/util/signal/signal_posix.go#L55">判断 graceful 的结果会是 false</a>，因此最终调用 cleanup 时会走到 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/tidb-server/main.go#L779">TryGracefulDown</a>，使用带 timeout（<a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/server/server.go#L746">固定 15s</a>）的 graceful shutdown 机制。</p>
+<p>具体 graceful shutdown 流程如下：</p>
+<ul>
+<li><p>TiDB 收到 SIGTERM 信号后，<a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/tidb-server/main.go#L212">先切换为下线状态并关闭所有服务</a>。</p>
+<ul>
+<li>切换为 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/server/server.go#L462">inShutdownMode</a> 状态，此时当接收到新的链接请求时<a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/server/http_status.go#L510-L516">直接返回 500 报错</a>。</li>
+<li>等待 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tidb-configuration-file#graceful-wait-before-shutdown-%E4%BB%8E-v50-%E7%89%88%E6%9C%AC%E5%BC%80%E5%A7%8B%E5%BC%95%E5%85%A5">graceful-wait-before-shutdown</a> 后，<a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/server/server.go#L479-L497">关闭所有服务</a>，拒绝新的链接请求。</li>
+</ul>
+</li>
+<li><p>接着执行 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/tidb-server/main.go#L213">cleanup</a> 处理已建链请求</p>
+<ul>
+<li>对未在事务中处于 idle 状态的链接，从 server 端尝试关闭链接。</li>
+<li>其他情况的链接，每秒重新探测一次状态。</li>
+</ul>
+</li>
+<li><p>若超过 15s timeout 时间，最终 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/v6.1.2/server/server.go#L758">kill 所有链接</a>。</p>
+</li>
+</ul>
+<h2 id="graceful-wait-before-shutdown-的问题"><a href="#graceful-wait-before-shutdown-的问题" class="headerlink" title="graceful-wait-before-shutdown 的问题"></a><a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/stable/tidb-configuration-file#graceful-wait-before-shutdown-%E4%BB%8E-v50-%E7%89%88%E6%9C%AC%E5%BC%80%E5%A7%8B%E5%BC%95%E5%85%A5">graceful-wait-before-shutdown</a> 的问题</h2><ul>
+<li>默认 0s 的情况下，TiDB 收到 SIGTERM 信号后会立刻关闭所有服务，此时应用端通过负载均衡尝试建立新链接会报 <strong>connection refused</strong>。</li>
+<li>通过配置 graceful-wait-before-shutdown 可以推迟关闭所有服务，让负载均衡的健康探测有窗口机会主动将 TiDB 节点摘除，但在时间窗口内应用端通过负载均衡尝试建立新链接仍会报 <strong>Internal Server Error 500</strong> 的错误。</li>
+</ul>
+<p>因此 graceful-wait-before-shutdown 没有解决根本问题，无论配置与否应用端都会报错，直到负载均衡的健康探测将 TiDB 节点摘除或 TiDB 重新启动恢复服务。</p>
+<h2 id="当前正在做的优化"><a href="#当前正在做的优化" class="headerlink" title="当前正在做的优化"></a>当前正在做的优化</h2><p>PR <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/pull/37441">#37441</a> 将 graceful shutdown 机制更改为无限等待（最新的 v6.3.0 DMR 已带上了该 PR），Issues <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/issues/32110">#32110</a> 中解决 ongoing txn 的问题。</p>
+<p>优化后可以解决：</p>
+<ul>
+<li>graceful shutdown 超过 15s 直接 kill，不够优雅。</li>
+<li>目前每秒重新探测一次链接状态，当链接上持续不断执行事务时，几乎不可能探测到链接处于不在事务的 idle 状态。</li>
+</ul>
+<p>无法解决：</p>
+<ul>
+<li>长时间执行的批量大事务。</li>
+<li>graceful-wait-before-shutdown 的问题。</li>
+</ul>
+<p>中长期规划：</p>
+<p>通过增加一层 <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb/blob/master/docs/design/2022-07-20-session-manager.md">session manager</a> 彻底解决问题。</p>
+<h2 id="建议"><a href="#建议" class="headerlink" title="建议"></a>建议</h2><p>tidb 滚动升级操作建议放在运维窗口或业务低峰期实施，应用端增加错误重试机制。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/11/29/tidb/enable-old-valueInTiCDC/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -170,10 +295,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-11-29 20:32:47 / 修改时间：12:36:34" itemprop="dateCreated datePublished" datetime="2021-11-29T20:32:47+00:00">2021-11-29</time>
+              <time title="创建时间：2021-11-29 20:32:47" itemprop="dateCreated datePublished" datetime="2021-11-29T20:32:47+00:00">2021-11-29</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -222,19 +353,19 @@
 </li>
 </ul>
 <p>可以看到，默认配置下 <strong>indexedColumnsValue</strong> 是存储在 key 中的，但当开启 new collation 特性后变为储存在 value 中。在 v4.0.5 之前这里存在着一个限制，对于 Delete 和 Update 类型的 change log，TiCDC 是无法从 TiKV 获取到 value 的， 因此在开启 new collation 时将会无法获取到 <strong>indexedColumnsValue</strong>，也因此无法还原 Delete 和 Update 事件。</p>
-<p>在 v4.0.5 中 TiKV <a target="_blank" rel="noopener" href="https://github.com/tikv/tikv/pull/8071">实现了输出 old value</a>，对应在 TiCDC 中通过新增 <strong>enable-old-value</strong> 参数来控制是否启用该特性。本文以下部分将采用黑盒测试，对比 <strong>new_collations_enabled_on_first_bootstrap ** 和 **enable-old-value</strong> 在不同配置组合下 TiCDC 的同步行为。TiCDC 默认<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E6%B2%A1%E6%9C%89%E6%9C%89%E6%95%88%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">仅同步有主键或唯一索引</a>的表，这里只讨论该类常见情况。</p>
+<p>在 v4.0.5 中 TiKV <a target="_blank" rel="noopener" href="https://github.com/tikv/tikv/pull/8071">实现了输出 old value</a>，对应在 TiCDC 中通过新增 <strong>enable-old-value</strong> 参数来控制是否启用该特性。本文以下部分将采用黑盒测试，对比 **new_collations_enabled_on_first_bootstrap ** 和 <strong>enable-old-value</strong> 在不同配置组合下 TiCDC 的同步行为。TiCDC 默认<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E6%B2%A1%E6%9C%89%E6%9C%89%E6%95%88%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">仅同步有主键或唯一索引</a>的表，这里只讨论该类常见情况。</p>
 <h2 id="黑盒测试"><a href="#黑盒测试" class="headerlink" title="黑盒测试"></a>黑盒测试</h2><p>本次测试使用版本 v5.0.3 (enable-old-value default true)，为方便重复测试这里使用 tidb-operator 进行部署，使用到的测试语句如下：</p>
 <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token comment"># 1.sql</span>
 <span class="token comment"># test new_collations_enabled_on_first_bootstrap = false (default)</span>
 <span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
 
-<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
-  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>t<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c3<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c4<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span><span class="token punctuation">,</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
 <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
 
 <span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -251,13 +382,13 @@
 <span class="token comment"># test new_collations_enabled_on_first_bootstrap = true</span>
 <span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
 
-<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
-  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>t<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c3<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c4<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span><span class="token punctuation">,</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
 <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8 <span class="token keyword">COLLATE</span> utf8_general_ci<span class="token punctuation">;</span>
 
 <span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -278,14 +409,14 @@
 </li>
 </ul>
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-2-启用-new-collation"><a href="#case-2-启用-new-collation" class="headerlink" title="case 2. 启用 new collation"></a>case 2. 启用 new collation</h3><ul>
@@ -294,28 +425,28 @@
 <li><p>enable-old-value = true (defalut)</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30001</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-3-关闭-enable-old-value"><a href="#case-3-关闭-enable-old-value" class="headerlink" title="case 3. 关闭 enable-old-value"></a>case 3. 关闭 enable-old-value</h3><ul>
@@ -324,18 +455,18 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
 <li><p>enable-old-value = false</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
-      "enable-old-value": false,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl <span class="token parameter variable">-n</span> tidb-cluster1 <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> pod/cluster1-ticdc-0 -- /cdc cli changefeed query <span class="token parameter variable">--pd</span><span class="token operator">=</span>http://cluster1-pd:2379 --changefeed-id<span class="token operator">=</span>cdctest <span class="token operator">|</span> <span class="token function">grep</span> enable-old-value
+      <span class="token string">"enable-old-value"</span><span class="token builtin class-name">:</span> false,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-4-关闭-enable-old-value-amp-启用-new-collation"><a href="#case-4-关闭-enable-old-value-amp-启用-new-collation" class="headerlink" title="case 4. 关闭 enable-old-value &amp; 启用 new collation"></a>case 4. 关闭 enable-old-value &amp; 启用 new collation</h3><ul>
@@ -344,33 +475,33 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
 <li><p>enable-old-value = false</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
-      "enable-old-value": false,
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl <span class="token parameter variable">-n</span> tidb-cluster1 <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> pod/cluster1-ticdc-0 -- /cdc cli changefeed query <span class="token parameter variable">--pd</span><span class="token operator">=</span>http://cluster1-pd:2379 --changefeed-id<span class="token operator">=</span>cdctest <span class="token operator">|</span> <span class="token function">grep</span> enable-old-value
+      <span class="token string">"enable-old-value"</span><span class="token builtin class-name">:</span> false,
 
-mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30001</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>测试结果不符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a1 | b1 | c1   | d1   |
-| a2 | b2 | c2   | d2   |
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a1 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b2 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>让我们通过开启 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v4.0/system-variables#tidb_general_log">tidb_general_log</a> 来观察 TiCDC 的同步行为：</p>
@@ -428,7 +559,7 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -545,7 +676,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -646,7 +777,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -729,7 +860,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -810,7 +941,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -851,11 +982,11 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
 <li>save <strong>now</strong> to etcd  &amp;&amp;  store to lastSavedTime</li>
 <li>update tso.physical = now</li>
 </ol>
-<h3 id="case2-now-lt-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-2-slow-logic"><a href="#case2-now-lt-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-2-slow-logic" class="headerlink" title="case2: now <= prevPhysical + 1ms &amp;&amp; logical > maxLogical/2  (slow logic)"></a>case2: now &lt;= prevPhysical + 1ms &amp;&amp; logical &gt; maxLogical/2  (slow logic)</h3><ol>
+<h3 id="case2-now-lt-x3D-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-x2F-2-slow-logic"><a href="#case2-now-lt-x3D-prevPhysical-1ms-amp-amp-logical-gt-maxLogical-x2F-2-slow-logic" class="headerlink" title="case2: now <= prevPhysical + 1ms &amp;&amp; logical > maxLogical/2  (slow logic)"></a>case2: now &lt;= prevPhysical + 1ms &amp;&amp; logical &gt; maxLogical/2  (slow logic)</h3><ol>
 <li>save <strong>prePhysical+1ms</strong> to etcd  &amp;&amp;  store to lastSavedTime</li>
 <li>update tso.physical = <strong>prePhysical+1ms</strong></li>
 </ol>
-<h3 id="case3-now-lt-prevPhysical-1ms-amp-amp-logical-lt-maxLogical-2-slow-logic"><a href="#case3-now-lt-prevPhysical-1ms-amp-amp-logical-lt-maxLogical-2-slow-logic" class="headerlink" title="case3: now <= prevPhysical + 1ms &amp;&amp; logical <= maxLogical/2  (slow logic)"></a>case3: now &lt;= prevPhysical + 1ms &amp;&amp; logical &lt;= maxLogical/2  (slow logic)</h3><p>no change</p>
+<h3 id="case3-now-lt-x3D-prevPhysical-1ms-amp-amp-logical-lt-x3D-maxLogical-x2F-2-slow-logic"><a href="#case3-now-lt-x3D-prevPhysical-1ms-amp-amp-logical-lt-x3D-maxLogical-x2F-2-slow-logic" class="headerlink" title="case3: now <= prevPhysical + 1ms &amp;&amp; logical <= maxLogical/2  (slow logic)"></a>case3: now &lt;= prevPhysical + 1ms &amp;&amp; logical &lt;= maxLogical/2  (slow logic)</h3><p>no change</p>
 <h2 id="系统时钟发生异常时"><a href="#系统时钟发生异常时" class="headerlink" title="系统时钟发生异常时"></a>系统时钟发生异常时</h2><h3 id="系统时钟异常往前调，然后恢复"><a href="#系统时钟异常往前调，然后恢复" class="headerlink" title="系统时钟异常往前调，然后恢复"></a>系统时钟异常往前调，然后恢复</h3><p>异常: case3 &amp;&amp; case2<br>恢复: case1</p>
 <h3 id="系统时钟异常往后调，然后恢复"><a href="#系统时钟异常往后调，然后恢复" class="headerlink" title="系统时钟异常往后调，然后恢复"></a>系统时钟异常往后调，然后恢复</h3><p>异常: case1<br>恢复: case3 &amp;&amp; case2<br>跟上异常点后： case1</p>
 <h2 id="简化代码"><a href="#简化代码" class="headerlink" title="简化代码"></a>简化代码</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// pd/server/tso/tso.go</span>
@@ -975,7 +1106,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1028,7 +1159,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
 <h3 id="disable-SELinux"><a href="#disable-SELinux" class="headerlink" title="disable SELinux"></a>disable SELinux</h3><p>setenforce 0<br>/etc/selinux/config disable SELinux</p>
 <h3 id="disable-swap"><a href="#disable-swap" class="headerlink" title="disable swap"></a>disable swap</h3><p>sync; swapoff -a; sync;<br>/etc/fstab 注释 swap</p>
 <h3 id="sysctl"><a href="#sysctl" class="headerlink" title="sysctl"></a>sysctl</h3><p>modprobe br_netfilter</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt;  /etc/sysctl.d/k8s.conf
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">&gt;</span>  /etc/sysctl.d/k8s.conf</span>
 net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 net.bridge.bridge-nf-call-arptables = 1
@@ -1044,15 +1175,15 @@ net.ipv4.conf.all.rp_filter = 1
 net.ipv4.neigh.default.gc_thresh1 = 80000
 net.ipv4.neigh.default.gc_thresh2 = 90000
 net.ipv4.neigh.default.gc_thresh3 = 100000
-EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>sysctl –system</p>
 <h3 id="irqbalance"><a href="#irqbalance" class="headerlink" title="irqbalance"></a>irqbalance</h3><p>systemctl enable irqbalance<br>systemctl start irqbalance<br>systemctl status irqbalance</p>
 <h3 id="CPUFreq-performance"><a href="#CPUFreq-performance" class="headerlink" title="CPUFreq performance"></a>CPUFreq performance</h3><p>虚拟机可跳过此步<br>cpupower frequency-info<br>cpupower frequency-set –governor performance</p>
 <h3 id="ulimit"><a href="#ulimit" class="headerlink" title="ulimit"></a>ulimit</h3><p>ulimit -a<br>按需调整 /etc/security/limits.conf</p>
-<h3 id="aliyun-repo"><a href="#aliyun-repo" class="headerlink" title="aliyun repo"></a>aliyun repo</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+<h3 id="aliyun-repo"><a href="#aliyun-repo" class="headerlink" title="aliyun repo"></a>aliyun repo</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
-cat &lt;&lt;EOF &gt;  /etc/yum.repos.d/kubernetes.repo
+<span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">&gt;</span>  /etc/yum.repos.d/kubernetes.repo</span>
 [kubernetes]
 name=Kubernetes
 baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
@@ -1060,11 +1191,11 @@ enabled=1
 gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="1-install-docker"><a href="#1-install-docker" class="headerlink" title="1. install docker"></a>1. install docker</h2><p>yum install -y yum-utils<br>yum install -y docker-ce</p>
 <p>修改 cgroup driver 为 systemd</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt;  /etc/docker/daemon.json
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">&gt;</span>  /etc/docker/daemon.json</span>
 {
   "exec-opts": ["native.cgroupdriver=systemd"],
   "log-driver": "json-file",
@@ -1074,7 +1205,7 @@ EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
   "storage-driver": "overlay2",
   "data-root": "/home/docker"
 }
-EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>systemctl enable docker</p>
 <blockquote>
@@ -1084,60 +1215,60 @@ EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
 <p>systemctl start/restart docker 生效配置</p>
 <h2 id="2-install-kubeadm"><a href="#2-install-kubeadm" class="headerlink" title="2. install kubeadm"></a>2. install kubeadm</h2><p>yum install -y kubeadm<br>systemctl enable kubelet<br>systemctl start kubelet</p>
 <p>安装后可用以下命令<br>kubeadm  kubectl  kubelet</p>
-<h2 id="3-kubeadm-init-join"><a href="#3-kubeadm-init-join" class="headerlink" title="3. kubeadm init/join"></a>3. kubeadm init/join</h2><p>可手动指定国内仓库镜像， 通过 config pull image 到本地<br>kubeadm config images pull –image-repository=k8s.gcr.io/</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# docker images | grep k8s.gcr.io
-k8s.gcr.io/kube-apiserver                                         v1.21.1    771ffcf9ca63   11 days ago    126MB
-k8s.gcr.io/kube-controller-manager                                v1.21.1    e16544fd47b0   11 days ago    120MB
-k8s.gcr.io/kube-proxy                                             v1.21.1    4359e752b596   11 days ago    131MB
-k8s.gcr.io/kube-scheduler                                         v1.21.1    a4183b88f6e6   11 days ago    50.6MB
-k8s.gcr.io/pause                                                  3.4.1      0f8457a4c2ec   4 months ago   683kB
-k8s.gcr.io/coredns/coredns                                        v1.8.0     296a6d5035e2   7 months ago   42.5MB
-k8s.gcr.io/etcd                                                   3.4.13-0   0369cf4303ff   8 months ago   253MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="3-kubeadm-init-x2F-join"><a href="#3-kubeadm-init-x2F-join" class="headerlink" title="3. kubeadm init/join"></a>3. kubeadm init/join</h2><p>可手动指定国内仓库镜像， 通过 config pull image 到本地<br>kubeadm config images pull –image-repository=k8s.gcr.io/</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># docker images | grep k8s.gcr.io</span>
+k8s.gcr.io/kube-apiserver                                         v1.21.1    771ffcf9ca63   <span class="token number">11</span> days ago    126MB
+k8s.gcr.io/kube-controller-manager                                v1.21.1    e16544fd47b0   <span class="token number">11</span> days ago    120MB
+k8s.gcr.io/kube-proxy                                             v1.21.1    4359e752b596   <span class="token number">11</span> days ago    131MB
+k8s.gcr.io/kube-scheduler                                         v1.21.1    a4183b88f6e6   <span class="token number">11</span> days ago    <span class="token number">50</span>.6MB
+k8s.gcr.io/pause                                                  <span class="token number">3.4</span>.1      0f8457a4c2ec   <span class="token number">4</span> months ago   683kB
+k8s.gcr.io/coredns/coredns                                        v1.8.0     296a6d5035e2   <span class="token number">7</span> months ago   <span class="token number">42</span>.5MB
+k8s.gcr.io/etcd                                                   <span class="token number">3.4</span>.13-0   0369cf4303ff   <span class="token number">8</span> months ago   253MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="3-1-master"><a href="#3-1-master" class="headerlink" title="3.1 master"></a>3.1 master</h3><p><strong>–pod-network-cidr</strong> 根据下面安装 cni flannel deploy yaml 中 network 调整， 默认值为 <a target="_blank" rel="noopener" href="https://github.com/flannel-io/flannel/blob/master/Documentation/kube-flannel.yml#L128">10.244.0.0/16</a><br>若有多 Kubernetes 集群部署 tidb-cluster 需求，手动设定 dns 使用参数 –service-dns-domain</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubeadm init --node-name='172.16.6.188' --pod-network-cidr=10.244.0.0/16
-...
-Your Kubernetes control-plane has initialized successfully!
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubeadm init --node-name='172.16.6.188' --pod-network-cidr=10.244.0.0/16</span>
+<span class="token punctuation">..</span>.
+Your Kubernetes control-plane has initialized successfully<span class="token operator">!</span>
 
 To start using your cluster, you need to run the following as a regular user:
 
-  mkdir -p $HOME/.kube
-  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  <span class="token function">mkdir</span> <span class="token parameter variable">-p</span> <span class="token environment constant">$HOME</span>/.kube
+  <span class="token function">sudo</span> <span class="token function">cp</span> <span class="token parameter variable">-i</span> /etc/kubernetes/admin.conf <span class="token environment constant">$HOME</span>/.kube/config
+  <span class="token function">sudo</span> <span class="token function">chown</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">id</span> <span class="token parameter variable">-u</span><span class="token variable">)</span></span><span class="token builtin class-name">:</span><span class="token variable"><span class="token variable">$(</span><span class="token function">id</span> <span class="token parameter variable">-g</span><span class="token variable">)</span></span> <span class="token environment constant">$HOME</span>/.kube/config
 
-Alternatively, if you are the root user, you can run:
+Alternatively, <span class="token keyword">if</span> you are the root user, you can run:
 
-  export KUBECONFIG=/etc/kubernetes/admin.conf
+  <span class="token builtin class-name">export</span> <span class="token assign-left variable">KUBECONFIG</span><span class="token operator">=</span>/etc/kubernetes/admin.conf
 
 You should now deploy a pod network to the cluster.
-Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+Run <span class="token string">"kubectl apply -f [podnetwork].yaml"</span> with one of the options listed at:
   https://kubernetes.io/docs/concepts/cluster-administration/addons/
 
-Then you can join any number of worker nodes by running the following on each as root:
+Then you can <span class="token function">join</span> any number of worker nodes by running the following on each as root:
 
-kubeadm join 172.16.6.188:6443 --token sd2lhv.7hbkznxww3eknymv \
+kubeadm <span class="token function">join</span> <span class="token number">172.16</span>.6.188:6443 <span class="token parameter variable">--token</span> sd2lhv.7hbkznxww3eknymv <span class="token punctuation">\</span>
 	--discovery-token-ca-cert-hash sha256:86554a381b1d023d6812002060c6e70e00cf19c8a7a7e5e2a37394630cb874a2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>根据提示， 将 <code>export KUBECONFIG=/etc/kubernetes/admin.conf</code> 添加至 profile<br>worker node 需要手动拷贝 master node 上该文件 &amp; export</p>
 <p>允许 master 节点调度 Pod</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl taint node 172.16.6.188 node-role.kubernetes.io/master:NoSchedule-
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl taint node 172.16.6.188 node-role.kubernetes.io/master:NoSchedule-</span>
 node/172.16.6.188 untainted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <h4 id="3-1-1-IPv6"><a href="#3-1-1-IPv6" class="headerlink" title="3.1.1 IPv6"></a>3.1.1 IPv6</h4><p>kubeadm init –apiserver-advertise-address=2600:1f13:c89:8900:150d:1ed:13c8:e90d</p>
-<h3 id="3-2-worker"><a href="#3-2-worker" class="headerlink" title="3.2 worker"></a>3.2 worker</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubeadm join 172.16.6.188:6443 --token sd2lhv.7hbkznxww3eknymv \
-	--discovery-token-ca-cert-hash sha256:86554a381b1d023d6812002060c6e70e00cf19c8a7a7e5e2a37394630cb874a2 \
-    --node-name='172.16.6.187'
+<h3 id="3-2-worker"><a href="#3-2-worker" class="headerlink" title="3.2 worker"></a>3.2 worker</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubeadm join 172.16.6.188:6443 --token sd2lhv.7hbkznxww3eknymv \</span>
+	--discovery-token-ca-cert-hash sha256:86554a381b1d023d6812002060c6e70e00cf19c8a7a7e5e2a37394630cb874a2 <span class="token punctuation">\</span>
+    --node-name<span class="token operator">=</span><span class="token string">'172.16.6.187'</span>
 
-[root@centos76_vm ~]# kubectl get no -A
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get no -A</span>
 NAME           STATUS      ROLES                  AGE     VERSION
-172.16.6.186   NotReady    &lt;none&gt;                 3m12s   v1.21.1
-172.16.6.187   NotReady    &lt;none&gt;                 20h     v1.21.1
-172.16.6.188   NotReady    control-plane,master   21h     v1.21.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token number">172.16</span>.6.186   NotReady    <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>                 3m12s   v1.21.1
+<span class="token number">172.16</span>.6.187   NotReady    <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>                 20h     v1.21.1
+<span class="token number">172.16</span>.6.188   NotReady    control-plane,master   21h     v1.21.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>安装 CNI 插件 flannel</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml</span>
 
-Warning: policy/v1beta1 PodSecurityPolicy is deprecated in v1.21+, unavailable in v1.25+
+Warning: policy/v1beta1 PodSecurityPolicy is deprecated <span class="token keyword">in</span> v1.21+, unavailable <span class="token keyword">in</span> v1.25+
 podsecuritypolicy.policy/psp.flannel.unprivileged created
 clusterrole.rbac.authorization.k8s.io/flannel created
 clusterrolebinding.rbac.authorization.k8s.io/flannel created
@@ -1145,29 +1276,29 @@ serviceaccount/flannel created
 configmap/kube-flannel-cfg created
 daemonset.apps/kube-flannel-ds created
 
-[root@centos76_vm ~]# kubectl get po -A | grep flannel
-kube-system   kube-flannel-ds-k6n6t                  1/1     Running   0          2d20h
-kube-system   kube-flannel-ds-n26qj                  1/1     Running   0          3d17h
-kube-system   kube-flannel-ds-zvv5f                  1/1     Running   0          3d16h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -A | grep flannel</span>
+kube-system   kube-flannel-ds-k6n6t                  <span class="token number">1</span>/1     Running   <span class="token number">0</span>          2d20h
+kube-system   kube-flannel-ds-n26qj                  <span class="token number">1</span>/1     Running   <span class="token number">0</span>          3d17h
+kube-system   kube-flannel-ds-zvv5f                  <span class="token number">1</span>/1     Running   <span class="token number">0</span>          3d16h<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="4-部署-operator"><a href="#4-部署-operator" class="headerlink" title="4. 部署 operator"></a>4. <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/stable/deploy-tidb-operator">部署 operator</a></h2><h2 id="5-部署-tidb-cluster1"><a href="#5-部署-tidb-cluster1" class="headerlink" title="5. 部署 tidb-cluster1"></a>5. <a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb-operator/blob/master/examples/multi-cluster/tidb-cluster-1.yaml">部署 tidb-cluster1</a></h2><p>image 可以换成 uhub.service.ucloud.cn/pingcap/{pd/tikv/tidb}<br><strong>创建 pv 挂载点需在所有 node 上执行，否则 node 上将没有 pv 生成，无法满足 tikv 调度</strong></p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># 虚拟机的/home 在 /dev/sda2
-# 使用 --bind 创建挂载点用于 pv disk
-DISK_UUID=$(blkid -s UUID -o value /dev/sda2)
-for i in $(seq 1 3); do
-  mkdir -p /home/mnt/${DISK_UUID}/vol${i}
-  mkdir -p /home/mnt/disks/${DISK_UUID}_vol${i}
-  mount --bind /home/mnt/${DISK_UUID}/vol${i} /home/mnt/disks/${DISK_UUID}_vol${i}
-done
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 虚拟机的/home 在 /dev/sda2</span>
+<span class="token comment"># 使用 --bind 创建挂载点用于 pv disk</span>
+<span class="token assign-left variable">DISK_UUID</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>blkid <span class="token parameter variable">-s</span> UUID <span class="token parameter variable">-o</span> value /dev/sda2<span class="token variable">)</span></span>
+<span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">seq</span> <span class="token number">1</span> <span class="token number">3</span><span class="token variable">)</span></span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+  <span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /home/mnt/<span class="token variable">${DISK_UUID}</span>/vol<span class="token variable">${i}</span>
+  <span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /home/mnt/disks/<span class="token variable">${DISK_UUID}</span>_vol<span class="token variable">${i}</span>
+  <span class="token function">mount</span> <span class="token parameter variable">--bind</span> /home/mnt/<span class="token variable">${DISK_UUID}</span>/vol<span class="token variable">${i}</span> /home/mnt/disks/<span class="token variable">${DISK_UUID}</span>_vol<span class="token variable">${i}</span>
+<span class="token keyword">done</span>
 
-# 使用operator provisioner，修改路径为 /home/mnt/disks
-[root@centos76_vm ~]# wget https://raw.githubusercontent.com/pingcap/tidb-operator/v1.1.12/manifests/local-dind/local-volume-provisioner.yaml
-[root@centos76_vm ~]# kubectl apply -f local-volume-provisioner.yaml
+<span class="token comment"># 使用operator provisioner，修改路径为 /home/mnt/disks</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># wget https://raw.githubusercontent.com/pingcap/tidb-operator/v1.1.12/manifests/local-dind/local-volume-provisioner.yaml</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl apply -f local-volume-provisioner.yaml</span>
 
-# 设为 default sc
-[root@centos76_vm ~]# kubectl patch storageclass local-storage -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+<span class="token comment"># 设为 default sc</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl patch storageclass local-storage -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</span>
 
-[root@centos76_vm ~]# kubectl get pv
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get pv</span>
 NAME                CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS    REASON   AGE
 local-pv-1799bdea   446Gi      RWO            Delete           Available           local-storage            9s
 local-pv-18a6c0a5   446Gi      RWO            Delete           Available           local-storage            9s
@@ -1179,200 +1310,200 @@ local-pv-b6680abf   446Gi      RWO            Delete           Available        
 local-pv-c139b536   446Gi      RWO            Delete           Available           local-storage            9s
 local-pv-ef0862f3   446Gi      RWO            Delete           Available           local-storage            9s
 
-[root@centos76_vm ~]# kubectl create ns tidb-cluster1
-[root@centos76_vm ~]# kubectl -n tidb-cluster1 apply -f tidb-cluster-1.yaml
-[root@centos76_vm ~]# kubectl get po -n tidb-cluster1 -o wide
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl create ns tidb-cluster1</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl -n tidb-cluster1 apply -f tidb-cluster-1.yaml</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -n tidb-cluster1 -o wide</span>
 NAME                                 READY   STATUS    RESTARTS   AGE   IP             NODE           NOMINATED NODE   READINESS GATES
-cluster1-discovery-c9d6c97f4-pxtq2   1/1     Running   0          58s   10.244.2.126   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-pd-0                        1/1     Running   0          58s   10.244.1.67    172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-0                      1/1     Running   0          17s   10.244.2.127   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-1                      1/1     Running   0          17s   10.244.2.128   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-2                      1/1     Running   0          17s   10.244.2.129   172.16.6.186   &lt;none&gt;           &lt;none&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+cluster1-discovery-c9d6c97f4-pxtq2   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          58s   <span class="token number">10.244</span>.2.126   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-pd-0                        <span class="token number">1</span>/1     Running   <span class="token number">0</span>          58s   <span class="token number">10.244</span>.1.67    <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-0                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          17s   <span class="token number">10.244</span>.2.127   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-1                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          17s   <span class="token number">10.244</span>.2.128   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-2                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          17s   <span class="token number">10.244</span>.2.129   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="6-调度-tikv-pod"><a href="#6-调度-tikv-pod" class="headerlink" title="6. 调度 tikv pod"></a>6. 调度 tikv pod</h2><blockquote>
 <p>官网上 operator v1.1.12 版本没有 topologySpreadConstraints 功能， 需使用最新版本 v1.2.0-rc.1</p>
 </blockquote>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl apply -f https://raw.githubusercontent.com/pingcap/tidb-operator/v1.2.0-rc.1/manifests/crd.yaml
-[root@centos76_vm ~]# mkdir -p ${HOME}/tidb-operator &amp;&amp; \
-helm inspect values pingcap/tidb-operator --version=v1.2.0-rc.1 &gt; ${HOME}/tidb-operator/values-tidb-operator.yaml
-[root@centos76_vm ~]# helm install tidb-operator pingcap/tidb-operator --namespace tidb-admin1 --version v1.2.0-rc.1 -f ${HOME}/tidb-operator/values-tidb-operator.yaml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl apply -f https://raw.githubusercontent.com/pingcap/tidb-operator/v1.2.0-rc.1/manifests/crd.yaml</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p ${HOME}/tidb-operator &amp;&amp; \</span>
+helm inspect values pingcap/tidb-operator <span class="token parameter variable">--version</span><span class="token operator">=</span>v1.2.0-rc.1 <span class="token operator">&gt;</span> <span class="token variable">${<span class="token environment constant">HOME</span>}</span>/tidb-operator/values-tidb-operator.yaml
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># helm install tidb-operator pingcap/tidb-operator --namespace tidb-admin1 --version v1.2.0-rc.1 -f ${HOME}/tidb-operator/values-tidb-operator.yaml</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="6-1-通过-tidb-scheduler-调度"><a href="#6-1-通过-tidb-scheduler-调度" class="headerlink" title="6.1 通过 tidb-scheduler 调度"></a>6.1 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/tidb-scheduler#tidb-%E9%9B%86%E7%BE%A4%E8%B0%83%E5%BA%A6%E9%9C%80%E6%B1%82">通过 tidb-scheduler 调度</a></h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# cat tidb-cluster-1.yaml | grep schedulerName
-  schedulerName: "tidb-scheduler"
-[root@centos76_vm ~]# cat tidb-cluster-1.yaml | grep annotations -A 1
+<h3 id="6-1-通过-tidb-scheduler-调度"><a href="#6-1-通过-tidb-scheduler-调度" class="headerlink" title="6.1 通过 tidb-scheduler 调度"></a>6.1 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/tidb-scheduler#tidb-%E9%9B%86%E7%BE%A4%E8%B0%83%E5%BA%A6%E9%9C%80%E6%B1%82">通过 tidb-scheduler 调度</a></h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># cat tidb-cluster-1.yaml | grep schedulerName</span>
+  schedulerName: <span class="token string">"tidb-scheduler"</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># cat tidb-cluster-1.yaml | grep annotations -A 1</span>
   annotations:
     pingcap.com/ha-topology-key: kubernetes.io/hostname
-[root@centos76_vm ~]# kubectl get po -n tidb-cluster1 -o wide
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -n tidb-cluster1 -o wide</span>
 NAME                               READY   STATUS    RESTARTS   AGE     IP            NODE           NOMINATED NODE   READINESS GATES
-cluster1-discovery-5df6575-kmjzc   1/1     Running   0          7m      10.244.2.13   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-pd-0                      1/1     Running   0          7m      10.244.2.14   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-tidb-0                    2/2     Running   0          6m9s    10.244.1.15   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-0                    1/1     Running   0          6m48s   10.244.1.14   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-1                    1/1     Running   0          6m48s   10.244.2.15   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-2                    1/1     Running   0          6m48s   10.244.0.4    172.16.6.188   &lt;none&gt;           &lt;none&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+cluster1-discovery-5df6575-kmjzc   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          7m      <span class="token number">10.244</span>.2.13   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-pd-0                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          7m      <span class="token number">10.244</span>.2.14   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tidb-0                    <span class="token number">2</span>/2     Running   <span class="token number">0</span>          6m9s    <span class="token number">10.244</span>.1.15   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-0                    <span class="token number">1</span>/1     Running   <span class="token number">0</span>          6m48s   <span class="token number">10.244</span>.1.14   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-1                    <span class="token number">1</span>/1     Running   <span class="token number">0</span>          6m48s   <span class="token number">10.244</span>.2.15   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-2                    <span class="token number">1</span>/1     Running   <span class="token number">0</span>          6m48s   <span class="token number">10.244</span>.0.4    <span class="token number">172.16</span>.6.188   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="6-2-通过-topologySpreadConstraints-调度"><a href="#6-2-通过-topologySpreadConstraints-调度" class="headerlink" title="6.2 通过 topologySpreadConstraints 调度"></a>6.2 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/configure-a-tidb-cluster#%E9%80%9A%E8%BF%87-topologyspreadconstraints-%E5%AE%9E%E7%8E%B0-pod-%E5%9D%87%E5%8C%80%E5%88%86%E5%B8%83">通过 topologySpreadConstraints 调度</a></h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# cat tidb-cluster-1.yaml  | grep topologySpreadConstraints -A 2
+<h3 id="6-2-通过-topologySpreadConstraints-调度"><a href="#6-2-通过-topologySpreadConstraints-调度" class="headerlink" title="6.2 通过 topologySpreadConstraints 调度"></a>6.2 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/configure-a-tidb-cluster#%E9%80%9A%E8%BF%87-topologyspreadconstraints-%E5%AE%9E%E7%8E%B0-pod-%E5%9D%87%E5%8C%80%E5%88%86%E5%B8%83">通过 topologySpreadConstraints 调度</a></h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># cat tidb-cluster-1.yaml  | grep topologySpreadConstraints -A 2</span>
     topologySpreadConstraints:
     - topologyKey: kubernetes.io/hostname
     - topologyKey: zone
-[root@centos76_vm ~]# kubectl patch no/172.16.6.186 -p '{"metadata":{"labels":{"zone":"z1"}}}'
-[root@centos76_vm ~]# kubectl patch no/172.16.6.187 -p '{"metadata":{"labels":{"zone":"z2"}}}'
-[root@centos76_vm ~]# kubectl patch no/172.16.6.188 -p '{"metadata":{"labels":{"zone":"z3"}}}'
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl patch no/172.16.6.186 -p '{"metadata":{"labels":{"zone":"z1"}}}'</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl patch no/172.16.6.187 -p '{"metadata":{"labels":{"zone":"z2"}}}'</span>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl patch no/172.16.6.188 -p '{"metadata":{"labels":{"zone":"z3"}}}'</span>
 
-[root@centos76_vm ~]# kubectl get po -n tidb-cluster1 -o wide
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -n tidb-cluster1 -o wide</span>
 NAME                                 READY   STATUS    RESTARTS   AGE   IP            NODE           NOMINATED NODE   READINESS GATES
-cluster1-discovery-7cd58ddbc-nd7h2   1/1     Running   0          46s   10.244.2.33   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-pd-0                        1/1     Running   0          45s   10.244.2.34   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-0                      1/1     Running   0          18s   10.244.1.33   172.16.6.186   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-1                      1/1     Running   0          18s   10.244.2.35   172.16.6.187   &lt;none&gt;           &lt;none&gt;
-cluster1-tikv-2                      1/1     Running   0          18s   10.244.0.10   172.16.6.188   &lt;none&gt;           &lt;none&gt;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+cluster1-discovery-7cd58ddbc-nd7h2   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          46s   <span class="token number">10.244</span>.2.33   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-pd-0                        <span class="token number">1</span>/1     Running   <span class="token number">0</span>          45s   <span class="token number">10.244</span>.2.34   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-0                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          18s   <span class="token number">10.244</span>.1.33   <span class="token number">172.16</span>.6.186   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-1                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          18s   <span class="token number">10.244</span>.2.35   <span class="token number">172.16</span>.6.187   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+cluster1-tikv-2                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          18s   <span class="token number">10.244</span>.0.10   <span class="token number">172.16</span>.6.188   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="6-3-通过-affinity-调度"><a href="#6-3-通过-affinity-调度" class="headerlink" title="6.3 通过 affinity 调度"></a>6.3 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/configure-a-tidb-cluster#%E9%80%9A%E8%BF%87-affinity-%E8%B0%83%E5%BA%A6%E5%AE%9E%E4%BE%8B">通过 affinity 调度</a></h3><h2 id="7-heterogeneous-在线迁移步骤"><a href="#7-heterogeneous-在线迁移步骤" class="headerlink" title="7. heterogeneous 在线迁移步骤"></a>7. heterogeneous 在线迁移步骤</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># 重建 cluster1
-sh /root/recreate.sh
+<h3 id="6-3-通过-affinity-调度"><a href="#6-3-通过-affinity-调度" class="headerlink" title="6.3 通过 affinity 调度"></a>6.3 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/configure-a-tidb-cluster#%E9%80%9A%E8%BF%87-affinity-%E8%B0%83%E5%BA%A6%E5%AE%9E%E4%BE%8B">通过 affinity 调度</a></h3><h2 id="7-heterogeneous-在线迁移步骤"><a href="#7-heterogeneous-在线迁移步骤" class="headerlink" title="7. heterogeneous 在线迁移步骤"></a>7. heterogeneous 在线迁移步骤</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 重建 cluster1</span>
+<span class="token function">sh</span> /root/recreate.sh
 
-# tidb node port
-kubectl get svc -A | grep cluster1-tidb
+<span class="token comment"># tidb node port</span>
+kubectl get svc <span class="token parameter variable">-A</span> <span class="token operator">|</span> <span class="token function">grep</span> cluster1-tidb
 
-# sysbench prepare &amp; analyze table
+<span class="token comment"># sysbench prepare &amp; analyze table</span>
 
-# 创建 monitor (在 new-cluster1 apply 后 scheduler 才会创建 monitor pod)
-kubectl -n tidb-cluster1 apply -f /root/tidb-monitor.yaml
+<span class="token comment"># 创建 monitor (在 new-cluster1 apply 后 scheduler 才会创建 monitor pod)</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 apply <span class="token parameter variable">-f</span> /root/tidb-monitor.yaml
 
-# sysbench run on cluster1.tidb &amp; 观察 sysbench QPS
+<span class="token comment"># sysbench run on cluster1.tidb &amp; 观察 sysbench QPS</span>
 
-# 创建 new-cluster1
-kubectl -n tidb-cluster1 apply -f /root/new-tidb-cluster-1.yaml
+<span class="token comment"># 创建 new-cluster1</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 apply <span class="token parameter variable">-f</span> /root/new-tidb-cluster-1.yaml
 
-# grafana node port &amp; 观察 grafana 曲线
-kubectl get svc -A | grep grafana
+<span class="token comment"># grafana node port &amp; 观察 grafana 曲线</span>
+kubectl get svc <span class="token parameter variable">-A</span> <span class="token operator">|</span> <span class="token function">grep</span> grafana
 
-# 扩容 new-cluster1 tc.spec.tikv.replicas 到 3
-kubectl -n tidb-cluster1 edit tc/new-cluster1
+<span class="token comment"># 扩容 new-cluster1 tc.spec.tikv.replicas 到 3</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 edit tc/new-cluster1
 
-# 观察 grafana 曲线 &amp; 等待 region 均衡
+<span class="token comment"># 观察 grafana 曲线 &amp; 等待 region 均衡</span>
 
-# 调整 sysbench run on new-cluster1.tidb (应用指向新 tidb)
+<span class="token comment"># 调整 sysbench run on new-cluster1.tidb (应用指向新 tidb)</span>
 
-# 缩容 cluster1 的 tidb 和 tikv &amp; 观察 grafana
-kubectl -n tidb-cluster1 edit tc/cluster1
+<span class="token comment"># 缩容 cluster1 的 tidb 和 tikv &amp; 观察 grafana</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 edit tc/cluster1
 
-# transfer leader
-kubectl -n tidb-cluster1 exec -it cluster1-pd-0 -- ./pd-ctl member leader transfer new-cluster1-pd-0
+<span class="token comment"># transfer leader</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> cluster1-pd-0 -- ./pd-ctl member leader transfer new-cluster1-pd-0
 
-# 缩容 cluster1 的 pd
-kubectl -n tidb-cluster1 edit tc/cluster1
+<span class="token comment"># 缩容 cluster1 的 pd</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 edit tc/cluster1
 
-# 删除 cluster1 集群 (discovery pod)
-kubectl -n tidb-cluster1 delete tc/cluster1
+<span class="token comment"># 删除 cluster1 集群 (discovery pod)</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 delete tc/cluster1
 
-# 调整 monitor spec.clusters.name 中去除 cluster1 (monitor pod 会重建)
-kubectl -n tidb-cluster1 edit tm/basic
+<span class="token comment"># 调整 monitor spec.clusters.name 中去除 cluster1 (monitor pod 会重建)</span>
+kubectl <span class="token parameter variable">-n</span> tidb-cluster1 edit tm/basic
 
-# 迁移完成<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token comment"># 迁移完成</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="7-1-grafana-多集群监控问题"><a href="#7-1-grafana-多集群监控问题" class="headerlink" title="7.1 grafana 多集群监控问题"></a>7.1 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/dev/monitor-a-tidb-cluster#%E4%BD%BF%E7%94%A8-grafana-%E6%9F%A5%E7%9C%8B%E5%A4%9A%E9%9B%86%E7%BE%A4%E7%9B%91%E6%8E%A7">grafana 多集群监控问题</a></h3><p>也可以在 new-tc.metadata 增加:<br>labels:<br>  app.kubernetes.io/instance: {origin_cluster_name}</p>
 <h2 id="9-问题记录"><a href="#9-问题记录" class="headerlink" title="9. 问题记录"></a>9. 问题记录</h2><h3 id="docker-change-cgroup-driver"><a href="#docker-change-cgroup-driver" class="headerlink" title="docker change cgroup driver"></a>docker change cgroup driver</h3><p><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/setup/production-environment/container-runtimes/#docker">change runtime cgroup driver 为 systemd</a></p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# docker info |grep cgroup
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># docker info |grep cgroup</span>
  Cgroup Driver: cgroupfs
 
-[root@centos76_vm ~]# cat /etc/docker/daemon.json
-{
-  "exec-opts": ["native.cgroupdriver=systemd"],
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "100m"
-  },
-  "storage-driver": "overlay2",
-  "data-root": "/home/docker"
-}
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/docker/daemon.json</span>
+<span class="token punctuation">{</span>
+  <span class="token string">"exec-opts"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"native.cgroupdriver=systemd"</span><span class="token punctuation">]</span>,
+  <span class="token string">"log-driver"</span><span class="token builtin class-name">:</span> <span class="token string">"json-file"</span>,
+  <span class="token string">"log-opts"</span><span class="token builtin class-name">:</span> <span class="token punctuation">{</span>
+    <span class="token string">"max-size"</span><span class="token builtin class-name">:</span> <span class="token string">"100m"</span>
+  <span class="token punctuation">}</span>,
+  <span class="token string">"storage-driver"</span><span class="token builtin class-name">:</span> <span class="token string">"overlay2"</span>,
+  <span class="token string">"data-root"</span><span class="token builtin class-name">:</span> <span class="token string">"/home/docker"</span>
+<span class="token punctuation">}</span>
 
-[root@centos76_vm ~]# docker info |grep systemd
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># docker info |grep systemd</span>
  Cgroup Driver: systemd<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="kubeadm-init-报-nodeRegistration-name-Invalid-value"><a href="#kubeadm-init-报-nodeRegistration-name-Invalid-value" class="headerlink" title="kubeadm init 报 nodeRegistration.name: Invalid value"></a>kubeadm init 报 nodeRegistration.name: Invalid value</h3><p>VM 的 hostname 统一为 centos76_vm， 不符合 validation<br>临时 workaround 增加 –node-name=’172.16.6.188’<br><strong>实际环境应不会有该问题， kubeadm config images pull 暂时未找到 workaround</strong></p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubeadm init
-nodeRegistration.name: Invalid value: "centos76_vm": a lowercase RFC 1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')
-To see the stack trace of this error execute with --v=5 or higher
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubeadm init</span>
+nodeRegistration.name: Invalid value: <span class="token string">"centos76_vm"</span><span class="token builtin class-name">:</span> a lowercase RFC <span class="token number">1123</span> subdomain must consist of lower <span class="token keyword">case</span> alphanumeric characters, <span class="token string">'-'</span> or <span class="token string">'.'</span>, and must start and end with an alphanumeric character <span class="token punctuation">(</span>e.g. <span class="token string">'example.com'</span>, regex used <span class="token keyword">for</span> validation is <span class="token string">'[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*'</span><span class="token punctuation">)</span>
+To see the stack trace of this error execute with <span class="token parameter variable">--v</span><span class="token operator">=</span><span class="token number">5</span> or higher
 
-kubeadm init --node-name='172.16.6.188' --v 8<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+kubeadm init --node-name<span class="token operator">=</span><span class="token string">'172.16.6.188'</span> <span class="token parameter variable">--v</span> <span class="token number">8</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="已有-kubeadm-残留信息"><a href="#已有-kubeadm-残留信息" class="headerlink" title="已有 kubeadm 残留信息"></a>已有 kubeadm 残留信息</h3><p>使用 kubeadm reset 清理</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubeadm init --node-name='172.16.6.188'
-[init] Using Kubernetes version: v1.21.1
-[preflight] Running pre-flight checks
-error execution phase preflight: [preflight] Some fatal errors occurred:
-	[ERROR Port-10259]: Port 10259 is in use
-	[ERROR FileAvailable--etc-kubernetes-manifests-kube-apiserver.yaml]: /etc/kubernetes/manifests/kube-apiserver.yaml already exists
-	[ERROR FileAvailable--etc-kubernetes-manifests-kube-controller-manager.yaml]: /etc/kubernetes/manifests/kube-controller-manager.yaml already exists
-	[ERROR FileAvailable--etc-kubernetes-manifests-kube-scheduler.yaml]: /etc/kubernetes/manifests/kube-scheduler.yaml already exists
-	[ERROR FileAvailable--etc-kubernetes-manifests-etcd.yaml]: /etc/kubernetes/manifests/etcd.yaml already exists
-	[ERROR Port-10250]: Port 10250 is in use
-	[ERROR Port-2379]: Port 2379 is in use
-	[ERROR Port-2380]: Port 2380 is in use
-	[ERROR DirAvailable--var-lib-etcd]: /var/lib/etcd is not empty
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubeadm init --node-name='172.16.6.188'</span>
+<span class="token punctuation">[</span>init<span class="token punctuation">]</span> Using Kubernetes version: v1.21.1
+<span class="token punctuation">[</span>preflight<span class="token punctuation">]</span> Running pre-flight checks
+error execution phase preflight: <span class="token punctuation">[</span>preflight<span class="token punctuation">]</span> Some fatal errors occurred:
+	<span class="token punctuation">[</span>ERROR Port-10259<span class="token punctuation">]</span>: Port <span class="token number">10259</span> is <span class="token keyword">in</span> use
+	<span class="token punctuation">[</span>ERROR FileAvailable--etc-kubernetes-manifests-kube-apiserver.yaml<span class="token punctuation">]</span>: /etc/kubernetes/manifests/kube-apiserver.yaml already exists
+	<span class="token punctuation">[</span>ERROR FileAvailable--etc-kubernetes-manifests-kube-controller-manager.yaml<span class="token punctuation">]</span>: /etc/kubernetes/manifests/kube-controller-manager.yaml already exists
+	<span class="token punctuation">[</span>ERROR FileAvailable--etc-kubernetes-manifests-kube-scheduler.yaml<span class="token punctuation">]</span>: /etc/kubernetes/manifests/kube-scheduler.yaml already exists
+	<span class="token punctuation">[</span>ERROR FileAvailable--etc-kubernetes-manifests-etcd.yaml<span class="token punctuation">]</span>: /etc/kubernetes/manifests/etcd.yaml already exists
+	<span class="token punctuation">[</span>ERROR Port-10250<span class="token punctuation">]</span>: Port <span class="token number">10250</span> is <span class="token keyword">in</span> use
+	<span class="token punctuation">[</span>ERROR Port-2379<span class="token punctuation">]</span>: Port <span class="token number">2379</span> is <span class="token keyword">in</span> use
+	<span class="token punctuation">[</span>ERROR Port-2380<span class="token punctuation">]</span>: Port <span class="token number">2380</span> is <span class="token keyword">in</span> use
+	<span class="token punctuation">[</span>ERROR DirAvailable--var-lib-etcd<span class="token punctuation">]</span>: /var/lib/etcd is not empty
 
-[root@centos76_vm ~]# kubeadm reset
-[reset] Reading configuration from the cluster...
-[reset] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -o yaml'
-W0524 16:39:28.363100    4665 reset.go:99] [reset] Unable to fetch the kubeadm-config ConfigMap from cluster: failed to get config map: Get "https://172.16.6.188:6443/api/v1/namespaces/kube-system/configmaps/kubeadm-config?timeout=10s": dial tcp 172.16.6.188:6443: connect: connection refused
-[reset] WARNING: Changes made to this host by 'kubeadm init' or 'kubeadm join' will be reverted.
-[reset] Are you sure you want to proceed? [y/N]: y
-[preflight] Running pre-flight checks
-W0524 16:39:51.168162    4665 removeetcdmember.go:79] [reset] No kubeadm config, using etcd pod spec to get data directory
-[reset] Stopping the kubelet service
-[reset] Unmounting mounted directories in "/var/lib/kubelet"
-[reset] Deleting contents of config directories: [/etc/kubernetes/manifests /etc/kubernetes/pki]
-[reset] Deleting files: [/etc/kubernetes/admin.conf /etc/kubernetes/kubelet.conf /etc/kubernetes/bootstrap-kubelet.conf /etc/kubernetes/controller-manager.conf /etc/kubernetes/scheduler.conf]
-[reset] Deleting contents of stateful directories: [/var/lib/etcd /var/lib/kubelet /var/lib/dockershim /var/run/kubernetes /var/lib/cni]
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubeadm reset</span>
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Reading configuration from the cluster<span class="token punctuation">..</span>.
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> FYI: You can <span class="token function">look</span> at this config <span class="token function">file</span> with <span class="token string">'kubectl -n kube-system get cm kubeadm-config -o yaml'</span>
+W0524 <span class="token number">16</span>:39:28.363100    <span class="token number">4665</span> reset.go:99<span class="token punctuation">]</span> <span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Unable to fetch the kubeadm-config ConfigMap from cluster: failed to get config map: Get <span class="token string">"https://172.16.6.188:6443/api/v1/namespaces/kube-system/configmaps/kubeadm-config?timeout=10s"</span><span class="token builtin class-name">:</span> dial tcp <span class="token number">172.16</span>.6.188:6443: connect: connection refused
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> WARNING: Changes made to this <span class="token function">host</span> by <span class="token string">'kubeadm init'</span> or <span class="token string">'kubeadm join'</span> will be reverted.
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Are you sure you want to proceed? <span class="token punctuation">[</span>y/N<span class="token punctuation">]</span>: y
+<span class="token punctuation">[</span>preflight<span class="token punctuation">]</span> Running pre-flight checks
+W0524 <span class="token number">16</span>:39:51.168162    <span class="token number">4665</span> removeetcdmember.go:79<span class="token punctuation">]</span> <span class="token punctuation">[</span>reset<span class="token punctuation">]</span> No kubeadm config, using etcd pod spec to get data directory
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Stopping the kubelet <span class="token function">service</span>
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Unmounting mounted directories <span class="token keyword">in</span> <span class="token string">"/var/lib/kubelet"</span>
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Deleting contents of config directories: <span class="token punctuation">[</span>/etc/kubernetes/manifests /etc/kubernetes/pki<span class="token punctuation">]</span>
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Deleting files: <span class="token punctuation">[</span>/etc/kubernetes/admin.conf /etc/kubernetes/kubelet.conf /etc/kubernetes/bootstrap-kubelet.conf /etc/kubernetes/controller-manager.conf /etc/kubernetes/scheduler.conf<span class="token punctuation">]</span>
+<span class="token punctuation">[</span>reset<span class="token punctuation">]</span> Deleting contents of stateful directories: <span class="token punctuation">[</span>/var/lib/etcd /var/lib/kubelet /var/lib/dockershim /var/run/kubernetes /var/lib/cni<span class="token punctuation">]</span>
 
-The reset process does not clean CNI configuration. To do so, you must remove /etc/cni/net.d
+The reset process does not clean CNI configuration. To <span class="token keyword">do</span> so, you must remove /etc/cni/net.d
 
 The reset process does not reset or clean up iptables rules or IPVS tables.
-If you wish to reset iptables, you must do so manually by using the "iptables" command.
+If you wish to reset iptables, you must <span class="token keyword">do</span> so manually by using the <span class="token string">"iptables"</span> command.
 
-If your cluster was setup to utilize IPVS, run ipvsadm --clear (or similar)
+If your cluster was setup to utilize IPVS, run ipvsadm <span class="token parameter variable">--clear</span> <span class="token punctuation">(</span>or similar<span class="token punctuation">)</span>
 to reset your system's IPVS tables.
 
 The reset process does not clean your kubeconfig files and you must remove them manually.
-Please, check the contents of the $HOME/.kube/config file.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+Please, check the contents of the <span class="token environment constant">$HOME</span>/.kube/config file.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>kubeadm reset 不会清理 iptables 和 cni 等信息， 手动清理</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">iptables -F
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">iptables <span class="token parameter variable">-F</span>
 
-rm -rf /var/lib/cni/
-rm -rf /etc/cni
-ifconfig cni0 down
-ifconfig flannel.1 down
-ip link delete cni0
-ip link delete flannel.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">rm</span> <span class="token parameter variable">-rf</span> /var/lib/cni/
+<span class="token function">rm</span> <span class="token parameter variable">-rf</span> /etc/cni
+<span class="token function">ifconfig</span> cni0 down
+<span class="token function">ifconfig</span> flannel.1 down
+<span class="token function">ip</span> <span class="token function">link</span> delete cni0
+<span class="token function">ip</span> <span class="token function">link</span> delete flannel.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="k8s-coredns-pod-pending"><a href="#k8s-coredns-pod-pending" class="headerlink" title="k8s coredns pod pending"></a>k8s coredns pod pending</h3><p>若没安装 cni plugin 或 不指定/指定错误 <strong>–pod-network-cidr</strong>, k8s 默认 coredns 处于 Pending 状态</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl get po -A | grep Pending
-kube-system   coredns-558bd4d5db-724kx               0/1     Pending   0          14m
-kube-system   coredns-558bd4d5db-kkkmm               0/1     Pending   0          14m
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -A | grep Pending</span>
+kube-system   coredns-558bd4d5db-724kx               <span class="token number">0</span>/1     Pending   <span class="token number">0</span>          14m
+kube-system   coredns-558bd4d5db-kkkmm               <span class="token number">0</span>/1     Pending   <span class="token number">0</span>          14m
 
-[root@centos76_vm ~]# systemctl status kubelet.service  -l | tail -n 2
-5月 24 18:13:58 centos76_vm kubelet[25338]: I0524 18:13:58.262707   25338 cni.go:239] "Unable to update cni config" err="no networks found in /etc/cni/net.d"
-5月 24 18:13:59 centos76_vm kubelet[25338]: E0524 18:13:59.418055   25338 kubelet.go:2211] "Container runtime network not ready" networkReady="NetworkReady=false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized"
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># systemctl status kubelet.service  -l | tail -n 2</span>
+<span class="token number">5</span>月 <span class="token number">24</span> <span class="token number">18</span>:13:58 centos76_vm kubelet<span class="token punctuation">[</span><span class="token number">25338</span><span class="token punctuation">]</span>: I0524 <span class="token number">18</span>:13:58.262707   <span class="token number">25338</span> cni.go:239<span class="token punctuation">]</span> <span class="token string">"Unable to update cni config"</span> <span class="token assign-left variable">err</span><span class="token operator">=</span><span class="token string">"no networks found in /etc/cni/net.d"</span>
+<span class="token number">5</span>月 <span class="token number">24</span> <span class="token number">18</span>:13:59 centos76_vm kubelet<span class="token punctuation">[</span><span class="token number">25338</span><span class="token punctuation">]</span>: E0524 <span class="token number">18</span>:13:59.418055   <span class="token number">25338</span> kubelet.go:2211<span class="token punctuation">]</span> <span class="token string">"Container runtime network not ready"</span> <span class="token assign-left variable">networkReady</span><span class="token operator">=</span><span class="token string">"NetworkReady=false reason:NetworkPluginNotReady message:docker: network plugin is not ready: cni config uninitialized"</span>
 
-[root@centos76_vm ~]# systemctl status kubelet.service  -l | tail -n 2
-5月 24 18:37:41 centos76_vm kubelet[19932]: I0524 18:37:41.912576   19932 pod_container_deletor.go:79] "Container not found in pod's containers" containerID="47aeebf532ce8cf03f44ef44ffa5e07cf627a896448de49a4d018c0007e04e56"
-5月 24 18:37:41 centos76_vm kubelet[19932]: I0524 18:37:41.914559   19932 cni.go:333] "CNI failed to retrieve network namespace path" err="cannot find network namespace for the terminated container \"47aeebf532ce8cf03f44ef44ffa5e07cf627a896448de49a4d018c0007e04e56\""<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># systemctl status kubelet.service  -l | tail -n 2</span>
+<span class="token number">5</span>月 <span class="token number">24</span> <span class="token number">18</span>:37:41 centos76_vm kubelet<span class="token punctuation">[</span><span class="token number">19932</span><span class="token punctuation">]</span>: I0524 <span class="token number">18</span>:37:41.912576   <span class="token number">19932</span> pod_container_deletor.go:79<span class="token punctuation">]</span> <span class="token string">"Container not found in pod's containers"</span> <span class="token assign-left variable">containerID</span><span class="token operator">=</span><span class="token string">"47aeebf532ce8cf03f44ef44ffa5e07cf627a896448de49a4d018c0007e04e56"</span>
+<span class="token number">5</span>月 <span class="token number">24</span> <span class="token number">18</span>:37:41 centos76_vm kubelet<span class="token punctuation">[</span><span class="token number">19932</span><span class="token punctuation">]</span>: I0524 <span class="token number">18</span>:37:41.914559   <span class="token number">19932</span> cni.go:333<span class="token punctuation">]</span> <span class="token string">"CNI failed to retrieve network namespace path"</span> <span class="token assign-left variable">err</span><span class="token operator">=</span><span class="token string">"cannot find network namespace for the terminated container <span class="token entity" title="\&quot;">\"</span>47aeebf532ce8cf03f44ef44ffa5e07cf627a896448de49a4d018c0007e04e56<span class="token entity" title="\&quot;">\"</span>"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="kubectl-连不上-master-api-server"><a href="#kubectl-连不上-master-api-server" class="headerlink" title="kubectl 连不上 {master} api server"></a>kubectl 连不上 {master} api server</h3><p>copy master /etc/kubernetes/admin.conf to worker node</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl get po -A
-The connection to the server localhost:8080 was refused - did you specify the right host or port?
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -A</span>
+The connection to the server localhost:8080 was refused - did you specify the right <span class="token function">host</span> or port?
 
-[root@centos76_vm ~]# echo "export KUBECONFIG=/etc/kubernetes/admin.conf" &gt;&gt; ~/.bash_profile<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># echo "export KUBECONFIG=/etc/kubernetes/admin.conf" &gt;&gt; ~/.bash_profile</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="tidb-pd-pod-pending"><a href="#tidb-pd-pod-pending" class="headerlink" title="tidb pd pod pending"></a>tidb pd pod pending</h3><p>查看 log 为 pv FailedBinding， 参考使用 operator provisioner</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl -n tidb-cluster1 describe pvc/pd-cluster1-pd-0 | tail -n 3
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl -n tidb-cluster1 describe pvc/pd-cluster1-pd-0 | tail -n 3</span>
   Type    Reason         Age                   From                         Message
   ----    ------         ----                  ----                         -------
-  Normal  FailedBinding  11s (x23 over 5m27s)  persistentvolume-controller  no persistent volumes available for this claim and no storage class is set<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+  Normal  FailedBinding  11s <span class="token punctuation">(</span>x23 over 5m27s<span class="token punctuation">)</span>  persistentvolume-controller  no persistent volumes available <span class="token keyword">for</span> this claim and no storage class is <span class="token builtin class-name">set</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="tikv-pod-反复-CrashLoopBackOff-Error"><a href="#tikv-pod-反复-CrashLoopBackOff-Error" class="headerlink" title="tikv pod 反复 CrashLoopBackOff/Error"></a>tikv pod 反复 CrashLoopBackOff/Error</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">[root@centos76_vm ~]# kubectl get po -A |grep cluster1-tikv-3
-tidb-cluster1   cluster1-tikv-3                            0/1     CrashLoopBackOff   6          8m40s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="tikv-pod-反复-CrashLoopBackOff-x2F-Error"><a href="#tikv-pod-反复-CrashLoopBackOff-x2F-Error" class="headerlink" title="tikv pod 反复 CrashLoopBackOff/Error"></a>tikv pod 反复 CrashLoopBackOff/Error</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@centos76_vm ~<span class="token punctuation">]</span><span class="token comment"># kubectl get po -A |grep cluster1-tikv-3</span>
+tidb-cluster1   cluster1-tikv-3                            <span class="token number">0</span>/1     CrashLoopBackOff   <span class="token number">6</span>          8m40s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p><a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb-in-kubernetes/stable/exceptions#tikv-store-%E5%BC%82%E5%B8%B8%E8%BF%9B%E5%85%A5-tombstone-%E7%8A%B6%E6%80%81">并发进行 tikv 扩缩容可能导致，参考解决</a></p>
 <h3 id="tikv-pod-logs-报错-store-is-tombstone"><a href="#tikv-pod-logs-报错-store-is-tombstone" class="headerlink" title="tikv pod logs 报错 store is tombstone"></a>tikv pod logs 报错 store is tombstone</h3><p>现象：查看报错为重复使用 pv 的 store id 已处于 tombstone 状态<br>过程：反复对 tikv 进行扩容和缩容，过程中手动 delete pv。 通过 kubectl -n tidb-cluster1 describe tc cluster1， 查看当前存在 tombstone 状态的 store<br>原因：正常 pv 不能手动 delete，需要配合 sc 由 pvc 进行删除。同时 pv 对应的本地盘数据需手动清理。 由于未清理本地磁盘的数据，重建tikv pod时使用了原有数据，导致 store id 重复<br>解决：手动清理磁盘数据； 也可通过 pd-ctl store remove-tombstone 手动清理 tombstone 状态的 store</p>
@@ -1381,85 +1512,85 @@ tidb-cluster1   cluster1-tikv-3                            0/1     CrashLoopBack
 <li>完成 k8s node cluster 创建</li>
 <li>完成 helm3 安装, helm repo add pingcap <a target="_blank" rel="noopener" href="https://charts.pingcap.org/">https://charts.pingcap.org/</a></li>
 </ul>
-<h3 id="mount-pv-disk"><a href="#mount-pv-disk" class="headerlink" title="mount pv disk"></a>mount pv disk</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">DISK_UUID=$(blkid -s UUID -o value /dev/sda2)
-for i in $(seq 1 3); do
-  mkdir -p /home/mnt/${DISK_UUID}/vol${i}
-  mkdir -p /home/mnt/disks/${DISK_UUID}_vol${i}
-  mount --bind /home/mnt/${DISK_UUID}/vol${i} /home/mnt/disks/${DISK_UUID}_vol${i}
-done<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="mount-pv-disk"><a href="#mount-pv-disk" class="headerlink" title="mount pv disk"></a>mount pv disk</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token assign-left variable">DISK_UUID</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>blkid <span class="token parameter variable">-s</span> UUID <span class="token parameter variable">-o</span> value /dev/sda2<span class="token variable">)</span></span>
+<span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">seq</span> <span class="token number">1</span> <span class="token number">3</span><span class="token variable">)</span></span><span class="token punctuation">;</span> <span class="token keyword">do</span>
+  <span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /home/mnt/<span class="token variable">${DISK_UUID}</span>/vol<span class="token variable">${i}</span>
+  <span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /home/mnt/disks/<span class="token variable">${DISK_UUID}</span>_vol<span class="token variable">${i}</span>
+  <span class="token function">mount</span> <span class="token parameter variable">--bind</span> /home/mnt/<span class="token variable">${DISK_UUID}</span>/vol<span class="token variable">${i}</span> /home/mnt/disks/<span class="token variable">${DISK_UUID}</span>_vol<span class="token variable">${i}</span>
+<span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <ul>
 <li>tc yaml</li>
 </ul>
 <p>参考 github sample， 修改 namespace 等参数<br><a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb-operator/blob/master/examples/multi-cluster/tidb-cluster-1.yaml">https://github.com/pingcap/tidb-operator/blob/master/examples/multi-cluster/tidb-cluster-1.yaml</a><br><a target="_blank" rel="noopener" href="https://github.com/pingcap/tidb-operator/blob/master/examples/advanced/tidb-cluster.yaml">https://github.com/pingcap/tidb-operator/blob/master/examples/advanced/tidb-cluster.yaml</a></p>
-<h3 id="重建集群脚本-root-recreate-sh"><a href="#重建集群脚本-root-recreate-sh" class="headerlink" title="重建集群脚本 /root/recreate.sh"></a>重建集群脚本 /root/recreate.sh</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">#!/bin/bash
+<h3 id="重建集群脚本-x2F-root-x2F-recreate-sh"><a href="#重建集群脚本-x2F-root-x2F-recreate-sh" class="headerlink" title="重建集群脚本 /root/recreate.sh"></a>重建集群脚本 /root/recreate.sh</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
 
-# 环境变量
-tidb_cluster_ns=tidb-cluster1
-operator_ns=tidb-admin1
-operator_v=v1.2.0-rc.1
+<span class="token comment"># 环境变量</span>
+<span class="token assign-left variable">tidb_cluster_ns</span><span class="token operator">=</span>tidb-cluster1
+<span class="token assign-left variable">operator_ns</span><span class="token operator">=</span>tidb-admin1
+<span class="token assign-left variable">operator_v</span><span class="token operator">=</span>v1.2.0-rc.1
 
-lvp_dir=/root/local-volume-provisioner.yaml
-operator_dir=${HOME}/tidb-operator/values-tidb-operator.yaml
-tidb_cluser_file=/root/tidb-cluster-1.yaml
-tidb_monitor_file=/root/tidb-monitor.yaml
+<span class="token assign-left variable">lvp_dir</span><span class="token operator">=</span>/root/local-volume-provisioner.yaml
+<span class="token assign-left variable">operator_dir</span><span class="token operator">=</span><span class="token variable">${<span class="token environment constant">HOME</span>}</span>/tidb-operator/values-tidb-operator.yaml
+<span class="token assign-left variable">tidb_cluser_file</span><span class="token operator">=</span>/root/tidb-cluster-1.yaml
+<span class="token assign-left variable">tidb_monitor_file</span><span class="token operator">=</span>/root/tidb-monitor.yaml
 
-master=172.16.6.188
-worker1=172.16.6.186
-worker2=172.16.6.187
+<span class="token assign-left variable">master</span><span class="token operator">=</span><span class="token number">172.16</span>.6.188
+<span class="token assign-left variable">worker1</span><span class="token operator">=</span><span class="token number">172.16</span>.6.186
+<span class="token assign-left variable">worker2</span><span class="token operator">=</span><span class="token number">172.16</span>.6.187
 
-kubectl delete ns $tidb_cluster_ns
-kubectl delete ns $operator_ns
-kubectl delete -f $lvp_dir
-for pv in `kubectl get pv | grep local-pv | awk '{print $1}'`
-do
-  kubectl delete pv/$pv
-done
+kubectl delete ns <span class="token variable">$tidb_cluster_ns</span>
+kubectl delete ns <span class="token variable">$operator_ns</span>
+kubectl delete <span class="token parameter variable">-f</span> <span class="token variable">$lvp_dir</span>
+<span class="token keyword">for</span> <span class="token for-or-select variable">pv</span> <span class="token keyword">in</span> <span class="token variable"><span class="token variable">`</span>kubectl get <span class="token function">pv</span> <span class="token operator">|</span> <span class="token function">grep</span> local-pv <span class="token operator">|</span> <span class="token function">awk</span> <span class="token string">'{print $1}'</span><span class="token variable">`</span></span>
+<span class="token keyword">do</span>
+  kubectl delete pv/<span class="token variable">$pv</span>
+<span class="token keyword">done</span>
 
-disk_clean () 
-{
-  ssh root@$1 "
+<span class="token function-name function">disk_clean</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> 
+<span class="token punctuation">{</span>
+  <span class="token function">ssh</span> root@<span class="token variable">$1</span> <span class="token string">"
   rm -f /tmp/disk_clean.sh
   echo '
-  DISK_UUID=\$(blkid -s UUID -o value /dev/sda2)
-  for i in \$(seq 1 3); do
-    rm  -Rf /home/mnt/disks/\${DISK_UUID}_vol\${i}/*
+  DISK_UUID=\<span class="token variable"><span class="token variable">$(</span>blkid <span class="token parameter variable">-s</span> UUID <span class="token parameter variable">-o</span> value /dev/sda2<span class="token variable">)</span></span>
+  for i in \<span class="token variable"><span class="token variable">$(</span><span class="token function">seq</span> <span class="token number">1</span> <span class="token number">3</span><span class="token variable">)</span></span>; do
+    rm  -Rf /home/mnt/disks/\<span class="token variable">${DISK_UUID}</span>_vol\<span class="token variable">${i}</span>/*
   done
   ' &gt; /tmp/disk_clean.sh
   sh /tmp/disk_clean.sh
-"
-}
+"</span>
+<span class="token punctuation">}</span>
 
-disk_clean $master
-disk_clean $worker1
-disk_clean $worker2
+disk_clean <span class="token variable">$master</span>
+disk_clean <span class="token variable">$worker1</span>
+disk_clean <span class="token variable">$worker2</span>
 
-echo "*** finish clean ***"
+<span class="token builtin class-name">echo</span> <span class="token string">"*** finish clean ***"</span>
 
-kubectl create ns $tidb_cluster_ns
-kubectl create ns $operator_ns
+kubectl create ns <span class="token variable">$tidb_cluster_ns</span>
+kubectl create ns <span class="token variable">$operator_ns</span>
 
-kubectl apply -f https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/crd.yaml
-# 使用operator provisioner，修改路径为 /home/mnt/disks
-rm -f $lvp_dir
-wget https://raw.githubusercontent.com/pingcap/tidb-operator/$operator_v/manifests/local-dind/local-volume-provisioner.yaml -O $lvp_dir
-sed -i "s/\/mnt\/disks/\/home\/mnt\/disks/g" $lvp_dir
+kubectl apply <span class="token parameter variable">-f</span> https://raw.githubusercontent.com/pingcap/tidb-operator/<span class="token variable">$operator_v</span>/manifests/crd.yaml
+<span class="token comment"># 使用operator provisioner，修改路径为 /home/mnt/disks</span>
+<span class="token function">rm</span> <span class="token parameter variable">-f</span> <span class="token variable">$lvp_dir</span>
+<span class="token function">wget</span> https://raw.githubusercontent.com/pingcap/tidb-operator/<span class="token variable">$operator_v</span>/manifests/local-dind/local-volume-provisioner.yaml <span class="token parameter variable">-O</span> <span class="token variable">$lvp_dir</span>
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">"s/\/mnt\/disks/\/home\/mnt\/disks/g"</span> <span class="token variable">$lvp_dir</span>
 
-# 按需修改 value
-mkdir -p ${HOME}/tidb-operator &amp;&amp; \
-helm inspect values pingcap/tidb-operator --version=$operator_v &gt; $operator_dir
-helm install tidb-operator pingcap/tidb-operator --namespace $operator_ns --version $operator_v -f $operator_dir\
-    --set operatorImage=registry.cn-beijing.aliyuncs.com/tidb/tidb-operator:$operator_v \
-    --set tidbBackupManagerImage=registry.cn-beijing.aliyuncs.com/tidb/tidb-backup-manager:$operator_v \
-    --set scheduler.kubeSchedulerImageName=registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler
+<span class="token comment"># 按需修改 value</span>
+<span class="token function">mkdir</span> <span class="token parameter variable">-p</span> <span class="token variable">${<span class="token environment constant">HOME</span>}</span>/tidb-operator <span class="token operator">&amp;&amp;</span> <span class="token punctuation">\</span>
+helm inspect values pingcap/tidb-operator <span class="token parameter variable">--version</span><span class="token operator">=</span><span class="token variable">$operator_v</span> <span class="token operator">&gt;</span> <span class="token variable">$operator_dir</span>
+helm <span class="token function">install</span> tidb-operator pingcap/tidb-operator <span class="token parameter variable">--namespace</span> <span class="token variable">$operator_ns</span> <span class="token parameter variable">--version</span> <span class="token variable">$operator_v</span> <span class="token parameter variable">-f</span> <span class="token variable">$operator_dir</span><span class="token punctuation">\</span>
+    <span class="token parameter variable">--set</span> <span class="token assign-left variable">operatorImage</span><span class="token operator">=</span>registry.cn-beijing.aliyuncs.com/tidb/tidb-operator:<span class="token variable">$operator_v</span> <span class="token punctuation">\</span>
+    <span class="token parameter variable">--set</span> <span class="token assign-left variable">tidbBackupManagerImage</span><span class="token operator">=</span>registry.cn-beijing.aliyuncs.com/tidb/tidb-backup-manager:<span class="token variable">$operator_v</span> <span class="token punctuation">\</span>
+    <span class="token parameter variable">--set</span> <span class="token assign-left variable">scheduler.kubeSchedulerImageName</span><span class="token operator">=</span>registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler
 
-kubectl apply -f $lvp_dir
-kubectl patch storageclass local-storage -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+kubectl apply <span class="token parameter variable">-f</span> <span class="token variable">$lvp_dir</span>
+kubectl patch storageclass local-storage <span class="token parameter variable">-p</span> <span class="token string">'{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'</span>
 
-kubectl -n $tidb_cluster_ns apply -f $tidb_cluser_file
-kubectl -n $tidb_cluster_ns apply -f $tidb_monitor_file
+kubectl <span class="token parameter variable">-n</span> <span class="token variable">$tidb_cluster_ns</span> apply <span class="token parameter variable">-f</span> <span class="token variable">$tidb_cluser_file</span>
+kubectl <span class="token parameter variable">-n</span> <span class="token variable">$tidb_cluster_ns</span> apply <span class="token parameter variable">-f</span> <span class="token variable">$tidb_monitor_file</span>
 
-echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token builtin class-name">echo</span> <span class="token string">"*** finsh recreate ***"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
       
     </div>
@@ -1510,7 +1641,7 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1590,7 +1721,7 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1672,7 +1803,7 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1750,7 +1881,7 @@ echo "*** finsh recreate ***"<span aria-hidden="true" class="line-numbers-rows">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1844,96 +1975,10 @@ string:  1
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/25/go/reflect/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/01/25/go/reflect/" class="post-title-link" itemprop="url">反射</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-01-25 22:50:23" itemprop="dateCreated datePublished" datetime="2021-01-25T22:50:23+00:00">2021-01-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">b <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span>
-s <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
-pbyte <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>SliceHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>b<span class="token punctuation">)</span>
-pstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">)</span><span class="token punctuation">)</span>
-fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>pbyte<span class="token punctuation">.</span>Data <span class="token operator">==</span> pstring<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// false</span>
-b <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"ttt"</span><span class="token punctuation">)</span>
-pstring<span class="token punctuation">.</span>Data <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Data
-fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// t</span>
-pstring<span class="token punctuation">.</span>Len <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Len
-fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// ttt</span>
-ss <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
-psstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ss<span class="token punctuation">)</span><span class="token punctuation">)</span>
-fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>psstring<span class="token punctuation">.</span>Data <span class="token operator">==</span> pbyte<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// true</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -1999,7 +2044,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Println<
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -2037,7 +2082,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Println<
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

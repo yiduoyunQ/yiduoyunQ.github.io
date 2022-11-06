@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,7 +28,7 @@
 <meta property="og:description" content="组件安装阿里yum源设置mv &#x2F;etc&#x2F;yum.repos.d&#x2F;CentOS-Base.repo &#x2F;etc&#x2F;yum.repos.d&#x2F;CentOS-Base.repo.backup wget -O &#x2F;etc&#x2F;yum.repos.d&#x2F;CentOS-Base.repo http:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;repo&#x2F;Centos-8.repo  docker-ce安装yum install">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-15T23:29:56.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.661Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.730Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="k8s">
 <meta name="twitter:card" content="summary">
@@ -183,7 +183,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -206,28 +206,28 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="组件安装"><a href="#组件安装" class="headerlink" title="组件安装"></a>组件安装</h2><h3 id="阿里yum源设置"><a href="#阿里yum源设置" class="headerlink" title="阿里yum源设置"></a>阿里yum源设置</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-8.repo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+        <h2 id="组件安装"><a href="#组件安装" class="headerlink" title="组件安装"></a>组件安装</h2><h3 id="阿里yum源设置"><a href="#阿里yum源设置" class="headerlink" title="阿里yum源设置"></a>阿里yum源设置</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mv</span> /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+<span class="token function">wget</span> <span class="token parameter variable">-O</span> /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-8.repo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
-<h3 id="docker-ce安装"><a href="#docker-ce安装" class="headerlink" title="docker-ce安装"></a>docker-ce安装</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">yum install -y yum-utils device-mapper-persistent-data lvm2
+<h3 id="docker-ce安装"><a href="#docker-ce安装" class="headerlink" title="docker-ce安装"></a>docker-ce安装</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">yum <span class="token function">install</span> <span class="token parameter variable">-y</span> yum-utils device-mapper-persistent-data lvm2
 yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
-yum list docker-ce.x86_64 --showduplicates | sort -r
-#yum -y install docker-ce-[VERSION]
-wget https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm
-yum install -y containerd.io-1.2.13-3.2.el7.x86_64.rpm
-yum install -y docker-ce.x86_64
+yum list docker-ce.x86_64 <span class="token parameter variable">--showduplicates</span> <span class="token operator">|</span> <span class="token function">sort</span> <span class="token parameter variable">-r</span>
+<span class="token comment">#yum -y install docker-ce-[VERSION]</span>
+<span class="token function">wget</span> https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.13-3.2.el7.x86_64.rpm
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> containerd.io-1.2.13-3.2.el7.x86_64.rpm
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> docker-ce.x86_64
 systemctl start docker.service
-docker version<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">docker</span> version<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="设置cgroup-driver为systemd"><a href="#设置cgroup-driver为systemd" class="headerlink" title="设置cgroup driver为systemd"></a>设置cgroup driver为systemd</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt; /etc/docker/daemon.json
+<h3 id="设置cgroup-driver为systemd"><a href="#设置cgroup-driver为systemd" class="headerlink" title="设置cgroup driver为systemd"></a>设置cgroup driver为systemd</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">&gt;</span> /etc/docker/daemon.json</span>
 {
   "exec-opts": ["native.cgroupdriver=systemd"]
 }
-EOF
-systemctl restart docker
-docker info | grep Cgroup<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF</span>
+systemctl restart <span class="token function">docker</span>
+<span class="token function">docker</span> info <span class="token operator">|</span> <span class="token function">grep</span> Cgroup<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="kubernetes安装"><a href="#kubernetes安装" class="headerlink" title="kubernetes安装"></a>kubernetes安装</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+<h3 id="kubernetes安装"><a href="#kubernetes安装" class="headerlink" title="kubernetes安装"></a>kubernetes安装</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">&gt;</span> /etc/yum.repos.d/kubernetes.repo</span>
 [kubernetes]
 name=Kubernetes
 baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
@@ -235,22 +235,22 @@ enabled=1
 gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-EOF
-yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+EOF</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> kubelet kubeadm kubectl <span class="token parameter variable">--disableexcludes</span><span class="token operator">=</span>kubernetes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="kubeadm-init"><a href="#kubeadm-init" class="headerlink" title="kubeadm init"></a>kubeadm init</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># 使用flannel网络必须设置cidr，网段自定
-# --ignore-preflight-errors all 跳过之前已安装部分（出问题时，问题解决后加上继续运行）
-kubeadm init --image-repository=registry.aliyuncs.com/google_containers --apiserver-advertise-address=172.19.191.191 --service-cidr=10.1.0.0/16 --pod-network-cidr=10.96.0.0/16 --kubernetes-version=v1.18.3
-# 根据init提示执行
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="kubeadm-init"><a href="#kubeadm-init" class="headerlink" title="kubeadm init"></a>kubeadm init</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 使用flannel网络必须设置cidr，网段自定</span>
+<span class="token comment"># --ignore-preflight-errors all 跳过之前已安装部分（出问题时，问题解决后加上继续运行）</span>
+kubeadm init --image-repository<span class="token operator">=</span>registry.aliyuncs.com/google_containers --apiserver-advertise-address<span class="token operator">=</span><span class="token number">172.19</span>.191.191 --service-cidr<span class="token operator">=</span><span class="token number">10.1</span>.0.0/16 --pod-network-cidr<span class="token operator">=</span><span class="token number">10.96</span>.0.0/16 --kubernetes-version<span class="token operator">=</span>v1.18.3
+<span class="token comment"># 根据init提示执行</span>
+<span class="token function">mkdir</span> <span class="token parameter variable">-p</span> <span class="token environment constant">$HOME</span>/.kube
+<span class="token function">sudo</span> <span class="token function">cp</span> <span class="token parameter variable">-i</span> /etc/kubernetes/admin.conf <span class="token environment constant">$HOME</span>/.kube/config
+<span class="token function">sudo</span> <span class="token function">chown</span> <span class="token variable"><span class="token variable">$(</span><span class="token function">id</span> <span class="token parameter variable">-u</span><span class="token variable">)</span></span><span class="token builtin class-name">:</span><span class="token variable"><span class="token variable">$(</span><span class="token function">id</span> <span class="token parameter variable">-g</span><span class="token variable">)</span></span> <span class="token environment constant">$HOME</span>/.kube/config<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="安装网络组件flannel"><a href="#安装网络组件flannel" class="headerlink" title="安装网络组件flannel"></a>安装网络组件flannel</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-#安装完flannel，将配置拷到node节点，否则添加节点之后状态不对
-scp -r /etc/cni root@{node}:/etc
-#这一步也要拷贝，否则节点看着正常，但是pod由于网络原因无法创建
-scp -r /run/flannel/ root@{node}:/run<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="安装网络组件flannel"><a href="#安装网络组件flannel" class="headerlink" title="安装网络组件flannel"></a>安装网络组件flannel</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl apply <span class="token parameter variable">-f</span> https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+<span class="token comment">#安装完flannel，将配置拷到node节点，否则添加节点之后状态不对</span>
+<span class="token function">scp</span> <span class="token parameter variable">-r</span> /etc/cni root@<span class="token punctuation">{</span>node<span class="token punctuation">}</span>:/etc
+<span class="token comment">#这一步也要拷贝，否则节点看着正常，但是pod由于网络原因无法创建</span>
+<span class="token function">scp</span> <span class="token parameter variable">-r</span> /run/flannel/ root@<span class="token punctuation">{</span>node<span class="token punctuation">}</span>:/run<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="nginx部署"><a href="#nginx部署" class="headerlink" title="nginx部署"></a>nginx部署</h2><p>nginx-deployment.yaml</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> apps/v1 <span class="token comment"># for versions before 1.9.0 use apps/v1beta2</span>
@@ -290,52 +290,52 @@ scp -r /run/flannel/ root@{node}:/run<span aria-hidden="true" class="line-number
     <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">8080</span>  <span class="token comment"># svc端口</span>
     <span class="token key atrule">targetPort</span><span class="token punctuation">:</span> <span class="token number">80</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">docker pull nginx
-kubectl create -f nginx-deployment.yaml
-kubectl apply -f nginx-svc.yaml
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> pull nginx
+kubectl create <span class="token parameter variable">-f</span> nginx-deployment.yaml
+kubectl apply <span class="token parameter variable">-f</span> nginx-svc.yaml
 
-kubectl get pods -o wide
+kubectl get pods <span class="token parameter variable">-o</span> wide
 NAME                                READY   STATUS    RESTARTS   AGE   IP           NODE                      NOMINATED NODE   READINESS GATES
-nginx-deployment-558fc78868-fh5hg   1/1     Running   0          10m   10.96.0.15   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;
-nginx-deployment-558fc78868-wrskf   1/1     Running   0          10m   10.96.0.16   izuf6h1cr4n27ctdyzruy1z   &lt;none&gt;           &lt;none&gt;
+nginx-deployment-558fc78868-fh5hg   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          10m   <span class="token number">10.96</span>.0.15   izuf6h1cr4n27ctdyzruy1z   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
+nginx-deployment-558fc78868-wrskf   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          10m   <span class="token number">10.96</span>.0.16   izuf6h1cr4n27ctdyzruy1z   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>           <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>
 
 kubectl get svc
-NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)          AGE
-kubernetes   ClusterIP   10.1.0.1     &lt;none&gt;        443/TCP          23h
-nginx-svc    NodePort    10.1.22.28   &lt;none&gt;        8080:30765/TCP   37m
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT<span class="token punctuation">(</span>S<span class="token punctuation">)</span>          AGE
+kubernetes   ClusterIP   <span class="token number">10.1</span>.0.1     <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>        <span class="token number">443</span>/TCP          23h
+nginx-svc    NodePort    <span class="token number">10.1</span>.22.28   <span class="token operator">&lt;</span>none<span class="token operator">&gt;</span>        <span class="token number">8080</span>:30765/TCP   37m
 
-curl 10.96.0.15:80 # pod
-curl 10.96.0.16:80 # pod
-curl 10.1.22.28:8080 # 集群内
-curl 139.196.224.165:30765 # 集群外<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">curl</span> <span class="token number">10.96</span>.0.15:80 <span class="token comment"># pod</span>
+<span class="token function">curl</span> <span class="token number">10.96</span>.0.16:80 <span class="token comment"># pod</span>
+<span class="token function">curl</span> <span class="token number">10.1</span>.22.28:8080 <span class="token comment"># 集群内</span>
+<span class="token function">curl</span> <span class="token number">139.196</span>.224.165:30765 <span class="token comment"># 集群外</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h2 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h2><h3 id="master节点不允许部署pod"><a href="#master节点不允许部署pod" class="headerlink" title="master节点不允许部署pod"></a>master节点不允许部署pod</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl describe pod nginx | tail -n 3
+<h2 id="坑"><a href="#坑" class="headerlink" title="坑"></a>坑</h2><h3 id="master节点不允许部署pod"><a href="#master节点不允许部署pod" class="headerlink" title="master节点不允许部署pod"></a>master节点不允许部署pod</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl describe pod nginx <span class="token operator">|</span> <span class="token function">tail</span> <span class="token parameter variable">-n</span> <span class="token number">3</span>
   Type     Reason            Age                  From               Message
   ----     ------            ----                 ----               -------
-  Warning  FailedScheduling  24s (x8 over 8m56s)  default-scheduler  0/1 nodes are available: 1 node(s) had taint {node-role.kubernetes.io/master: }, that the pod didn't tolerate.
+  Warning  FailedScheduling  24s <span class="token punctuation">(</span>x8 over 8m56s<span class="token punctuation">)</span>  default-scheduler  <span class="token number">0</span>/1 nodes are available: <span class="token number">1</span> node<span class="token punctuation">(</span>s<span class="token punctuation">)</span> had taint <span class="token punctuation">{</span>node-role.kubernetes.io/master: <span class="token punctuation">}</span>, that the pod didn't tolerate.
 
-# k8s默认master node不允许部署pod，取消该限制
-kubectl taint nodes --all node-role.kubernetes.io/master-
-# 还原命令
-# kubectl taint nodes k8s node-role.kubernetes.io/master=true:NoSchedule<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token comment"># k8s默认master node不允许部署pod，取消该限制</span>
+kubectl taint nodes <span class="token parameter variable">--all</span> node-role.kubernetes.io/master-
+<span class="token comment"># 还原命令</span>
+<span class="token comment"># kubectl taint nodes k8s node-role.kubernetes.io/master=true:NoSchedule</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="cni0网卡已分配ip段与当前不一致"><a href="#cni0网卡已分配ip段与当前不一致" class="headerlink" title="cni0网卡已分配ip段与当前不一致"></a>cni0网卡已分配ip段与当前不一致</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl get pods
+<h3 id="cni0网卡已分配ip段与当前不一致"><a href="#cni0网卡已分配ip段与当前不一致" class="headerlink" title="cni0网卡已分配ip段与当前不一致"></a>cni0网卡已分配ip段与当前不一致</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl get pods
 NAME    READY   STATUS              RESTARTS   AGE
-nginx   0/1     ContainerCreating   0          11m
+nginx   <span class="token number">0</span>/1     ContainerCreating   <span class="token number">0</span>          11m
 
-kubectl describe pod nginx | tail -n 1
-  Warning  FailedCreatePodSandBox  22s (x280 over 5m13s)   kubelet, izuf6h1cr4n27ctdyzruy1z  (combined from similar events): Failed to create pod sandbox: rpc error: code = Unknown desc = failed to set up sandbox container "053ca6b0dcd9801ddd6cbc6384e56e5b435ae6bacfeb96fe67f9347ca7d1aa38" network for pod "nginx": networkPlugin cni failed to set up pod "nginx_default" network: failed to set bridge addr: "cni0" already has an IP address different from 10.96.0.1/24
+kubectl describe pod nginx <span class="token operator">|</span> <span class="token function">tail</span> <span class="token parameter variable">-n</span> <span class="token number">1</span>
+  Warning  FailedCreatePodSandBox  22s <span class="token punctuation">(</span>x280 over 5m13s<span class="token punctuation">)</span>   kubelet, izuf6h1cr4n27ctdyzruy1z  <span class="token punctuation">(</span>combined from similar events<span class="token punctuation">)</span>: Failed to create pod sandbox: rpc error: code <span class="token operator">=</span> Unknown desc <span class="token operator">=</span> failed to <span class="token builtin class-name">set</span> up sandbox container <span class="token string">"053ca6b0dcd9801ddd6cbc6384e56e5b435ae6bacfeb96fe67f9347ca7d1aa38"</span> network <span class="token keyword">for</span> pod <span class="token string">"nginx"</span><span class="token builtin class-name">:</span> networkPlugin cni failed to <span class="token builtin class-name">set</span> up pod <span class="token string">"nginx_default"</span> network: failed to <span class="token builtin class-name">set</span> bridge addr: <span class="token string">"cni0"</span> already has an IP address different from <span class="token number">10.96</span>.0.1/24
 
-ifconfig cni0
-cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
-        inet 10.244.0.1  netmask 255.255.255.0  broadcast 0.0.0.0
+<span class="token function">ifconfig</span> cni0
+cni0: <span class="token assign-left variable">flags</span><span class="token operator">=</span><span class="token number">416</span><span class="token operator"><span class="token file-descriptor important">3</span>&lt;</span>UP,BROADCAST,RUNNING,MULTICAST<span class="token operator">&gt;</span>  mtu <span class="token number">1450</span>
+        inet <span class="token number">10.244</span>.0.1  netmask <span class="token number">255.255</span>.255.0  broadcast <span class="token number">0.0</span>.0.0
 
-# 确认无人使用，删除网卡，由pod自动重建
-ifconfig cni0 down
-ip link delete cni0
-ifconfig cni0
-cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
-        inet 10.96.0.1  netmask 255.255.255.0  broadcast 0.0.0.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token comment"># 确认无人使用，删除网卡，由pod自动重建</span>
+<span class="token function">ifconfig</span> cni0 down
+<span class="token function">ip</span> <span class="token function">link</span> delete cni0
+<span class="token function">ifconfig</span> cni0
+cni0: <span class="token assign-left variable">flags</span><span class="token operator">=</span><span class="token number">416</span><span class="token operator"><span class="token file-descriptor important">3</span>&lt;</span>UP,BROADCAST,RUNNING,MULTICAST<span class="token operator">&gt;</span>  mtu <span class="token number">1450</span>
+        inet <span class="token number">10.96</span>.0.1  netmask <span class="token number">255.255</span>.255.0  broadcast <span class="token number">0.0</span>.0.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="外网无法访问阿里云ECS，端口不通"><a href="#外网无法访问阿里云ECS，端口不通" class="headerlink" title="外网无法访问阿里云ECS，端口不通"></a>外网无法访问阿里云ECS，端口不通</h3>
 
@@ -438,7 +438,7 @@ cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -476,7 +476,7 @@ cni0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1450
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

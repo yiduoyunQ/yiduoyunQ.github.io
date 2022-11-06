@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -147,6 +147,92 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/25/go/reflect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/01/25/go/reflect/" class="post-title-link" itemprop="url">反射</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-25 22:50:23" itemprop="dateCreated datePublished" datetime="2021-01-25T22:50:23+00:00">2021-01-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="byte到string转换需要拷贝内存"><a href="#byte到string转换需要拷贝内存" class="headerlink" title="[]byte到string转换需要拷贝内存"></a>[]byte到string转换需要拷贝内存</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go">b <span class="token operator">:=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span>
+s <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+pbyte <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>SliceHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>b<span class="token punctuation">)</span>
+pstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>s<span class="token punctuation">)</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>pbyte<span class="token punctuation">.</span>Data <span class="token operator">==</span> pstring<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// false</span>
+b <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token function">byte</span><span class="token punctuation">(</span><span class="token string">"ttt"</span><span class="token punctuation">)</span>
+pstring<span class="token punctuation">.</span>Data <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Data
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// t</span>
+pstring<span class="token punctuation">.</span>Len <span class="token operator">=</span> pbyte<span class="token punctuation">.</span>Len
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span> <span class="token comment">// ttt</span>
+ss <span class="token operator">:=</span> <span class="token function">string</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+psstring <span class="token operator">:=</span> <span class="token punctuation">(</span><span class="token operator">*</span>reflect<span class="token punctuation">.</span>StringHeader<span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>ss<span class="token punctuation">)</span><span class="token punctuation">)</span>
+fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span>psstring<span class="token punctuation">.</span>Data <span class="token operator">==</span> pbyte<span class="token punctuation">.</span>Data<span class="token punctuation">)</span> <span class="token comment">// true</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/11/23/go/net/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -178,7 +264,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -201,7 +287,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="select-poll-epoll"><a href="#select-poll-epoll" class="headerlink" title="select / poll / epoll"></a>select / poll / epoll</h2><img src="/2020/11/23/go/net/select_poll_epoll.png" class="">
+          <h2 id="select-x2F-poll-x2F-epoll"><a href="#select-x2F-poll-x2F-epoll" class="headerlink" title="select / poll / epoll"></a>select / poll / epoll</h2><img src="/2020/11/23/go/net/select_poll_epoll.png" class="">
 
 <h2 id="net-Listen"><a href="#net-Listen" class="headerlink" title="net.Listen"></a>net.Listen</h2><img src="/2020/11/23/go/net/net_Listen.jpeg" class="">
 
@@ -216,7 +302,7 @@
 <li><code>FD.Accept</code> 返回后，调用 <code>newFD</code> 创建这个新的socket对应的 <strong>netFD</strong>， 然后调用 <code>netFD.init</code> 完成初始化，调用链同Listen，最终将 <strong>socket fd</strong> 注册到 <strong>listener fd</strong> 的epoll实例的事件队列中</li>
 <li>被park的goroutine在 <code>func netpoll(delay int64) gList</code> 中调用 <code>epollwait</code> 处理可读/可写的事件fd，生成g链表返回。 <code>netpoll</code> 函数在proc的GPM逻辑中被调用</li>
 </ol>
-<h2 id="Conn-Read-Conn-Write"><a href="#Conn-Read-Conn-Write" class="headerlink" title="Conn.Read/Conn.Write"></a>Conn.Read/Conn.Write</h2><h2 id="net-flow"><a href="#net-flow" class="headerlink" title="net flow"></a>net flow</h2><ul>
+<h2 id="Conn-Read-x2F-Conn-Write"><a href="#Conn-Read-x2F-Conn-Write" class="headerlink" title="Conn.Read/Conn.Write"></a>Conn.Read/Conn.Write</h2><h2 id="net-flow"><a href="#net-flow" class="headerlink" title="net flow"></a>net flow</h2><ul>
 <li>Listen创建epoll实例</li>
 <li>client连接server，Listener调用Accept接收conn，每个conn开启一个goroutine处理，所有信息注册到epoll实例的事件队列</li>
 <li>conn调用Read/Write时被park当前goroutine，在GPM逻辑中调用netpoll唤醒goroutine响应I/O事件</li>
@@ -273,7 +359,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -562,7 +648,7 @@ top<span class="token punctuation">:</span>
 	<span class="token function">print</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
 <span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="io-fs"><a href="#io-fs" class="headerlink" title="io/fs"></a>io/fs</h3>
+<h3 id="io-x2F-fs"><a href="#io-x2F-fs" class="headerlink" title="io/fs"></a>io/fs</h3>
       
     </div>
 
@@ -612,7 +698,7 @@ top<span class="token punctuation">:</span>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -639,22 +725,22 @@ top<span class="token punctuation">:</span>
 
 <h2 id="V2"><a href="#V2" class="headerlink" title="V2"></a>V2</h2><img src="/2020/11/18/k8s/cgroup/cgroupV2.jpg" class="">
 
-<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell"># ls /sys/fs/cgroup/ |grep cpu
+<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ls /sys/fs/cgroup/ |grep cpu</span>
 cpu
 cpuacct
 cpu,cpuacct
 cpuset
 
-# cat /sys/fs/cgroup/cpu/user.slice/tasks
-4872
-21893
-21896
-21907
-21913
-21914
-# ps -ef | grep 21896 | grep -v grep
-root     21896     1  0 14:15 ?        00:00:00 /usr/lib/systemd/systemd --user
-root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token comment"># cat /sys/fs/cgroup/cpu/user.slice/tasks</span>
+<span class="token number">4872</span>
+<span class="token number">21893</span>
+<span class="token number">21896</span>
+<span class="token number">21907</span>
+<span class="token number">21913</span>
+<span class="token number">21914</span>
+<span class="token comment"># ps -ef | grep 21896 | grep -v grep</span>
+root     <span class="token number">21896</span>     <span class="token number">1</span>  <span class="token number">0</span> <span class="token number">14</span>:15 ?        00:00:00 /usr/lib/systemd/systemd <span class="token parameter variable">--user</span>
+root     <span class="token number">21907</span> <span class="token number">21896</span>  <span class="token number">0</span> <span class="token number">14</span>:15 ?        00:00:00 <span class="token punctuation">(</span>sd-pam<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <blockquote>
 <p>tasks中记录cgroup内pid</p>
@@ -714,7 +800,7 @@ root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true"
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -747,10 +833,10 @@ root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true"
 <p>白： 未标记，本次GC被sweep对象<br>灰： 待标记，最终转黑<br>黑： 标记，本次GC保留对象</p>
 </blockquote>
 <h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3><ol>
-<li>初始所有对象为**<em>白**</em></li>
-<li>从root开始遍历一次对象，标记为**<em>灰**</em></li>
-<li>遍历一次*<strong>灰**<em>，标记本对象为</em></strong>黑*<strong>，标记引用对象为**<em>灰</em></strong>，重复本操作</li>
-<li>剩余**<em>白**</em>即为待sweep对象</li>
+<li>初始所有对象为<em><strong>白</strong></em></li>
+<li>从root开始遍历一次对象，标记为<em><strong>灰</strong></em></li>
+<li>遍历一次<em><strong>灰</strong></em>，标记本对象为<em><strong>黑</strong></em>，标记引用对象为<em><strong>灰</strong></em>，重复本操作</li>
+<li>剩余<em><strong>白</strong></em>即为待sweep对象</li>
 </ol>
 <h3 id="若不使用STW的问题"><a href="#若不使用STW的问题" class="headerlink" title="若不使用STW的问题"></a>若不使用STW的问题</h3><ol>
 <li>白的(灰)引用被破坏</li>
@@ -764,11 +850,11 @@ root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true"
 <h3 id="插入写屏障"><a href="#插入写屏障" class="headerlink" title="插入写屏障"></a>插入写屏障</h3><blockquote>
 <p>对象被引用时触发<br>满足强三色不变式</p>
 </blockquote>
-<p>对象被引用时，设为**<em>灰**</em></p>
+<p>对象被引用时，设为<em><strong>灰</strong></em></p>
 <h4 id="插入写屏障问题"><a href="#插入写屏障问题" class="headerlink" title="插入写屏障问题"></a>插入写屏障问题</h4><p>为提高GC效率，<font color="red">栈内存</font>不执行插入写屏障</p>
 <p>解决：</p>
 <ol>
-<li>三色标记完成后，栈对象统一变**<em>白**</em></li>
+<li>三色标记完成后，栈对象统一变<em><strong>白</strong></em></li>
 <li>启动STW</li>
 <li>三色标记处理栈对象</li>
 <li>停止STW</li>
@@ -779,12 +865,12 @@ root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true"
 <h3 id="删除屏障"><a href="#删除屏障" class="headerlink" title="删除屏障"></a>删除屏障</h3><blockquote>
 <p>对象被删除时触发<br>满足弱三色不变式</p>
 </blockquote>
-<p>标记下游引用对象为**<em>灰**</em></p>
-<h4 id="删除屏障问题"><a href="#删除屏障问题" class="headerlink" title="删除屏障问题"></a>删除屏障问题</h4><p>删除对象下游对象最终会被标记为**<em>黑**</em>，可能无其他引用，本轮GC保留一轮，在下轮GC清除</p>
+<p>标记下游引用对象为<em><strong>灰</strong></em></p>
+<h4 id="删除屏障问题"><a href="#删除屏障问题" class="headerlink" title="删除屏障问题"></a>删除屏障问题</h4><p>删除对象下游对象最终会被标记为<em><strong>黑</strong></em>，可能无其他引用，本轮GC保留一轮，在下轮GC清除</p>
 <h3 id="混合写屏障-结合写屏障和删除屏障"><a href="#混合写屏障-结合写屏障和删除屏障" class="headerlink" title="混合写屏障 (结合写屏障和删除屏障)"></a>混合写屏障 (结合写屏障和删除屏障)</h3><ol>
-<li>初始扫描<font color="red">栈可达对象</font>标记为*<strong>黑**<em>，GC期间新创建的栈对象直接标记为</em></strong>黑*** (解决写屏障问题)</li>
-<li>被删除对象为**<em>灰**</em> (删除屏障)</li>
-<li>被添加对象为**<em>灰**</em> (写屏障)</li>
+<li>初始扫描<font color="red">栈可达对象</font>标记为<em><strong>黑</strong></em>，GC期间新创建的栈对象直接标记为<em><strong>黑</strong></em> (解决写屏障问题)</li>
+<li>被删除对象为<em><strong>灰</strong></em> (删除屏障)</li>
+<li>被添加对象为<em><strong>灰</strong></em> (写屏障)</li>
 </ol>
 <h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2>
       
@@ -836,7 +922,7 @@ root     21907 21896  0 14:15 ?        00:00:00 (sd-pam)<span aria-hidden="true"
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -969,7 +1055,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1030,8 +1116,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
 </tr>
 </tbody></table>
 <h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><ul>
-<li><a href="https://zhuanlan.zhihu.com/p/151397269" title="" target="">InnoDB btree latch 优化历程</a>
-</li>
+<li><a href="https://zhuanlan.zhihu.com/p/151397269" title="" target="">InnoDB btree latch 优化历程</a></li>
 </ul>
 
       
@@ -1083,7 +1168,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1128,10 +1213,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
 </blockquote>
 <ol>
 <li>prepare阶段：回滚段设置为prepare</li>
-<li>commit阶段</li>
-<li>1 flush stage：写redolog并刷盘，多个线程按进入的顺序将 binlog 从 cache 写入文件（不刷盘）</li>
-<li>2 sync stage：对 binlog 文件做 fsync 操作（多个线程的 binlog 合并一次刷盘）</li>
-<li>3 commit stage：各个线程按顺序做 InnoDB commit 操作</li>
+<li>commit阶段<br>  2.1 flush stage：写redolog并刷盘，多个线程按进入的顺序将 binlog 从 cache 写入文件（不刷盘）<br>  2.2 sync stage：对 binlog 文件做 fsync 操作（多个线程的 binlog 合并一次刷盘）<br>  2.3 commit stage：各个线程按顺序做 InnoDB commit 操作</li>
 </ol>
 <ul>
 <li>每个stage为一个队列，有锁保护，第一个进入队列的线程为leader，后续进入队列为follower，队列满员后，leader领导队列全员执行stage并进入下个stage。若下个stage非空，leader注册为下个stage的follower并加入。</li>
@@ -1196,7 +1278,7 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
 <li>阶段1： A锁定30，B锁定50，检查C是否可以转钱</li>
 <li>阶段2: ABC开始转钱，任意一个失败不断重试</li>
 </ul>
-<h3 id="事务状态表-日志流水表"><a href="#事务状态表-日志流水表" class="headerlink" title="事务状态表/日志流水表"></a>事务状态表/日志流水表</h3><p>A给C转30，如何保证AC同时转账成功</p>
+<h3 id="事务状态表-x2F-日志流水表"><a href="#事务状态表-x2F-日志流水表" class="headerlink" title="事务状态表/日志流水表"></a>事务状态表/日志流水表</h3><p>A给C转30，如何保证AC同时转账成功</p>
 <p>调用方维护事务状态表，每次调用前记录流水，调用成功后更新流水状态，流水事务ID全局唯一<br>后台任务不断检查流水表，若存在长时间未成功流水，尝试重试该流水事务ID的转账，根据TCC幂等性最终保证一致性</p>
 <ol>
 <li>若多次重试失败，状态置未错误，需人工干预</li>
@@ -1266,7 +1348,7 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1289,7 +1371,7 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="dig"><a href="#dig" class="headerlink" title="dig"></a>dig</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">dig www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+          <h2 id="dig"><a href="#dig" class="headerlink" title="dig"></a>dig</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">dig</span> www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <img src="/2020/07/29/sys/dns/dig.png" class="">
 
@@ -1322,12 +1404,12 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
 <blockquote>
 <p>dig指定DNS服务器查询</p>
 </blockquote>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">dig @8.8.8.8 www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">dig</span> @8.8.8.8 www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <h2 id="分级查询"><a href="#分级查询" class="headerlink" title="分级查询"></a>分级查询</h2><h3 id="域名层级"><a href="#域名层级" class="headerlink" title="域名层级"></a>域名层级</h3><pre class="line-numbers language-text" data-language="text"><code class="language-text">主机名.次级域名.顶级域名.根域名<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <h3 id="根域名"><a href="#根域名" class="headerlink" title="根域名"></a>根域名</h3><p>全世界<code>A.ROOT-SERVERS.NET</code>到<code>M.ROOT-SERVERS.NET</code>共十三组</p>
-<h3 id="逐级查询"><a href="#逐级查询" class="headerlink" title="逐级查询"></a>逐级查询</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">dig +trace www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h3 id="逐级查询"><a href="#逐级查询" class="headerlink" title="逐级查询"></a>逐级查询</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">dig</span> +trace www.baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <blockquote>
 <p>根域名-&gt;顶级域名-&gt;次级域名-&gt;name server-&gt;服务器内网主机</p>
@@ -1338,20 +1420,20 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
 <h2 id="nslookup"><a href="#nslookup" class="headerlink" title="nslookup"></a>nslookup</h2><blockquote>
 <p>交互式dns查询</p>
 </blockquote>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">nslookup<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">nslookup</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <img src="/2020/07/29/sys/dns/nslookup.png" class="">
 
-<h2 id="linux-dns配置"><a href="#linux-dns配置" class="headerlink" title="linux dns配置"></a>linux dns配置</h2><h3 id="etc-hosts"><a href="#etc-hosts" class="headerlink" title="/etc/hosts"></a>/etc/hosts</h3><blockquote>
+<h2 id="linux-dns配置"><a href="#linux-dns配置" class="headerlink" title="linux dns配置"></a>linux dns配置</h2><h3 id="x2F-etc-x2F-hosts"><a href="#x2F-etc-x2F-hosts" class="headerlink" title="/etc/hosts"></a>/etc/hosts</h3><blockquote>
 <p>配置地址和域名的映射</p>
 </blockquote>
-<pre class="line-numbers language-yml" data-language="yml"><code class="language-yml">1.1.1.1 www.baidu.com
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">1.1.1.1 www.baidu.com
 2.2.2.2 www.qq.com<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
-<h3 id="etc-resolv-conf"><a href="#etc-resolv-conf" class="headerlink" title="/etc/resolv.conf"></a>/etc/resolv.conf</h3><blockquote>
+<h3 id="x2F-etc-x2F-resolv-conf"><a href="#x2F-etc-x2F-resolv-conf" class="headerlink" title="/etc/resolv.conf"></a>/etc/resolv.conf</h3><blockquote>
 <p>除了nameserver以外皆为可选设置</p>
 </blockquote>
-<pre class="line-numbers language-yml" data-language="yml"><code class="language-yml">domain abc
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">domain abc
 search x.y.z qqq
 nameserver 1.1.1.1
 nameserver 2.2.2.2
@@ -1416,7 +1498,7 @@ nameserver 2.2.2.2
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1536,7 +1618,7 @@ nameserver 2.2.2.2
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1561,60 +1643,57 @@ nameserver 2.2.2.2
       
           <h2 id="默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致"><a href="#默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致" class="headerlink" title="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致"></a>默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</h2><ol>
 <li>获取gtid或file postion</li>
-<li>顺序逻辑备份每个库，不同库之间备份时间点不同</li>
-<li>1 同时lock库中所有表READ锁，使库变为只读</li>
-<li>2 show create table + select * from table， 导出</li>
-<li>3 unlock tables</li>
+<li>顺序逻辑备份每个库，不同库之间备份时间点不同<br>2.1 同时lock库中所有表READ锁，使库变为只读<br>2.2 show create table + select * from table， 导出<br>2.3 unlock tables</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:02:01.441631Z	   18 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-2020-11-01T16:02:01.441820Z	   18 Query	show tables
-2020-11-01T16:02:01.442210Z	   18 Query	LOCK TABLES `employees` READ /*!32311 LOCAL */,`t1` READ /*!32311 LOCAL */,`test` READ /*!32311 LOCAL */,`test_auto` READ /*!32311 LOCAL */
-...
-2020-11-01T16:02:04.181862Z	   18 Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441631Z</span>	   <span class="token number">18</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441820Z</span>	   <span class="token number">18</span> Query	show tables
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.442210Z</span>	   <span class="token number">18</span> Query	LOCK TABLES `employees` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`t1` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test_auto` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:02:04.181862Z</span>	   <span class="token number">18</span> Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="–lock-all-tables-所有库备份点一致"><a href="#–lock-all-tables-所有库备份点一致" class="headerlink" title="–lock-all-tables  所有库备份点一致"></a>–lock-all-tables  所有库备份点一致</h2><p>整个数据库变为只读</p>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:16:57.678240Z	   21 Query	FLUSH TABLES
-2020-11-01T16:16:58.204729Z	   21 Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:16:57.678240Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES
+<span class="token date number">2020-11-01T</span><span class="token time number">16:16:58.204729Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <h2 id="–single-transaction-所有innodb表备份点一致"><a href="#–single-transaction-所有innodb表备份点一致" class="headerlink" title="–single-transaction  所有innodb表备份点一致"></a>–single-transaction  所有innodb表备份点一致</h2><ol>
 <li>设置会话隔离级别为RR</li>
 <li>开启一个MVCC会话，START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */ ，开启会话时自带一次select保证备份点之后的读一致性</li>
 <li>创建SAVEPOINT开始表备份，在ROLLBACK TO SAVEPOINT前对表的DDL阻塞</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:20:35.440889Z	   22 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-2020-11-01T16:20:35.441080Z	   22 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
-...
-2020-11-01T16:20:35.451846Z	   22 Query	UNLOCK TABLES
-...
-2020-11-01T16:20:35.471418Z	   22 Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-2020-11-01T16:20:35.471499Z	   22 Query	SAVEPOINT sp
-2020-11-01T16:20:35.478244Z	   22 Query	show tables
-...
-2020-11-01T16:20:35.484877Z	   22 Query	show create table `t1`
-2020-11-01T16:20:35.486464Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `t1`
-2020-11-01T16:20:35.488296Z	   22 Query	ROLLBACK TO SAVEPOINT sp
-...
-2020-11-01T16:20:35.489280Z	   22 Query	show create table `test`
-2020-11-01T16:20:35.497826Z	   22 Query	SELECT /*!40001 SQL_NO_CACHE */ * FROM `test`
-2020-11-01T16:20:38.400419Z	   22 Query	ROLLBACK TO SAVEPOINT sp
-...
-2020-11-01T16:20:38.403299Z	   22 Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.440889Z</span>	   <span class="token number">22</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.441080Z</span>	   <span class="token number">22</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.451846Z</span>	   <span class="token number">22</span> Query	UNLOCK TABLES
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471418Z</span>	   <span class="token number">22</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471499Z</span>	   <span class="token number">22</span> Query	SAVEPOINT sp
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.478244Z</span>	   <span class="token number">22</span> Query	show tables
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.484877Z</span>	   <span class="token number">22</span> Query	show create table `t1`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.486464Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `t1`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.488296Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.489280Z</span>	   <span class="token number">22</span> Query	show create table `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.497826Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `test`
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.400419Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.403299Z</span>	   <span class="token number">22</span> Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h2 id="–single-transaction-–master-data-2-需2次flush关表"><a href="#–single-transaction-–master-data-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
+<h2 id="–single-transaction-–master-data-x3D-2-需2次flush关表"><a href="#–single-transaction-–master-data-x3D-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
 <ol>
 <li>flush tables + FTWRL 整个数据库达到一致</li>
 <li>设置RR，开启一致读会话</li>
 <li>通过show master status获取binlog位点</li>
 <li>UNLOCK TABLES</li>
 </ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log">2020-11-01T16:47:40.165353Z	   23 Query	FLUSH /*!40101 LOCAL */ TABLES
-2020-11-01T16:47:40.190316Z	   23 Query	FLUSH TABLES WITH READ LOCK
-2020-11-01T16:47:40.190471Z	   23 Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-2020-11-01T16:47:40.190537Z	   23 Query	START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */
-2020-11-01T16:47:40.190744Z	   23 Query	SHOW VARIABLES LIKE 'gtid\_mode'
-2020-11-01T16:47:40.202013Z	   23 Query	SHOW MASTER STATUS
-2020-11-01T16:47:40.204813Z	   23 Query	UNLOCK TABLES
-...<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.165353Z</span>	   <span class="token number">23</span> Query	FLUSH <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40101</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span> TABLES
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190316Z</span>	   <span class="token number">23</span> Query	FLUSH TABLES WITH READ LOCK
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190471Z</span>	   <span class="token number">23</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190537Z</span>	   <span class="token number">23</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190744Z</span>	   <span class="token number">23</span> Query	SHOW VARIABLES LIKE <span class="token string">'gtid\_mode'</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.202013Z</span>	   <span class="token number">23</span> Query	SHOW MASTER <span class="token level info keyword">STATUS</span>
+<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.204813Z</span>	   <span class="token number">23</span> Query	UNLOCK TABLES
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>mysql –max-allowed-packet=16MB -BNe “SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN (‘mysql’, ‘performance_schema’, ‘information_schema’, ‘sys’)” | tr ‘\n’ ‘ ‘ &gt; dbs.sql<br>mysqldump  –opt –add-drop-database –add-drop-table –complete-insert –default-character-set=utf8 –hex-blob –master-data=2 –quote-names –single-transaction –events –routines –triggers –databases $(cat dbs.sql) &gt; full_dump.sql</p>
 <ul>
@@ -1723,7 +1802,7 @@ nameserver 2.2.2.2
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1746,10 +1825,10 @@ nameserver 2.2.2.2
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">#!/usr/bin/sh
-set -o errexit
-nohup tcpdump -i eth0 -C 512 -W 4 -w /tmp/tcpdump.cap &amp;
-sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+          <h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/usr/bin/sh</span>
+<span class="token builtin class-name">set</span> <span class="token parameter variable">-o</span> errexit
+<span class="token function">nohup</span> tcpdump <span class="token parameter variable">-i</span> eth0 <span class="token parameter variable">-C</span> <span class="token number">512</span> <span class="token parameter variable">-W</span> <span class="token number">4</span> <span class="token parameter variable">-w</span> /tmp/tcpdump.cap <span class="token operator">&amp;</span>
+<span class="token function">sleep</span> <span class="token number">3</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h2><p>client &amp; server 互相确认对方receive和send</p>
 <img src="/2020/07/19/sys/tcpdump/%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.jpg" class="">
@@ -1780,7 +1859,7 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
 </li>
 </ul>
 <h3 id="sync攻击"><a href="#sync攻击" class="headerlink" title="sync攻击"></a>sync攻击</h3><p>client短时间内伪造大量不存在ip来源sync包，server端ack由于ip不存在不断重发直至超时，占用半队列。</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">netstat -n -p TCP | grep SYN_RECV<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">netstat</span> <span class="token parameter variable">-n</span> <span class="token parameter variable">-p</span> TCP <span class="token operator">|</span> <span class="token function">grep</span> SYN_RECV<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <h3 id="系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies"><a href="#系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies" class="headerlink" title="系统message打印kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies."></a>系统message打印<code>kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies.</code></h3><p>client短时间大量SYN包，半队列无法及时处理，服务器自动启用net.ipv4.tcp_syncookies = 1</p>
 <h2 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h2><img src="/2020/07/19/sys/tcpdump/%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B.jpg" class="">
@@ -1856,100 +1935,10 @@ sleep 3<span aria-hidden="true" class="line-numbers-rows"><span></span><span></s
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/17/k8s/docker%E5%91%BD%E4%BB%A4/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/17/k8s/docker%E5%91%BD%E4%BB%A4/" class="post-title-link" itemprop="url">docker命令</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-17 00:28:00" itemprop="dateCreated datePublished" datetime="2020-07-17T00:28:00+00:00">2020-07-17</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>docker rm<br>docker rmi<br>docker pull<br>docker push<br>docker run</p>
-<h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">docker ps -a
-docker inspect $id
-docker stats $id
-docker top $id
-
-docker start $id
-docker stop $id
-
-docker exec -it $id bash
-
-docker kill --signal=1 $id
-docker rename $id {new_name}
-docker update --cpuset-cpus=0-3 $id
-
-docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
-docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="page-number" href="/page/4/">4</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -2015,7 +2004,7 @@ docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]<span aria-hidden="true" c
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -2053,7 +2042,7 @@ docker save -o target_image.tag.tar TARGET_IMAGE[:TAG]<span aria-hidden="true" c
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

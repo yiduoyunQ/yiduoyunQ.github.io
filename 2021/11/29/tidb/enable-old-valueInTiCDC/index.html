@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://pingcap-knowledge-base.oss-cn-beijing.aliyuncs.com/u/26/f/image1635155433555.png">
 <meta property="article:published_time" content="2021-11-29T20:32:47.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.681Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.746Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -177,10 +177,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2021-11-29 20:32:47 / 修改时间：12:36:34" itemprop="dateCreated datePublished" datetime="2021-11-29T20:32:47+00:00">2021-11-29</time>
+              <time title="创建时间：2021-11-29 20:32:47" itemprop="dateCreated datePublished" datetime="2021-11-29T20:32:47+00:00">2021-11-29</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -229,19 +235,19 @@
 </li>
 </ul>
 <p>可以看到，默认配置下 <strong>indexedColumnsValue</strong> 是存储在 key 中的，但当开启 new collation 特性后变为储存在 value 中。在 v4.0.5 之前这里存在着一个限制，对于 Delete 和 Update 类型的 change log，TiCDC 是无法从 TiKV 获取到 value 的， 因此在开启 new collation 时将会无法获取到 <strong>indexedColumnsValue</strong>，也因此无法还原 Delete 和 Update 事件。</p>
-<p>在 v4.0.5 中 TiKV <a target="_blank" rel="noopener" href="https://github.com/tikv/tikv/pull/8071">实现了输出 old value</a>，对应在 TiCDC 中通过新增 <strong>enable-old-value</strong> 参数来控制是否启用该特性。本文以下部分将采用黑盒测试，对比 <strong>new_collations_enabled_on_first_bootstrap ** 和 **enable-old-value</strong> 在不同配置组合下 TiCDC 的同步行为。TiCDC 默认<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E6%B2%A1%E6%9C%89%E6%9C%89%E6%95%88%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">仅同步有主键或唯一索引</a>的表，这里只讨论该类常见情况。</p>
+<p>在 v4.0.5 中 TiKV <a target="_blank" rel="noopener" href="https://github.com/tikv/tikv/pull/8071">实现了输出 old value</a>，对应在 TiCDC 中通过新增 <strong>enable-old-value</strong> 参数来控制是否启用该特性。本文以下部分将采用黑盒测试，对比 **new_collations_enabled_on_first_bootstrap ** 和 <strong>enable-old-value</strong> 在不同配置组合下 TiCDC 的同步行为。TiCDC 默认<a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v5.0/manage-ticdc#%E5%90%8C%E6%AD%A5%E6%B2%A1%E6%9C%89%E6%9C%89%E6%95%88%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">仅同步有主键或唯一索引</a>的表，这里只讨论该类常见情况。</p>
 <h2 id="黑盒测试"><a href="#黑盒测试" class="headerlink" title="黑盒测试"></a>黑盒测试</h2><p>本次测试使用版本 v5.0.3 (enable-old-value default true)，为方便重复测试这里使用 tidb-operator 进行部署，使用到的测试语句如下：</p>
 <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token comment"># 1.sql</span>
 <span class="token comment"># test new_collations_enabled_on_first_bootstrap = false (default)</span>
 <span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
 
-<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
-  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>t<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c3<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c4<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span><span class="token punctuation">,</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
 <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8<span class="token punctuation">;</span>
 
 <span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -258,13 +264,13 @@
 <span class="token comment"># test new_collations_enabled_on_first_bootstrap = true</span>
 <span class="token keyword">DROP</span> <span class="token keyword">TABLE</span> <span class="token keyword">IF</span> <span class="token keyword">EXISTS</span> t<span class="token punctuation">;</span>
 
-<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token punctuation">`</span>t<span class="token punctuation">`</span> <span class="token punctuation">(</span>
-  <span class="token punctuation">`</span>c1<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c3<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token punctuation">`</span>c4<span class="token punctuation">`</span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
-  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c1<span class="token punctuation">`</span><span class="token punctuation">,</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
-  <span class="token keyword">KEY</span> <span class="token punctuation">`</span>c2<span class="token punctuation">`</span> <span class="token punctuation">(</span><span class="token punctuation">`</span>c2<span class="token punctuation">`</span><span class="token punctuation">)</span>
+<span class="token keyword">CREATE</span> <span class="token keyword">TABLE</span> <span class="token identifier"><span class="token punctuation">`</span>t<span class="token punctuation">`</span></span> <span class="token punctuation">(</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token operator">NOT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c3<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token identifier"><span class="token punctuation">`</span>c4<span class="token punctuation">`</span></span> <span class="token keyword">varchar</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span> <span class="token keyword">COLLATE</span> utf8_general_ci <span class="token keyword">DEFAULT</span> <span class="token boolean">NULL</span><span class="token punctuation">,</span>
+  <span class="token keyword">PRIMARY</span> <span class="token keyword">KEY</span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c1<span class="token punctuation">`</span></span><span class="token punctuation">,</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span> <span class="token comment">/*T![clustered_index] NONCLUSTERED */</span><span class="token punctuation">,</span>
+  <span class="token keyword">KEY</span> <span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span> <span class="token punctuation">(</span><span class="token identifier"><span class="token punctuation">`</span>c2<span class="token punctuation">`</span></span><span class="token punctuation">)</span>
 <span class="token punctuation">)</span> <span class="token keyword">ENGINE</span><span class="token operator">=</span><span class="token keyword">InnoDB</span> <span class="token keyword">DEFAULT</span> <span class="token keyword">CHARSET</span><span class="token operator">=</span>utf8 <span class="token keyword">COLLATE</span> utf8_general_ci<span class="token punctuation">;</span>
 
 <span class="token keyword">insert</span> <span class="token keyword">into</span> t <span class="token keyword">values</span><span class="token punctuation">(</span><span class="token string">'a1'</span><span class="token punctuation">,</span><span class="token string">'b1'</span><span class="token punctuation">,</span><span class="token string">'c1'</span><span class="token punctuation">,</span><span class="token string">'d1'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -285,14 +291,14 @@
 </li>
 </ul>
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-2-启用-new-collation"><a href="#case-2-启用-new-collation" class="headerlink" title="case 2. 启用 new collation"></a>case 2. 启用 new collation</h3><ul>
@@ -301,28 +307,28 @@
 <li><p>enable-old-value = true (defalut)</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30001</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-3-关闭-enable-old-value"><a href="#case-3-关闭-enable-old-value" class="headerlink" title="case 3. 关闭 enable-old-value"></a>case 3. 关闭 enable-old-value</h3><ul>
@@ -331,18 +337,18 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
 <li><p>enable-old-value = false</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
-      "enable-old-value": false,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl <span class="token parameter variable">-n</span> tidb-cluster1 <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> pod/cluster1-ticdc-0 -- /cdc cli changefeed query <span class="token parameter variable">--pd</span><span class="token operator">=</span>http://cluster1-pd:2379 --changefeed-id<span class="token operator">=</span>cdctest <span class="token operator">|</span> <span class="token function">grep</span> enable-old-value
+      <span class="token string">"enable-old-value"</span><span class="token builtin class-name">:</span> false,<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>测试结果符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="case-4-关闭-enable-old-value-amp-启用-new-collation"><a href="#case-4-关闭-enable-old-value-amp-启用-new-collation" class="headerlink" title="case 4. 关闭 enable-old-value &amp; 启用 new collation"></a>case 4. 关闭 enable-old-value &amp; 启用 new collation</h3><ul>
@@ -351,33 +357,33 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
 <li><p>enable-old-value = false</p>
 </li>
 </ul>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">kubectl -n tidb-cluster1 exec -it pod/cluster1-ticdc-0 -- /cdc cli changefeed query --pd=http://cluster1-pd:2379 --changefeed-id=cdctest | grep enable-old-value
-      "enable-old-value": false,
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">kubectl <span class="token parameter variable">-n</span> tidb-cluster1 <span class="token builtin class-name">exec</span> <span class="token parameter variable">-it</span> pod/cluster1-ticdc-0 -- /cdc cli changefeed query <span class="token parameter variable">--pd</span><span class="token operator">=</span>http://cluster1-pd:2379 --changefeed-id<span class="token operator">=</span>cdctest <span class="token operator">|</span> <span class="token function">grep</span> enable-old-value
+      <span class="token string">"enable-old-value"</span><span class="token builtin class-name">:</span> false,
 
-mysql -h172.16.6.188 -P30001 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30001</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster1-tidb-0.cluster1-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"
+mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-e</span> <span class="token string">"show config where type='tidb' and name='new_collations_enabled_on_first_bootstrap'"</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| Type | Instance                                                  | Name                                      | Value |
+<span class="token operator">|</span> Type <span class="token operator">|</span> Instance                                                  <span class="token operator">|</span> Name                                      <span class="token operator">|</span> Value <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+
-| tidb | cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 | new_collations_enabled_on_first_bootstrap | true  |
+<span class="token operator">|</span> tidb <span class="token operator">|</span> cluster2-tidb-0.cluster2-tidb-peer.tidb-cluster1.svc:4000 <span class="token operator">|</span> new_collations_enabled_on_first_bootstrap <span class="token operator">|</span> <span class="token boolean">true</span>  <span class="token operator">|</span>
 +------+-----------------------------------------------------------+-------------------------------------------+-------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>测试结果不符合预期：</p>
-<pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">mysql -h172.16.6.188 -P30002 -uroot -D test -e "select * from t order by c1,c2"
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="token parameter variable">-P30002</span> <span class="token parameter variable">-uroot</span> <span class="token parameter variable">-D</span> <span class="token builtin class-name">test</span> <span class="token parameter variable">-e</span> <span class="token string">"select * from t order by c1,c2"</span>
 +----+----+------+------+
-| c1 | c2 | c3   | c4   |
+<span class="token operator">|</span> c1 <span class="token operator">|</span> c2 <span class="token operator">|</span> c3   <span class="token operator">|</span> c4   <span class="token operator">|</span>
 +----+----+------+------+
-| a1 | b1 | c1   | d1   |
-| a2 | b2 | c2   | d2   |
-| a2 | b9 | c2   | d2   |
-| a3 | b3 | c9   | d3   |
-| a4 | b4 | c4   | d9   |
-| a9 | b1 | c1   | d1   |
+<span class="token operator">|</span> a1 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b2 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a2 <span class="token operator">|</span> b9 <span class="token operator">|</span> c2   <span class="token operator">|</span> d2   <span class="token operator">|</span>
+<span class="token operator">|</span> a3 <span class="token operator">|</span> b3 <span class="token operator">|</span> c9   <span class="token operator">|</span> d3   <span class="token operator">|</span>
+<span class="token operator">|</span> a4 <span class="token operator">|</span> b4 <span class="token operator">|</span> c4   <span class="token operator">|</span> d9   <span class="token operator">|</span>
+<span class="token operator">|</span> a9 <span class="token operator">|</span> b1 <span class="token operator">|</span> c1   <span class="token operator">|</span> d1   <span class="token operator">|</span>
 +----+----+------+------+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>让我们通过开启 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/zh/tidb/v4.0/system-variables#tidb_general_log">tidb_general_log</a> 来观察 TiCDC 的同步行为：</p>
@@ -406,7 +412,10 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
     <a href="/2021/11/10/tidb/ConnectionIdleDuration/" rel="prev" title="metrics in TiDB -- Connection Idle Duration">
       <i class="fa fa-chevron-left"></i> metrics in TiDB -- Connection Idle Duration
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2022/11/02/tidb/graceful-shutdown/" rel="next" title="graceful shutdown in TiDB">
+      graceful shutdown in TiDB <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -479,7 +488,7 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -517,7 +526,7 @@ mysql -h172.16.6.188 -P30002 -uroot -e "show config where type='tidb' and name='
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

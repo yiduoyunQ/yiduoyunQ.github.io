@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -20,19 +20,19 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="栈内存 栈帧布局与函数跳转 函数调用栈    内存对齐 32位对齐：4 64位对齐：8  type T1 struct {     a bool  &#x2F;&#x2F; 占1B     b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B     c int8     d int64     e byte }  type T2 struct {     e byte &#x2F;&#x2F; 占1B">
+  <meta name="description" content="栈内存 栈帧布局与函数跳转 函数调用栈  内存对齐 32位对齐：4 64位对齐：8  type T1 struct {     a bool  &#x2F;&#x2F; 占1B     b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B     c int8     d int64     e byte }  type T2 struct {     e byte &#x2F;&#x2F; 占1B">
 <meta property="og:type" content="article">
 <meta property="og:title" content="go 内存分配和对齐">
 <meta property="og:url" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="栈内存 栈帧布局与函数跳转 函数调用栈    内存对齐 32位对齐：4 64位对齐：8  type T1 struct {     a bool  &#x2F;&#x2F; 占1B     b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B     c int8     d int64     e byte }  type T2 struct {     e byte &#x2F;&#x2F; 占1B">
+<meta property="og:description" content="栈内存 栈帧布局与函数跳转 函数调用栈  内存对齐 32位对齐：4 64位对齐：8  type T1 struct {     a bool  &#x2F;&#x2F; 占1B     b int32 &#x2F;&#x2F; 对齐为4，a后面需要3B padding，从第5B开始占4B     c int8     d int64     e byte }  type T2 struct {     e byte &#x2F;&#x2F; 占1B">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E5%86%85%E5%AD%98%E7%A2%8E%E7%89%87%E7%A4%BA%E4%BE%8B.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/go-memory-detail.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/mspan_gc.jpg">
 <meta property="og:image" content="https://yiduoyunq.github.io/2020/06/02/go/%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%AF%B9%E9%BD%90/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0.jpg">
 <meta property="article:published_time" content="2020-06-02T11:04:35.000Z">
-<meta property="article:modified_time" content="2021-11-29T12:36:34.657Z">
+<meta property="article:modified_time" content="2022-11-06T04:09:31.726Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta property="article:tag" content="源码">
 <meta name="twitter:card" content="summary">
@@ -188,7 +188,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-29 12:36:34" itemprop="dateModified" datetime="2021-11-29T12:36:34+00:00">2021-11-29</time>
+                <time title="修改时间：2022-11-06 04:09:31" itemprop="dateModified" datetime="2022-11-06T04:09:31+00:00">2022-11-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -213,9 +213,7 @@
       
         <h2 id="栈内存"><a href="#栈内存" class="headerlink" title="栈内存"></a>栈内存</h2><ul>
 <li><a href="https://www.bilibili.com/video/BV1WZ4y1p7JT" title="" target="">栈帧布局与函数跳转</a></li>
-<li><a href="https://www.bilibili.com/video/BV1tZ4y1p7Rv" title="" target="">函数调用栈</a>
-
-</li>
+<li><a href="https://www.bilibili.com/video/BV1tZ4y1p7Rv" title="" target="">函数调用栈</a></li>
 </ul>
 <h2 id="内存对齐"><a href="#内存对齐" class="headerlink" title="内存对齐"></a>内存对齐</h2><ul>
 <li>32位对齐：4</li>
@@ -260,31 +258,31 @@ string size: 16, align: 8
 T size: 32, align: 8
 T size: 16, align: 8<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h3 id="gctrace"><a href="#gctrace" class="headerlink" title="gctrace"></a>gctrace</h3><pre class="line-numbers language-shell" data-language="shell"><code class="language-shell">$ GODEBUG=gctrace=1 go run test
-package test is not in GOROOT (/usr/local/Cellar/go/1.14/libexec/src/test)
-qiujirongdeMacBook-Air:test qiujirong$ GODEBUG=gctrace=1 go run test.go 
-gc 1 @0.044s 5%: 0.020+3.8+0.070 ms clock, 0.083+7.0/3.6/0+0.28 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 2 @0.112s 2%: 0.070+0.49+0.034 ms clock, 0.28+0.21/0.38/0.38+0.13 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 3 @0.201s 1%: 0.026+1.0+0.038 ms clock, 0.10+0/0.42/1.7+0.15 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 4 @0.311s 1%: 0.050+0.47+0.003 ms clock, 0.20+0.17/0.28/0.77+0.013 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 5 @0.455s 0%: 0.070+4.2+0.009 ms clock, 0.28+0.85/3.6/1.3+0.036 ms cpu, 4-&gt;4-&gt;1 MB, 5 MB goal, 4 P
-gc 6 @0.496s 0%: 0.030+0.85+0.005 ms clock, 0.12+0/0.64/0.85+0.020 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 7 @0.571s 0%: 0.025+0.87+0.022 ms clock, 0.10+0.86/0.62/0.58+0.091 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-gc 8 @0.590s 0%: 0.047+0.67+0.004 ms clock, 0.18+0.28/0.46/1.1+0.016 ms cpu, 4-&gt;4-&gt;0 MB, 5 MB goal, 4 P
-# command-line-arguments
-gc 1 @0.031s 4%: 0.035+12+0.29 ms clock, 0.14+0.44/5.4/19+1.1 ms cpu, 4-&gt;5-&gt;4 MB, 5 MB goal, 4 P
-# command-line-arguments
-gc 1 @0.002s 15%: 0.009+8.3+0.013 ms clock, 0.039+1.5/4.9/0.53+0.052 ms cpu, 5-&gt;6-&gt;6 MB, 6 MB goal, 4 P
-gc 2 @0.199s 1%: 0.007+8.6+0.039 ms clock, 0.029+0/6.8/13+0.15 ms cpu, 11-&gt;11-&gt;10 MB, 12 MB goal, 4 P
-gc 3 @0.447s 1%: 0.007+12+0.023 ms clock, 0.028+1.9/11/25+0.093 ms cpu, 22-&gt;22-&gt;20 MB, 23 MB goal, 4 P
-bool size: 1, align: 1
-int32 size: 4, align: 4
-int8 size: 1, align: 1
-int64 size: 8, align: 8
-byte size: 1, align: 1
-string size: 16, align: 8
-T size: 32, align: 8
-T size: 16, align: 8<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="gctrace"><a href="#gctrace" class="headerlink" title="gctrace"></a>gctrace</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token assign-left variable">GODEBUG</span><span class="token operator">=</span>gctrace<span class="token operator">=</span><span class="token number">1</span> go run <span class="token builtin class-name">test</span>
+package <span class="token builtin class-name">test</span> is not <span class="token keyword">in</span> GOROOT <span class="token punctuation">(</span>/usr/local/Cellar/go/1.14/libexec/src/test<span class="token punctuation">)</span>
+qiujirongdeMacBook-Air:test qiujirong$ <span class="token assign-left variable">GODEBUG</span><span class="token operator">=</span>gctrace<span class="token operator">=</span><span class="token number">1</span> go run test.go 
+gc <span class="token number">1</span> @0.044s <span class="token number">5</span>%: <span class="token number">0.020</span>+3.8+0.070 ms clock, <span class="token number">0.083</span>+7.0/3.6/0+0.28 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">2</span> @0.112s <span class="token number">2</span>%: <span class="token number">0.070</span>+0.49+0.034 ms clock, <span class="token number">0.28</span>+0.21/0.38/0.38+0.13 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">3</span> @0.201s <span class="token number">1</span>%: <span class="token number">0.026</span>+1.0+0.038 ms clock, <span class="token number">0.10</span>+0/0.42/1.7+0.15 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">4</span> @0.311s <span class="token number">1</span>%: <span class="token number">0.050</span>+0.47+0.003 ms clock, <span class="token number">0.20</span>+0.17/0.28/0.77+0.013 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">5</span> @0.455s <span class="token number">0</span>%: <span class="token number">0.070</span>+4.2+0.009 ms clock, <span class="token number">0.28</span>+0.85/3.6/1.3+0.036 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">1</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">6</span> @0.496s <span class="token number">0</span>%: <span class="token number">0.030</span>+0.85+0.005 ms clock, <span class="token number">0.12</span>+0/0.64/0.85+0.020 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">7</span> @0.571s <span class="token number">0</span>%: <span class="token number">0.025</span>+0.87+0.022 ms clock, <span class="token number">0.10</span>+0.86/0.62/0.58+0.091 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">8</span> @0.590s <span class="token number">0</span>%: <span class="token number">0.047</span>+0.67+0.004 ms clock, <span class="token number">0.18</span>+0.28/0.46/1.1+0.016 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">0</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+<span class="token comment"># command-line-arguments</span>
+gc <span class="token number">1</span> @0.031s <span class="token number">4</span>%: <span class="token number">0.035</span>+12+0.29 ms clock, <span class="token number">0.14</span>+0.44/5.4/19+1.1 ms cpu, <span class="token number">4</span>-<span class="token operator">&gt;</span><span class="token number">5</span>-<span class="token operator">&gt;</span><span class="token number">4</span> MB, <span class="token number">5</span> MB goal, <span class="token number">4</span> P
+<span class="token comment"># command-line-arguments</span>
+gc <span class="token number">1</span> @0.002s <span class="token number">15</span>%: <span class="token number">0.009</span>+8.3+0.013 ms clock, <span class="token number">0.039</span>+1.5/4.9/0.53+0.052 ms cpu, <span class="token number">5</span>-<span class="token operator">&gt;</span><span class="token number">6</span>-<span class="token operator">&gt;</span><span class="token number">6</span> MB, <span class="token number">6</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">2</span> @0.199s <span class="token number">1</span>%: <span class="token number">0.007</span>+8.6+0.039 ms clock, <span class="token number">0.029</span>+0/6.8/13+0.15 ms cpu, <span class="token number">11</span>-<span class="token operator">&gt;</span><span class="token number">11</span>-<span class="token operator">&gt;</span><span class="token number">10</span> MB, <span class="token number">12</span> MB goal, <span class="token number">4</span> P
+gc <span class="token number">3</span> @0.447s <span class="token number">1</span>%: <span class="token number">0.007</span>+12+0.023 ms clock, <span class="token number">0.028</span>+1.9/11/25+0.093 ms cpu, <span class="token number">22</span>-<span class="token operator">&gt;</span><span class="token number">22</span>-<span class="token operator">&gt;</span><span class="token number">20</span> MB, <span class="token number">23</span> MB goal, <span class="token number">4</span> P
+bool size: <span class="token number">1</span>, align: <span class="token number">1</span>
+int32 size: <span class="token number">4</span>, align: <span class="token number">4</span>
+int8 size: <span class="token number">1</span>, align: <span class="token number">1</span>
+int64 size: <span class="token number">8</span>, align: <span class="token number">8</span>
+byte size: <span class="token number">1</span>, align: <span class="token number">1</span>
+string size: <span class="token number">16</span>, align: <span class="token number">8</span>
+T size: <span class="token number">32</span>, align: <span class="token number">8</span>
+T size: <span class="token number">16</span>, align: <span class="token number">8</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h2><h3 id="总线寻址"><a href="#总线寻址" class="headerlink" title="总线寻址"></a>总线寻址</h3><p>32位总线寻址范围最大 = 2的32次方 = 支持最大4G内存寻址<br>64为总线寻址范围最大 = 2的64次方</p>
 <p>虚拟内存VMA(virtual memory address) -&gt; 物理地址(liner address)<br>虚拟内存划分为page，一般为4KB</p>
@@ -393,9 +391,7 @@ T size: 16, align: 8<span aria-hidden="true" class="line-numbers-rows"><span></s
 
 <ol>
 <li>从per-P的本地mcache，根据class和是否有指针分配对象</li>
-<li>若本地相应class的mcache对象已满，调用mspan.refill从mheap相应class的central申请，需加解锁</li>
-<li>1 从非空链表(至少有一个空闲对象)取出mspan，插入空链表，若该mspan需要sweep执行sweep</li>
-<li>2 从空链表(没有空闲对象或在mcache中)取出状态为需sweep的mspan并执行sweep</li>
+<li>若本地相应class的mcache对象已满，调用mspan.refill从mheap相应class的central申请，需加解锁<br>  2.1 从非空链表(至少有一个空闲对象)取出mspan，插入空链表，若该mspan需要sweep执行sweep<br>  2.2 从空链表(没有空闲对象或在mcache中)取出状态为需sweep的mspan并执行sweep</li>
 <li>若相应class的central满，调用central.grow从mheap获取mspan，放入空链表，从中分配对象</li>
 <li>若mheap内存满，调用mheap.grow，从os申请内存，底层调用mmp</li>
 </ol>
@@ -618,8 +614,7 @@ havespan<span class="token punctuation">:</span>
 
 <p>第二阶段：</p>
 <ol>
-<li><code>markroot</code>对所有root节点做标记，包含几个特殊任务随机分配给p执行，比如：释放全局<code>sched.gFree.stack</code>的栈，该队列保存有栈的dead G，释放栈后放入全局<code>sched.gFree.noStack</code></li>
-<li>1 默认每个p扫描自己的栈上引用对象，包括栈上的defer链表。若为noscan对象直接标记黑色，否则根据对象引用进行标记。</li>
+<li><code>markroot</code>对所有root节点做标记，包含几个特殊任务随机分配给p执行，比如：释放全局<code>sched.gFree.stack</code>的栈，该队列保存有栈的dead G，释放栈后放入全局<code>sched.gFree.noStack</code><br>  1.1 默认每个p扫描自己的栈上引用对象，包括栈上的defer链表。若为noscan对象直接标记黑色，否则根据对象引用进行标记。</li>
 </ol>
 <p>第三阶段：</p>
 <p><code>gcMarkDone</code>先stop the world，将写屏障记录的所有修改的指针加入到标记队列，完成后start the world</p>
@@ -637,8 +632,7 @@ havespan<span class="token punctuation">:</span>
 </ol>
 <p>每个p有写屏障buf，用于避免第二阶段中用户代码修改引用导致gc漏标记。</p>
 <h2 id="TODO-版本差异"><a href="#TODO-版本差异" class="headerlink" title="TODO 版本差异"></a>TODO 版本差异</h2><h2 id="TODO-JAVA"><a href="#TODO-JAVA" class="headerlink" title="TODO JAVA"></a>TODO JAVA</h2><h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
-<li><a href="https://tonybai.com/2020/02/20/a-visual-guide-to-golang-memory-allocator-from-ground-up/" title="" target="">图解Go内存分配器</a>
-</li>
+<li><a href="https://tonybai.com/2020/02/20/a-visual-guide-to-golang-memory-allocator-from-ground-up/" title="" target="">图解Go内存分配器</a></li>
 </ul>
 
     </div>
@@ -737,7 +731,7 @@ havespan<span class="token punctuation">:</span>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">48</span>
+          <span class="site-state-item-count">49</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -775,7 +769,7 @@ havespan<span class="token punctuation">:</span>
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
