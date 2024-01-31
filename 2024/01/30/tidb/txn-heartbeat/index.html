@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="背景当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 t">
+  <meta name="description" content="背景当 APP “同时” 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 tx">
 <meta property="og:type" content="article">
 <meta property="og:title" content="TiDB 事务心跳超时机制测试">
 <meta property="og:url" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/index.html">
 <meta property="og:site_name" content="yiduoyunQ">
-<meta property="og:description" content="背景当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 t">
+<meta property="og:description" content="背景当 APP “同时” 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 tx">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/1.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/2.png">
@@ -45,7 +45,7 @@
 <meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/17.png">
 <meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/18.png">
 <meta property="article:published_time" content="2024-01-30T08:28:45.000Z">
-<meta property="article:modified_time" content="2024-01-31T00:37:50.001Z">
+<meta property="article:modified_time" content="2024-01-31T00:41:25.740Z">
 <meta property="article:author" content="yiduoyunQ">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/1.png">
@@ -200,7 +200,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -223,7 +223,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP “同时” 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
 <p>常见的事务心跳超时情况有：</p>
 <ol>
 <li><p>txn 运行的 TiDB 与 TiKV 网络失联（本文模拟场景）。</p>

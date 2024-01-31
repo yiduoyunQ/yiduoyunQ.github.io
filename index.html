@@ -178,7 +178,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -201,7 +201,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP “同时” 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
 <p>常见的事务心跳超时情况有：</p>
 <ol>
 <li><p>txn 运行的 TiDB 与 TiKV 网络失联（本文模拟场景）。</p>
@@ -370,7 +370,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -495,7 +495,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -751,7 +751,7 @@ mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -868,7 +868,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -969,7 +969,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1052,7 +1052,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1133,7 +1133,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1298,7 +1298,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1833,7 +1833,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1913,7 +1913,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1995,7 +1995,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+                <time title="修改时间：2024-01-31 00:41:25" itemprop="dateModified" datetime="2024-01-31T00:41:25+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
