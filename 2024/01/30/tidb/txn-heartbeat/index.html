@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yiduoyunq.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="背景当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TiDB 事务心跳超时机制测试">
+<meta property="og:url" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/index.html">
+<meta property="og:site_name" content="yiduoyunQ">
+<meta property="og:description" content="背景当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 t">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/1.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/2.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/3.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/4.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/5.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/6.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/7.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/9.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/10.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/11.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/12.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/13.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/14.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/15.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/16.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/17.png">
+<meta property="og:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/18.png">
+<meta property="article:published_time" content="2024-01-30T08:28:45.000Z">
+<meta property="article:modified_time" content="2024-01-31T00:37:50.001Z">
+<meta property="article:author" content="yiduoyunQ">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/1.png">
+
+<link rel="canonical" href="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>TiDB 事务心跳超时机制测试 | yiduoyunQ</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">yiduoyunQ</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          TiDB 事务心跳超时机制测试
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-01-30 08:28:45" itemprop="dateCreated datePublished" datetime="2024-01-30T08:28:45+00:00">2024-01-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tidb/" itemprop="url" rel="index"><span itemprop="name">tidb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
+<p>常见的事务心跳超时情况有：</p>
+<ol>
+<li><p>txn 运行的 TiDB 与 TiKV 网络失联（本文模拟场景）。</p>
+</li>
+<li><p>TiKV busy 导致 TiDB 发送心跳失败超时，TiDB 会自动 retry。</p>
+</li>
+</ol>
+<p>本文测试场景</p>
+<p>场景1: txn1 和 txn2 锁相同数据，txn1 心跳超时，lock 被 txn2 resolved，txn1 commit 失败，txn2 commit 成功。</p>
+<p>场景2: txn1 和 txn2 锁不同数据，txn1 心跳超时后恢复，txn1 &amp; txn2 commit 成功。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>场景1: txn1 和 txn2 之间存在锁冲突，txn1 心跳超时后，txn2 resolve lock，txn1 心跳超时恢复后在 commit 阶段失败回滚。</p>
+<p>场景2: txn1 和 txn2 之间没有锁冲突，txn1 心跳超时恢复后可以继续发送，commit 成功。</p>
+<p>PS：不加锁语句如简单 select 不存在事务锁冲突，不在本文测试范围内，大家感兴趣可以自行测试更多语句模式。</p>
+<h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><ul>
+<li><p>测试工具</p>
+<ul>
+<li>使用 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/tidb-in-kubernetes/stable/get-started">Kind + Operator</a>  部署 TiDB 集群</li>
+<li>使用 Chaos Mesh 模拟<a target="_blank" rel="noopener" href="https://chaos-mesh.org/docs/simulate-network-chaos-on-kubernetes/">网络分区</a></li>
+</ul>
+</li>
+<li><p>工具版本</p>
+<ul>
+<li>Operator v1.5.2</li>
+<li>TiDB cluster v5.1.5</li>
+<li>Chaos Mesh v2.6.2</li>
+</ul>
+</li>
+<li><p>测试数据</p>
+<p>  id 为主键 handle key</p>
+  <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t<span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> c    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> a    <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">2</span> <span class="token operator">|</span> b    <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">3</span> <span class="token operator">|</span> c    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token number">3</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+<h2 id="场景1-事务心跳超时-amp-锁相同-row-id"><a href="#场景1-事务心跳超时-amp-锁相同-row-id" class="headerlink" title="场景1 事务心跳超时 &amp; 锁相同 row id"></a>场景1 事务心跳超时 &amp; 锁相同 row id</h2><ol>
+<li><p>SessionA on tidb-0 start transaction on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/1.png" class="">
+
+<p> tidb-0 periodically sends txn heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/2.png" class="">
+</li>
+<li><p>Simulate network partition between tidb-0 and all tikv</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/3.png" class="">
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/4.png" class="">
+</li>
+<li><p>During Simulation SessionB on tidb-1 select on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/5.png" class="">
+
+<p> tidb-1 periodically sends txn heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/6.png" class="">
+</li>
+<li><p>Stop Simulation</p>
+<p> tidb-0 can not continue sending heartbeat to TiKV</p>
+</li>
+<li><p>SessionA on tidb-0 continue transaction and <strong>commit return KV error</strong></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/7.png" class="">
+</li>
+<li><p>SessoinB on tidb-1 execute transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/9.png" class=""></li>
+</ol>
+<h1 id="场景2-事务心跳超时-amp-锁不同-row-id"><a href="#场景2-事务心跳超时-amp-锁不同-row-id" class="headerlink" title="场景2 事务心跳超时 &amp; 锁不同 row id"></a>场景2 事务心跳超时 &amp; 锁不同 row id</h1><ol>
+<li><p>Session A on tidb-0 start transaction on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/10.png" class="">
+
+<p> tidb-0 periodically sends heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/11.png" class="">
+</li>
+<li><p>Simulate network partition between tidb-0 and all tikv</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/12.png" class="">
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/13.png" class="">
+</li>
+<li><p>During Simulation SessionB on tidb-1 select on <code>t.id = 2</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">2</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/14.png" class="">
+
+<p> tidb-1 periodically sends heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/15.png" class="">
+</li>
+<li><p>Stop Simulation</p>
+<p> tidb-0 can continue sending heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/16.png" class="">
+</li>
+<li><p>SessionA on tidb-0 continues transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/17.png" class="">
+</li>
+<li><p>SessoinB on tidb-1 continues transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'bb'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/18.png" class=""></li>
+</ol>
+<h2 id="完"><a href="#完" class="headerlink" title="完"></a>完</h2>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/11/02/tidb/graceful-shutdown/" rel="prev" title="graceful shutdown in TiDB">
+      <i class="fa fa-chevron-left"></i> graceful shutdown in TiDB
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">2.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87"><span class="nav-number">3.</span> <span class="nav-text">准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF1-%E4%BA%8B%E5%8A%A1%E5%BF%83%E8%B7%B3%E8%B6%85%E6%97%B6-amp-%E9%94%81%E7%9B%B8%E5%90%8C-row-id"><span class="nav-number">4.</span> <span class="nav-text">场景1 事务心跳超时 &amp; 锁相同 row id</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9C%BA%E6%99%AF2-%E4%BA%8B%E5%8A%A1%E5%BF%83%E8%B7%B3%E8%B6%85%E6%97%B6-amp-%E9%94%81%E4%B8%8D%E5%90%8C-row-id"><span class="nav-number"></span> <span class="nav-text">场景2 事务心跳超时 &amp; 锁不同 row id</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%8C"><span class="nav-number">1.</span> <span class="nav-text">完</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">yiduoyunQ</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">50</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yiduoyunQ</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

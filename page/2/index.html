@@ -147,6 +147,135 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/02/26/go/tips/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/02/26/go/tips/" class="post-title-link" itemprop="url">tips</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-26 22:39:23" itemprop="dateCreated datePublished" datetime="2021-02-26T22:39:23+00:00">2021-02-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="for-range-go"><a href="#for-range-go" class="headerlink" title="for range go"></a>for range go</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	wg <span class="token operator">:=</span> sync<span class="token punctuation">.</span>WaitGroup<span class="token punctuation">{</span><span class="token punctuation">}</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> s <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">{</span><span class="token string">"1"</span><span class="token punctuation">,</span> <span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"3"</span><span class="token punctuation">}</span> <span class="token punctuation">{</span> <span class="token comment">// s只会实例化一次</span>
+		wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+		<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+			<span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"string: "</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
+			fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"%p \n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>s<span class="token punctuation">)</span>
+
+		<span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+	wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token comment">/* out
+string:  3
+string:  3
+0xc00008e1e0 
+0xc00008e1e0 
+string:  3
+0xc00008e1e0 
+*/</span>
+
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	wg <span class="token operator">:=</span> sync<span class="token punctuation">.</span>WaitGroup<span class="token punctuation">{</span><span class="token punctuation">}</span>
+	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> s <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">{</span><span class="token string">"1"</span><span class="token punctuation">,</span> <span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"3"</span><span class="token punctuation">}</span> <span class="token punctuation">{</span>
+		wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+		<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span>s <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// 值拷贝传入</span>
+			<span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+			fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"string: "</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
+			fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"%p \n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>s<span class="token punctuation">)</span>
+
+		<span class="token punctuation">}</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
+	<span class="token punctuation">}</span>
+	wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token comment">/* out
+string:  3
+string:  2
+0xc000100000 
+0xc000010200 
+string:  1
+0xc00008c000 
+*/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="pipeline"><a href="#pipeline" class="headerlink" title="pipeline"></a>pipeline</h2><img src="/2021/02/26/go/tips/pipeline.png" class="">
+
+<h2 id="fanout"><a href="#fanout" class="headerlink" title="fanout"></a>fanout</h2><img src="/2021/02/26/go/tips/fanout.png" class="">
+
+<h2 id="fanin"><a href="#fanin" class="headerlink" title="fanin"></a>fanin</h2><img src="/2021/02/26/go/tips/fanin.png" class="">
+
+<h2 id="ratelimit-限流"><a href="#ratelimit-限流" class="headerlink" title="ratelimit 限流"></a>ratelimit 限流</h2><p><a target="_blank" rel="noopener" href="https://github.com/uber-go/ratelimit">https://github.com/uber-go/ratelimit</a><br><a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/time/rate">https://pkg.go.dev/golang.org/x/time/rate</a></p>
+<h2 id="circuit-breaker-熔断"><a href="#circuit-breaker-熔断" class="headerlink" title="circuit breaker 熔断"></a>circuit breaker 熔断</h2><p><a target="_blank" rel="noopener" href="https://github.com/sony/gobreaker">https://github.com/sony/gobreaker</a></p>
+<h2 id="cache"><a href="#cache" class="headerlink" title="cache"></a>cache</h2><p><a target="_blank" rel="noopener" href="https://github.com/coocood/freecache">https://github.com/coocood/freecache</a><br><a target="_blank" rel="noopener" href="https://github.com/dgraph-io/ristretto">https://github.com/dgraph-io/ristretto</a><br><a target="_blank" rel="noopener" href="https://github.com/allegro/bigcache">https://github.com/allegro/bigcache</a></p>
+<h2 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h2><p><a target="_blank" rel="noopener" href="https://github.com/spf13/cast">https://github.com/spf13/cast</a></p>
+<h2 id="gops官方调试器"><a href="#gops官方调试器" class="headerlink" title="gops官方调试器"></a>gops官方调试器</h2><p><a target="_blank" rel="noopener" href="https://github.com/google/gops">https://github.com/google/gops</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/01/25/go/reflect/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -178,7 +307,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -264,7 +393,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Println<
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -359,7 +488,7 @@ fmt<span class="token punctuation">.</span><span class="token function">Println<
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -698,7 +827,7 @@ top<span class="token punctuation">:</span>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -800,7 +929,7 @@ root     <span class="token number">21907</span> <span class="token number">2189
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -922,7 +1051,7 @@ root     <span class="token number">21907</span> <span class="token number">2189
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1055,7 +1184,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1168,7 +1297,7 @@ drwx------ 4 root root     72 6月  21 22:39 86ee0049958014c13786026f642b9874a67
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1348,7 +1477,7 @@ Empty set (0.00 sec)<span aria-hidden="true" class="line-numbers-rows"><span></s
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1498,7 +1627,7 @@ nameserver 2.2.2.2
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1618,7 +1747,7 @@ nameserver 2.2.2.2
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1767,174 +1896,6 @@ nameserver 2.2.2.2
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/19/sys/tcpdump/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/19/sys/tcpdump/" class="post-title-link" itemprop="url">tcpdump</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-19 20:44:37" itemprop="dateCreated datePublished" datetime="2020-07-19T20:44:37+00:00">2020-07-19</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">系统</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h2><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/usr/bin/sh</span>
-<span class="token builtin class-name">set</span> <span class="token parameter variable">-o</span> errexit
-<span class="token function">nohup</span> tcpdump <span class="token parameter variable">-i</span> eth0 <span class="token parameter variable">-C</span> <span class="token number">512</span> <span class="token parameter variable">-W</span> <span class="token number">4</span> <span class="token parameter variable">-w</span> /tmp/tcpdump.cap <span class="token operator">&amp;</span>
-<span class="token function">sleep</span> <span class="token number">3</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h2><p>client &amp; server 互相确认对方receive和send</p>
-<img src="/2020/07/19/sys/tcpdump/%E4%B8%89%E6%AC%A1%E6%8F%A1%E6%89%8B.jpg" class="">
-
-<ul>
-<li>第一次握手 server： client send ok，server receive ok</li>
-<li>第二次握手 client： client receive&amp;send ok， server receive&amp;send ok</li>
-<li>第三次握手 server： client receive&amp;send ok， server receive&amp;send ok</li>
-</ul>
-<h3 id="两次握手问题"><a href="#两次握手问题" class="headerlink" title="两次握手问题"></a>两次握手问题</h3><ol>
-<li>client first SYNC delayed</li>
-<li>client second SYNC</li>
-<li>server receive second SYNC &amp; ACK， conn established</li>
-<li>client and server normally close conn</li>
-<li>server receive delayed first SYNC &amp; ACK， conn established</li>
-<li>client refuse first SYNC &amp; ACK， conn on server side will never close</li>
-</ol>
-<h3 id="半队列和全队列"><a href="#半队列和全队列" class="headerlink" title="半队列和全队列"></a>半队列和全队列</h3><ul>
-<li>内核层队列默认参数net.core.somaxconn = 128</li>
-<li>server端SYNC-RCVD状态连接存入半队列，不能大于内核somaxconn<ul>
-<li>半队列默认参数net.ipv4.tcp_max_syn_backlog = 1024，当net.ipv4.tcp_syncookies = 1时半连接队列逻辑上无上限，该参数无效。</li>
-<li>取min(backlog, tcp_max_syn_backlog, somaxconn)</li>
-</ul>
-</li>
-<li>server端ESTABLISHED状态连接存入全队列，不能大于内核somaxconn<ul>
-<li>全队列backlog参数由应用调用系统底层API: int listen(int sockfd, int backlog)时传入</li>
-</ul>
-</li>
-</ul>
-<h3 id="sync攻击"><a href="#sync攻击" class="headerlink" title="sync攻击"></a>sync攻击</h3><p>client短时间内伪造大量不存在ip来源sync包，server端ack由于ip不存在不断重发直至超时，占用半队列。</p>
-<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">netstat</span> <span class="token parameter variable">-n</span> <span class="token parameter variable">-p</span> TCP <span class="token operator">|</span> <span class="token function">grep</span> SYN_RECV<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<h3 id="系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies"><a href="#系统message打印kernel：-TCP-request-sock-TCP-Possible-SYN-flooding-on-port-xxx-Sending-cookies" class="headerlink" title="系统message打印kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies."></a>系统message打印<code>kernel： TCP request_sock_TCP: Possible SYN flooding on port xxx. Sending cookies.</code></h3><p>client短时间大量SYN包，半队列无法及时处理，服务器自动启用net.ipv4.tcp_syncookies = 1</p>
-<h2 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h2><img src="/2020/07/19/sys/tcpdump/%E5%9B%9B%E6%AC%A1%E6%8C%A5%E6%89%8B.jpg" class="">
-
-<ul>
-<li>第一次挥手： client发送FIN，处于FIN_WAIT1</li>
-<li>第二次挥手：<ul>
-<li>server收到FIN，发送ACK，处于CLOSE_WAIT</li>
-<li>client收到ACK，进入FIN_WAIT2，等待server</li>
-</ul>
-</li>
-<li>第三次挥手： server发送FIN，进入LAST_ACK</li>
-<li>第四次挥手：<ul>
-<li>client收到FIN，发送ACK，进入TIME_WAIT(2MSL)</li>
-<li>server收到ACK，进入CLOSED</li>
-</ul>
-</li>
-</ul>
-<h3 id="为什么四次挥手"><a href="#为什么四次挥手" class="headerlink" title="为什么四次挥手"></a>为什么四次挥手</h3><p>第一次+第二次： client主动发送FIN要求断开conn，server ACK确认收到FIN<br>第三次+第四次： server完成必要动作后，发送FIN确认可断开conn，client ACK确认</p>
-<h3 id="TIME-WAIT（2MSL）"><a href="#TIME-WAIT（2MSL）" class="headerlink" title="TIME_WAIT（2MSL）"></a>TIME_WAIT（2MSL）</h3><p>client ACK后若不等待2MSL而直接close conn，假设ACK丢失，server FIN超时重发，由于client已close conn会响应RST，server收到RST后无法正常close conn。</p>
-<h2 id="wireshark"><a href="#wireshark" class="headerlink" title="wireshark"></a>wireshark</h2><ul>
-<li>property(displayed/caputured)</li>
-<li>filter<ul>
-<li>frame.time</li>
-<li>ip.src/dst</li>
-<li>tcp.port/srcport/dstport</li>
-</ul>
-</li>
-<li>ayalyze<ul>
-<li>expert information</li>
-</ul>
-</li>
-<li>statistic<ul>
-<li>protocol hierarchy</li>
-<li>conversation<ul>
-<li>endpoint</li>
-</ul>
-</li>
-<li>io graph</li>
-<li>flow graph</li>
-</ul>
-</li>
-</ul>
-<h2 id="UDP"><a href="#UDP" class="headerlink" title="UDP"></a>UDP</h2><blockquote>
-<p>结构数据小<br>无需建立连接，直接发送接收数据<br>TCP保证数据顺序有效，UDP不保证顺序且可能丢包</p>
-</blockquote>
-<h2 id="http2-wireshark"><a href="#http2-wireshark" class="headerlink" title="http2 wireshark"></a>http2 wireshark</h2><p>analyze -&gt; enabled protocols -&gt; 选中HTTP2<br>analyze -&gt; decode as -&gt; tcp port 的[current] 设置为HTTP2</p>
-<img src="/2020/07/19/sys/tcpdump/http2_req.png" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res.png" class="">
-
-<img src="/2020/07/19/sys/tcpdump/http2_req_head.jpeg" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res_head_false.jpeg" class="">
-<img src="/2020/07/19/sys/tcpdump/http2_res_head_true.jpeg" class="">
-
-<h2 id="How-to-get-tcpdump-for-containers-inside-Kubernetes-pods-How-to-get-tcpdump-for-containers-inside-Kubernetes-pods"><a href="#How-to-get-tcpdump-for-containers-inside-Kubernetes-pods-How-to-get-tcpdump-for-containers-inside-Kubernetes-pods" class="headerlink" title="[How to get tcpdump for containers inside Kubernetes pods](How to get tcpdump for containers inside Kubernetes pods)"></a>[How to get tcpdump for containers inside Kubernetes pods](<a target="_blank" rel="noopener" href="https://pvtl.force.com/s/article/How-to-get-tcpdump-for-containers-inside-Kubernetes-pods?language=en_US">How to get tcpdump for containers inside Kubernetes pods</a>)</h2><p>kubectl -n ns exec -it pod – sh<br>cat /sys/class/net/eth0/iflink<br>ip link |grep ^xx</p>
-<h2 id="ref"><a href="#ref" class="headerlink" title="ref"></a>ref</h2><a href="https://mp.weixin.qq.com/s/-Q1AkxUr9xzGKwUMV-FQhQ" title="" target="">云网络丢包故障定位</a>
-<a href="https://cilium.io/blog/2018/04/17/why-is-the-kernel-community-replacing-iptables" title="" target="">why-is-the-kernel-community-replacing-iptables</a>
-
-
-<p>TODO SSL</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -2004,7 +1965,7 @@ nameserver 2.2.2.2
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-count">50</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -2042,7 +2003,7 @@ nameserver 2.2.2.2
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

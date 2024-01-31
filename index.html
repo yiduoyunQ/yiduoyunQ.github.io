@@ -147,6 +147,198 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2024/01/30/tidb/txn-heartbeat/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2024/01/30/tidb/txn-heartbeat/" class="post-title-link" itemprop="url">TiDB 事务心跳超时机制测试</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2024-01-30 08:28:45" itemprop="dateCreated datePublished" datetime="2024-01-30T08:28:45+00:00">2024-01-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tidb/" itemprop="url" rel="index"><span itemprop="name">tidb</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>当 APP  ”同时“ 发送 txn1 和 txn2 到 TiDB，txn1 和 txn2 之间存在锁冲突，TiDB 先执行了 txn1，则 txn2 需要等到 txn1 提交或回滚之后才能执行，TiDB 内部通过事务心跳机制来防止一些特殊情况下 txn1 持有锁的泄漏，进而防止 txn2 无限期等待。当 txn1 事务心跳超时后，txn2 即可 resolve txn1 持有的锁，之后当 txn1 恢复后会 rollback 并返回 error 报错给 APP。</p>
+<p>常见的事务心跳超时情况有：</p>
+<ol>
+<li><p>txn 运行的 TiDB 与 TiKV 网络失联（本文模拟场景）。</p>
+</li>
+<li><p>TiKV busy 导致 TiDB 发送心跳失败超时，TiDB 会自动 retry。</p>
+</li>
+</ol>
+<p>本文测试场景</p>
+<p>场景1: txn1 和 txn2 锁相同数据，txn1 心跳超时，lock 被 txn2 resolved，txn1 commit 失败，txn2 commit 成功。</p>
+<p>场景2: txn1 和 txn2 锁不同数据，txn1 心跳超时后恢复，txn1 &amp; txn2 commit 成功。</p>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>场景1: txn1 和 txn2 之间存在锁冲突，txn1 心跳超时后，txn2 resolve lock，txn1 心跳超时恢复后在 commit 阶段失败回滚。</p>
+<p>场景2: txn1 和 txn2 之间没有锁冲突，txn1 心跳超时恢复后可以继续发送，commit 成功。</p>
+<p>PS：不加锁语句如简单 select 不存在事务锁冲突，不在本文测试范围内，大家感兴趣可以自行测试更多语句模式。</p>
+<h2 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h2><ul>
+<li><p>测试工具</p>
+<ul>
+<li>使用 <a target="_blank" rel="noopener" href="https://docs.pingcap.com/tidb-in-kubernetes/stable/get-started">Kind + Operator</a>  部署 TiDB 集群</li>
+<li>使用 Chaos Mesh 模拟<a target="_blank" rel="noopener" href="https://chaos-mesh.org/docs/simulate-network-chaos-on-kubernetes/">网络分区</a></li>
+</ul>
+</li>
+<li><p>工具版本</p>
+<ul>
+<li>Operator v1.5.2</li>
+<li>TiDB cluster v5.1.5</li>
+<li>Chaos Mesh v2.6.2</li>
+</ul>
+</li>
+<li><p>测试数据</p>
+<p>  id 为主键 handle key</p>
+  <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql">mysql<span class="token operator">&gt;</span> <span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t<span class="token punctuation">;</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token operator">|</span> id <span class="token operator">|</span> c    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token operator">|</span>  <span class="token number">1</span> <span class="token operator">|</span> a    <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">2</span> <span class="token operator">|</span> b    <span class="token operator">|</span>
+<span class="token operator">|</span>  <span class="token number">3</span> <span class="token operator">|</span> c    <span class="token operator">|</span>
+<span class="token operator">+</span><span class="token comment">----+------+</span>
+<span class="token number">3</span> <span class="token keyword">rows</span> <span class="token operator">in</span> <span class="token keyword">set</span> <span class="token punctuation">(</span><span class="token number">0.01</span> sec<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+<h2 id="场景1-事务心跳超时-amp-锁相同-row-id"><a href="#场景1-事务心跳超时-amp-锁相同-row-id" class="headerlink" title="场景1 事务心跳超时 &amp; 锁相同 row id"></a>场景1 事务心跳超时 &amp; 锁相同 row id</h2><ol>
+<li><p>SessionA on tidb-0 start transaction on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/1.png" class="">
+
+<p> tidb-0 periodically sends txn heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/2.png" class="">
+</li>
+<li><p>Simulate network partition between tidb-0 and all tikv</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/3.png" class="">
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/4.png" class="">
+</li>
+<li><p>During Simulation SessionB on tidb-1 select on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/5.png" class="">
+
+<p> tidb-1 periodically sends txn heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/6.png" class="">
+</li>
+<li><p>Stop Simulation</p>
+<p> tidb-0 can not continue sending heartbeat to TiKV</p>
+</li>
+<li><p>SessionA on tidb-0 continue transaction and <strong>commit return KV error</strong></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/7.png" class="">
+</li>
+<li><p>SessoinB on tidb-1 execute transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/9.png" class=""></li>
+</ol>
+<h1 id="场景2-事务心跳超时-amp-锁不同-row-id"><a href="#场景2-事务心跳超时-amp-锁不同-row-id" class="headerlink" title="场景2 事务心跳超时 &amp; 锁不同 row id"></a>场景2 事务心跳超时 &amp; 锁不同 row id</h1><ol>
+<li><p>Session A on tidb-0 start transaction on <code>t.id = 1</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/10.png" class="">
+
+<p> tidb-0 periodically sends heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/11.png" class="">
+</li>
+<li><p>Simulate network partition between tidb-0 and all tikv</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/12.png" class="">
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/13.png" class="">
+</li>
+<li><p>During Simulation SessionB on tidb-1 select on <code>t.id = 2</code></p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">begin</span><span class="token punctuation">;</span>
+<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> t <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">2</span> <span class="token keyword">for</span> <span class="token keyword">update</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/14.png" class="">
+
+<p> tidb-1 periodically sends heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/15.png" class="">
+</li>
+<li><p>Stop Simulation</p>
+<p> tidb-0 can continue sending heartbeat to TiKV</p>
+ <img src="/2024/01/30/tidb/txn-heartbeat/16.png" class="">
+</li>
+<li><p>SessionA on tidb-0 continues transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'aa'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/17.png" class="">
+</li>
+<li><p>SessoinB on tidb-1 continues transaction successfully</p>
+ <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">update</span> t <span class="token keyword">set</span> c <span class="token operator">=</span> <span class="token string">'bb'</span> <span class="token keyword">where</span> id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">;</span>
+<span class="token keyword">commit</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+ <img src="/2024/01/30/tidb/txn-heartbeat/18.png" class=""></li>
+</ol>
+<h2 id="完"><a href="#完" class="headerlink" title="完"></a>完</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2022/11/02/tidb/graceful-shutdown/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -178,7 +370,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -303,7 +495,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -559,7 +751,7 @@ mysql <span class="token parameter variable">-h172.16.6.188</span> <span class="
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -676,7 +868,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -777,7 +969,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -860,7 +1052,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -941,7 +1133,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:50" itemprop="dateModified" datetime="2024-01-31T00:37:50+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1106,7 +1298,7 @@ req query packet <span class="token punctuation">[</span>in txn<span class="toke
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1641,7 +1833,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1721,7 +1913,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1803,7 +1995,7 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
+                <time title="修改时间：2024-01-31 00:37:49" itemprop="dateModified" datetime="2024-01-31T00:37:49+00:00">2024-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1831,135 +2023,6 @@ kubectl <span class="token parameter variable">-n</span> <span class="token vari
 <h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><img src="/2021/02/27/tidb/arch/flow.jpg" class="">
 
 <p>TODO</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2021/02/26/go/tips/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/26/go/tips/" class="post-title-link" itemprop="url">tips</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-02-26 22:39:23" itemprop="dateCreated datePublished" datetime="2021-02-26T22:39:23+00:00">2021-02-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2023-06-19 03:43:54" itemprop="dateModified" datetime="2023-06-19T03:43:54+00:00">2023-06-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="for-range-go"><a href="#for-range-go" class="headerlink" title="for range go"></a>for range go</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-	wg <span class="token operator">:=</span> sync<span class="token punctuation">.</span>WaitGroup<span class="token punctuation">{</span><span class="token punctuation">}</span>
-	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> s <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">{</span><span class="token string">"1"</span><span class="token punctuation">,</span> <span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"3"</span><span class="token punctuation">}</span> <span class="token punctuation">{</span> <span class="token comment">// s只会实例化一次</span>
-		wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
-		<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-			<span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-			fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"string: "</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
-			fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"%p \n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>s<span class="token punctuation">)</span>
-
-		<span class="token punctuation">}</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-	<span class="token punctuation">}</span>
-	wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-<span class="token punctuation">}</span>
-<span class="token comment">/* out
-string:  3
-string:  3
-0xc00008e1e0 
-0xc00008e1e0 
-string:  3
-0xc00008e1e0 
-*/</span>
-
-
-<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-	wg <span class="token operator">:=</span> sync<span class="token punctuation">.</span>WaitGroup<span class="token punctuation">{</span><span class="token punctuation">}</span>
-	<span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> s <span class="token operator">:=</span> <span class="token keyword">range</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">{</span><span class="token string">"1"</span><span class="token punctuation">,</span> <span class="token string">"2"</span><span class="token punctuation">,</span> <span class="token string">"3"</span><span class="token punctuation">}</span> <span class="token punctuation">{</span>
-		wg<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
-		<span class="token keyword">go</span> <span class="token keyword">func</span><span class="token punctuation">(</span>s <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// 值拷贝传入</span>
-			<span class="token keyword">defer</span> wg<span class="token punctuation">.</span><span class="token function">Done</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-			fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"string: "</span><span class="token punctuation">,</span> s<span class="token punctuation">)</span>
-			fmt<span class="token punctuation">.</span><span class="token function">Printf</span><span class="token punctuation">(</span><span class="token string">"%p \n"</span><span class="token punctuation">,</span> <span class="token operator">&amp;</span>s<span class="token punctuation">)</span>
-
-		<span class="token punctuation">}</span><span class="token punctuation">(</span>s<span class="token punctuation">)</span>
-	<span class="token punctuation">}</span>
-	wg<span class="token punctuation">.</span><span class="token function">Wait</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-<span class="token punctuation">}</span>
-<span class="token comment">/* out
-string:  3
-string:  2
-0xc000100000 
-0xc000010200 
-string:  1
-0xc00008c000 
-*/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="pipeline"><a href="#pipeline" class="headerlink" title="pipeline"></a>pipeline</h2><img src="/2021/02/26/go/tips/pipeline.png" class="">
-
-<h2 id="fanout"><a href="#fanout" class="headerlink" title="fanout"></a>fanout</h2><img src="/2021/02/26/go/tips/fanout.png" class="">
-
-<h2 id="fanin"><a href="#fanin" class="headerlink" title="fanin"></a>fanin</h2><img src="/2021/02/26/go/tips/fanin.png" class="">
-
-<h2 id="ratelimit-限流"><a href="#ratelimit-限流" class="headerlink" title="ratelimit 限流"></a>ratelimit 限流</h2><p><a target="_blank" rel="noopener" href="https://github.com/uber-go/ratelimit">https://github.com/uber-go/ratelimit</a><br><a target="_blank" rel="noopener" href="https://pkg.go.dev/golang.org/x/time/rate">https://pkg.go.dev/golang.org/x/time/rate</a></p>
-<h2 id="circuit-breaker-熔断"><a href="#circuit-breaker-熔断" class="headerlink" title="circuit breaker 熔断"></a>circuit breaker 熔断</h2><p><a target="_blank" rel="noopener" href="https://github.com/sony/gobreaker">https://github.com/sony/gobreaker</a></p>
-<h2 id="cache"><a href="#cache" class="headerlink" title="cache"></a>cache</h2><p><a target="_blank" rel="noopener" href="https://github.com/coocood/freecache">https://github.com/coocood/freecache</a><br><a target="_blank" rel="noopener" href="https://github.com/dgraph-io/ristretto">https://github.com/dgraph-io/ristretto</a><br><a target="_blank" rel="noopener" href="https://github.com/allegro/bigcache">https://github.com/allegro/bigcache</a></p>
-<h2 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h2><p><a target="_blank" rel="noopener" href="https://github.com/spf13/cast">https://github.com/spf13/cast</a></p>
-<h2 id="gops官方调试器"><a href="#gops官方调试器" class="headerlink" title="gops官方调试器"></a>gops官方调试器</h2><p><a target="_blank" rel="noopener" href="https://github.com/google/gops">https://github.com/google/gops</a></p>
 
       
     </div>
@@ -2044,7 +2107,7 @@ string:  1
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">49</span>
+          <span class="site-state-item-count">50</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -2082,7 +2145,7 @@ string:  1
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2023</span>
+  <span itemprop="copyrightYear">2024</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
