@@ -147,232 +147,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_election/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/04/29/zk/zkSrc_election/" class="post-title-link" itemprop="url">zookeeper源码-2.启动和选举</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-29 13:55:27" itemprop="dateCreated datePublished" datetime="2020-04-29T13:55:27+00:00">2020-04-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/zookeeper/" itemprop="url" rel="index"><span itemprop="name">zookeeper</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="启动流程"><a href="#启动流程" class="headerlink" title="启动流程"></a>启动流程</h2><ol>
-<li>QuorumPeerMain读取config</li>
-<li>调用QuorumPeer.start()<br>  2.1 loadDataBase() 载入当前节点的数据库<br>  2.2 startServerCnxnFactory() 启动客户端连接监听<br>  2.3 startLeaderElection() 开始选举<br>  2.4 调用run() 获取选举结果并执行响应</li>
-</ol>
-<h2 id="载入数据库"><a href="#载入数据库" class="headerlink" title="载入数据库"></a>载入数据库</h2><h2 id="启动客户端连接监听"><a href="#启动客户端连接监听" class="headerlink" title="启动客户端连接监听"></a>启动客户端连接监听</h2><p>监听分为两种模式，默认使用ServerCnxnFactory的NioServerCnxnFactory</p>
-<ul>
-<li>ServerCnxnFactory cnxnFactory<ul>
-<li>NioServerCnxnFactory</li>
-<li>NettyServerCnxnFactory</li>
-</ul>
-</li>
-<li>ServerCnxnFactory secureCnxnFactory</li>
-</ul>
-<h2 id="选举"><a href="#选举" class="headerlink" title="选举"></a>选举</h2><p>节点启动时，节点状态初始化为ServerState.LOOKING，此时ZK会获取当前的Leader或者会发起一个选举。</p>
-<img src="/2020/04/29/zk/zkSrc_election/peer_state.png" class="">
-
-<p>ZooKeeper实现了四种选举模式，默认选用FastLeaderElection</p>
-<ol>
-<li>LeaderElection</li>
-<li>AuthFastLeaderElection with authenticate disabled</li>
-<li>AuthFastLeaderElection with authenticate enabled</li>
-<li>FastLeaderElection</li>
-</ol>
-<img src="/2020/04/29/zk/zkSrc_election/election_class.png" class="">
-
-<h3 id="相关类"><a href="#相关类" class="headerlink" title="相关类"></a>相关类</h3><p>QuorumVerifier用于检查一个服务器列表能否构成一个可用的服务器集群。实现类有</p>
-<ul>
-<li>QuorumMaj 简单过半投票，默认策略</li>
-<li>QuorumHierarchical 基于权重投票策略</li>
-</ul>
-<p>QuorumMaj 主要接口如下:</p>
-<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">private</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span> allMembers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">private</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span> votingMembers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">private</span> <span class="token class-name">Map</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span> observingMembers <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">,</span> <span class="token class-name">QuorumServer</span><span class="token punctuation">&gt;</span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<ul>
-<li>containsQuorum 选举的结果是否超过集群半数节点。</li>
-<li>getAllMembers 获取集群中所有的节点。</li>
-<li>getVotingMembers 获取集群中参与选举的节点。</li>
-<li>getObservingMembers 获取集群中Observer节点。</li>
-</ul>
-<p>SyncedLearnerTracker用于FastLeaderElection中，保存集群和选举的映射关系。主要接口如下:</p>
-<ul>
-<li>addQuorumVerifier 添加集群信息</li>
-<li>addAck 添加选举响应</li>
-<li>hasAllQuorums 调用QuorumVerifier.containsQuorum()判断集群中参与选举的节点是否超过集群半数节点。</li>
-</ul>
-<p>节点中维护了两个QuorumVerifier的实例，分别是QuorumPeer类中的如下两个:</p>
-<ul>
-<li>quorumVerifier 最后Commit的节点的Verifier</li>
-<li>lastSeenQuorumVerifier 最后Proposed节点的Verifier</li>
-</ul>
-<h3 id="FastLeaderElection实现"><a href="#FastLeaderElection实现" class="headerlink" title="FastLeaderElection实现"></a>FastLeaderElection实现</h3><img src="/2020/04/29/zk/zkSrc_election/fast_election_class.png" class="">
-
-<p>Election为选举基类，lookForLeader()会循环阻塞在LOOKING状态，一直到成功获取Leader节点。</p>
-<ol>
-<li>节点首先更新Proposed为自己，广播通知，并循环获取<code>recvqueue</code>队列通知</li>
-<li>超时，重新广播通知</li>
-<li>忽略不在自己members中的通知和OBSERVING的通知</li>
-<li>收到LOOKING的通知<br>  4.1 选举轮次超过自己，使用<code>选举策略</code>判断若超过<strong>自身</strong>信息，更新Proposed和轮次，清空<code>本轮票数</code>，广播通知<br>  4.2 选举轮次落后自己，忽略<br>  4.3 相同选举轮次，使用<code>选举策略</code>判断若超过<strong>当前Proposed</strong>信息，Proposed更新为新接受的选举信息，广播通知<br>  4.4 如果<code>本轮票数</code>过半，且使用<code>选举策略</code>判断<code>recvqueue</code>中没有剩余超过<strong>当前Proposed</strong>信息的通知，设置LEADER信息(可能为自己)，退出选举；否则返回1</li>
-<li>收到FOLLOWING和LEADING的通知<br>  5.1 相同选举轮次，如果<code>本轮票数</code>过半，且收到过该Leader的通知(防止有节点选举已crash的非自身节点为Leader)，设置LEADER信息(可能为自己)，退出选举<br>  5.2 非相同选举轮次，如果<code>非本轮票数</code>过半，且收到过该Leader的通知，设置LEADER信息，退出选举</li>
-</ol>
-<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/*
- * 选举策略
- * We return true if one of the following three cases hold:
- * 1- New epoch is higher
- * 2- New epoch is the same as current epoch, but new zxid is higher
- * 3- New epoch is the same as current epoch, new zxid is the same
- *  as current zxid, but server id is higher.
- */</span>
-<span class="token keyword">return</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newEpoch <span class="token operator">&gt;</span> curEpoch<span class="token punctuation">)</span>
-        <span class="token operator">||</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newEpoch <span class="token operator">==</span> curEpoch<span class="token punctuation">)</span>
-            <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newZxid <span class="token operator">&gt;</span> curZxid<span class="token punctuation">)</span>
-                <span class="token operator">||</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>newZxid <span class="token operator">==</span> curZxid<span class="token punctuation">)</span>
-                    <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>newId <span class="token operator">&gt;</span> curId<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>QuorumCnxManager负责选举中的连接管理，该类包含三个inner class。</p>
-<ul>
-<li>Listener 负责监接收新连接，并且管理连接，在单独的线程运行。</li>
-<li>SendWorker 负责发送数据到其他节点，所发送的数据由FastLeaderElection提供，在单独的线程运行。</li>
-<li>RecvWorker 负责从其他节点接收数据，并且将数据发送给FastLeaderElection，在单独的线程运行。</li>
-</ul>
-<p>FastLeaderElection负责选举的算法处理，该类包含如下主要inner class。</p>
-<ul>
-<li>Messenger 发送和接收数据的管理类。注意，此处的发送和接收数据更关注的是打包和解包相关的逻辑，而不和网络相关，网络相关的部分由QuorumCnxManager负责。</li>
-<li>WorkerSender 负责打包选举数据，发送到其他节点，在单独的线程运行。</li>
-<li>WorkerReceiver 负责解析接收到数据，并根据结果反馈对应的ACK，在单独的线程运行。</li>
-</ul>
-<blockquote>
-<p>WorkerSender和WorkerReceiver为守护线程</p>
-</blockquote>
-<p><strong>选举启动流程:</strong>  </p>
-<img src="/2020/04/29/zk/zkSrc_election/fast_election_flow.png" class="">
-
-<p>FastLeader启动后：  </p>
-<ul>
-<li>创建QuorumCnxManager实例，并且开始监听其他节点新建的连接。</li>
-<li>创建FastLeaderElection实例，并且开启发送和接收数据的线程。(Messenger类会启动WorkerSender和WorkReceiver的线程)</li>
-</ul>
-<p><strong>触发选举:</strong></p>
-<p>新启动节点的状态为LOOKING，在节点主线程启动后(QuorumPeer.run)，调用Election的lookForLeader方法获取Leader信息。</p>
-<p>发送数据到其他节点的数据流向：</p>
-<img src="/2020/04/29/zk/zkSrc_election/send_flow.png" class="">
-
-<p>详细时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/send_seq.png" class="">
-
-<p>当FastLeaderElection要发送数据时，会通过向sendqueue发送数据来异步调用 WorkerSender.process。<br>在QuorumCnxManager.toSend的实现中，若到发送目标节点的连接不存在，则会主动建立连接。<br>QuorumCnxManager调用connectOne通过将数据添加到发送列表来异步调用SendWorker.send。</p>
-<p>在发送端建立连接时，首先会发送一个头信息，包括：</p>
-<ul>
-<li>版本信息</li>
-<li>前节点的server id</li>
-<li>ip地址信息</li>
-</ul>
-<p>详细信息详见QuorumCnxManager.initiateConnection</p>
-<p>接收方收到连接的时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/listen_seq.png" class="">
-
-<p>在接收端收到新连接时，首先会解析发送方发送的头信息。为了保证两个节点之间只有一个连接（即不会出现A建立连接到B，同时B也建立连接到A），zk会检查建立连接的节点的id。若发起连接的节点id小于当前节点，zk会断开这连接，并且主动建立一个到对方节点的连接。</p>
-<p>接收数据的流向为:</p>
-<img src="/2020/04/29/zk/zkSrc_election/recv_flow.png" class="">
-
-<p>详细时序图：</p>
-<img src="/2020/04/29/zk/zkSrc_election/recv_seq.png" class="">
-
-<p>RecvWorker在收到数据后，调用addToRecvQueue将数据添加到队列，WorkerReceiver从队列取数据处理。WorkerReceiver处理逻辑如下:</p>
-<ul>
-<li>检查对方节点是否参与选举，不参与选举的话直接返回当前节点的结果。</li>
-<li>若当前节点也在LOOKING状态，则将对方节点选举的结果添加到接收队列。若对方节点处于LOOKING状态，且electionEpoch落后于当前节点logicalclock，则发送当前节点的proposed选举信息到对方节点。</li>
-<li>若当前节点处于选举成功状态(不是LOOKING状态)，则发送当前节点的选举结果到对方节点。</li>
-</ul>
-<h2 id="zxid以及ElectionEpoch"><a href="#zxid以及ElectionEpoch" class="headerlink" title="zxid以及ElectionEpoch"></a>zxid以及ElectionEpoch</h2><h3 id="zxid"><a href="#zxid" class="headerlink" title="zxid"></a>zxid</h3><p>选举中会使用到数据库中最新的事务id(ZKDatabase.getDataTreeLastProcessedZxid()), 事务id由两部分组成，高32位表示Epoch，每次有新的节点当选会+1(Leader.lead())；后32位为事务id，有新的节点当选，该部分会从0重新开始。当数据库有写操作时，整个事务id会+1（参考ZooKeeperServer.getNextZxid()的引用）</p>
-<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">ZxidUtils</span> <span class="token punctuation">{</span>
-
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">long</span> <span class="token function">getEpochFromZxid</span><span class="token punctuation">(</span><span class="token keyword">long</span> zxid<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> zxid <span class="token operator">&gt;&gt;</span> <span class="token number">32L</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">long</span> <span class="token function">getCounterFromZxid</span><span class="token punctuation">(</span><span class="token keyword">long</span> zxid<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> zxid <span class="token operator">&amp;</span> <span class="token number">0</span>xffffffffL<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">long</span> <span class="token function">makeZxid</span><span class="token punctuation">(</span><span class="token keyword">long</span> epoch<span class="token punctuation">,</span> <span class="token keyword">long</span> counter<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token comment">// 前32位表示Epoch，后32位表示当前Epoch的事务号，新Leader节点lead()函数epoch+1，count从0开始</span>
-        <span class="token keyword">return</span> <span class="token punctuation">(</span>epoch <span class="token operator">&lt;&lt;</span> <span class="token number">32L</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token punctuation">(</span>counter <span class="token operator">&amp;</span> <span class="token number">0</span>xffffffffL<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token class-name">String</span> <span class="token function">zxidToString</span><span class="token punctuation">(</span><span class="token keyword">long</span> zxid<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> <span class="token class-name">Long</span><span class="token punctuation">.</span><span class="token function">toHexString</span><span class="token punctuation">(</span>zxid<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-
-<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="ElectionEpoch"><a href="#ElectionEpoch" class="headerlink" title="ElectionEpoch"></a>ElectionEpoch</h3><p>当前节点的ElectionEpoch定义于FastLeaderElection.logicalclock中，每发起一次新选举，该值会自+1。若其他节点选举信息中的ElectionEpoch大于当前节点，则会设置当前节点的值为接收到的值。</p>
-<hr>
-<h2 id="ZOOKEEPER-1732"><a href="#ZOOKEEPER-1732" class="headerlink" title="ZOOKEEPER-1732"></a>ZOOKEEPER-1732</h2><p>QuorumPeer.updateElectionVote<br>Vote.equals</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/04/29/zk/zkSrc_arch/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -404,7 +178,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -511,7 +285,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -647,7 +421,7 @@ conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><spa
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-count">50</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

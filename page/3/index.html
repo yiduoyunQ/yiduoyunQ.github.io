@@ -147,190 +147,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/21/mysql/mysqldump/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="yiduoyunQ">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="yiduoyunQ">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/07/21/mysql/mysqldump/" class="post-title-link" itemprop="url">mysqldump</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-07-21 00:54:09" itemprop="dateCreated datePublished" datetime="2020-07-21T00:54:09+00:00">2020-07-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mysql/" itemprop="url" rel="index"><span itemprop="name">mysql</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致"><a href="#默认-–lock-tables-库中不同表备份点一致，不同库备份点不一致" class="headerlink" title="默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致"></a>默认 –lock-tables  库中不同表备份点一致，不同库备份点不一致</h2><ol>
-<li>获取gtid或file postion</li>
-<li>顺序逻辑备份每个库，不同库之间备份时间点不同<br>2.1 同时lock库中所有表READ锁，使库变为只读<br>2.2 show create table + select * from table， 导出<br>2.3 unlock tables</li>
-</ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441631Z</span>	   <span class="token number">18</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.441820Z</span>	   <span class="token number">18</span> Query	show tables
-<span class="token date number">2020-11-01T</span><span class="token time number">16:02:01.442210Z</span>	   <span class="token number">18</span> Query	LOCK TABLES `employees` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`t1` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span><span class="token punctuation">,</span>`test_auto` READ <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">32311</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span>
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:02:04.181862Z</span>	   <span class="token number">18</span> Query	UNLOCK TABLES<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="–lock-all-tables-所有库备份点一致"><a href="#–lock-all-tables-所有库备份点一致" class="headerlink" title="–lock-all-tables  所有库备份点一致"></a>–lock-all-tables  所有库备份点一致</h2><p>整个数据库变为只读</p>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:16:57.678240Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES
-<span class="token date number">2020-11-01T</span><span class="token time number">16:16:58.204729Z</span>	   <span class="token number">21</span> Query	FLUSH TABLES WITH READ LOCK<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h2 id="–single-transaction-所有innodb表备份点一致"><a href="#–single-transaction-所有innodb表备份点一致" class="headerlink" title="–single-transaction  所有innodb表备份点一致"></a>–single-transaction  所有innodb表备份点一致</h2><ol>
-<li>设置会话隔离级别为RR</li>
-<li>开启一个MVCC会话，START TRANSACTION /*!40100 WITH CONSISTENT SNAPSHOT */ ，开启会话时自带一次select保证备份点之后的读一致性</li>
-<li>创建SAVEPOINT开始表备份，在ROLLBACK TO SAVEPOINT前对表的DDL阻塞</li>
-</ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.440889Z</span>	   <span class="token number">22</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.441080Z</span>	   <span class="token number">22</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.451846Z</span>	   <span class="token number">22</span> Query	UNLOCK TABLES
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471418Z</span>	   <span class="token number">22</span> Query	SHOW CREATE DATABASE IF NOT EXISTS `test`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.471499Z</span>	   <span class="token number">22</span> Query	SAVEPOINT sp
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.478244Z</span>	   <span class="token number">22</span> Query	show tables
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.484877Z</span>	   <span class="token number">22</span> Query	show create table `t1`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.486464Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `t1`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.488296Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.489280Z</span>	   <span class="token number">22</span> Query	show create table `test`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:35.497826Z</span>	   <span class="token number">22</span> Query	SELECT <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40001</span> SQL_NO_CACHE <span class="token operator">*</span><span class="token operator">/</span> <span class="token operator">*</span> FROM `test`
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.400419Z</span>	   <span class="token number">22</span> Query	ROLLBACK TO SAVEPOINT sp
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:20:38.403299Z</span>	   <span class="token number">22</span> Query	RELEASE SAVEPOINT sp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="–single-transaction-–master-data-x3D-2-需2次flush关表"><a href="#–single-transaction-–master-data-x3D-2-需2次flush关表" class="headerlink" title="–single-transaction + –master-data=2    需2次flush关表"></a>–single-transaction + –master-data=2    需2次flush关表</h2><p>–master-data需导出当前binlog位点，因此需FTWRL将数据库数据达到一致</p>
-<ol>
-<li>flush tables + FTWRL 整个数据库达到一致</li>
-<li>设置RR，开启一致读会话</li>
-<li>通过show master status获取binlog位点</li>
-<li>UNLOCK TABLES</li>
-</ol>
-<pre class="line-numbers language-log" data-language="log"><code class="language-log"><span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.165353Z</span>	   <span class="token number">23</span> Query	FLUSH <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40101</span> LOCAL <span class="token operator">*</span><span class="token operator">/</span> TABLES
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190316Z</span>	   <span class="token number">23</span> Query	FLUSH TABLES WITH READ LOCK
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190471Z</span>	   <span class="token number">23</span> Query	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190537Z</span>	   <span class="token number">23</span> Query	START TRANSACTION <span class="token operator">/</span><span class="token operator">*</span><span class="token operator">!</span><span class="token number">40100</span> WITH CONSISTENT SNAPSHOT <span class="token operator">*</span><span class="token operator">/</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.190744Z</span>	   <span class="token number">23</span> Query	SHOW VARIABLES LIKE <span class="token string">'gtid\_mode'</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.202013Z</span>	   <span class="token number">23</span> Query	SHOW MASTER <span class="token level info keyword">STATUS</span>
-<span class="token date number">2020-11-01T</span><span class="token time number">16:47:40.204813Z</span>	   <span class="token number">23</span> Query	UNLOCK TABLES
-<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>mysql –max-allowed-packet=16MB -BNe “SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME NOT IN (‘mysql’, ‘performance_schema’, ‘information_schema’, ‘sys’)” | tr ‘\n’ ‘ ‘ &gt; dbs.sql<br>mysqldump  –opt –add-drop-database –add-drop-table –complete-insert –default-character-set=utf8 –hex-blob –master-data=2 –quote-names –single-transaction –events –routines –triggers –databases $(cat dbs.sql) &gt; full_dump.sql</p>
-<ul>
-<li><p>-q, –quick   Don’t buffer query, dump directly to stdout. (Defaults to on; use –skip-quick to disable.)</p>
-</li>
-<li><p>–opt : Shorthand for –add-drop-table –add-locks –create-options –extended-insert –lock-tables –quick –set-charset</p>
-</li>
-<li><p>–lock-tables Lock all tables before dumping them</p>
-</li>
-<li><p>–single-transaction Issue a BEGIN SQL statement before dumping data from server</p>
-</li>
-<li><p>–hex-blob Dump binary columns using hexadecimal notation (for example, ‘abc’ becomes 0x616263)</p>
-</li>
-<li><p>–master-data=2 Write the binary log file name and position to the output as an SQL comment</p>
-</li>
-<li><p>–max-allowed-packet Maximum packet length to send to or receive from server</p>
-</li>
-<li><p>–events</p>
-</li>
-<li><p>–routines</p>
-</li>
-<li><p>–triggers</p>
-</li>
-<li><p>–complete-insert Use complete INSERT statements that include column names</p>
-</li>
-<li><p>–set-charset Add SET NAMES default_character_set to output</p>
-</li>
-<li><p>–add-drop-database</p>
-</li>
-<li><p>–add-drop-table</p>
-</li>
-<li><p>–add-locks</p>
-</li>
-<li><p>–default-character-set=utf8</p>
-</li>
-<li><p>–quick 流式取数据，非单次填充整个结果集到内存</p>
-</li>
-<li><p>–extended-insert Use multiple-row INSERT syntax</p>
-</li>
-<li><p>–create-options Include all MySQL-specific table options in CREATE TABLE statements</p>
-</li>
-<li><p>–flush-logs Flush MySQL server log files before starting dump</p>
-</li>
-<li><p>–lock-all-tables Lock all tables across all databases</p>
-</li>
-<li><p>–set-gtid-purged Whether to add SET @@GLOBAL.GTID_PURGED to output</p>
-</li>
-<li><p>–databases</p>
-</li>
-<li><p>–tables</p>
-</li>
-<li><p>–no-create-db</p>
-</li>
-<li><p>–no-create-info</p>
-</li>
-<li><p>–no-data</p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/07/19/sys/tcpdump/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -362,7 +178,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -530,7 +346,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -620,7 +436,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -703,7 +519,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -805,7 +621,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1100,7 +916,7 @@ kubectl rollout resume deployment/nginx-deployment<span aria-hidden="true" class
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1308,7 +1124,7 @@ cni0: <span class="token assign-left variable">flags</span><span class="token op
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1478,7 +1294,7 @@ v<span class="token punctuation">,</span> ok <span class="token operator">:=</sp
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1590,7 +1406,7 @@ v<span class="token punctuation">,</span> ok <span class="token operator">:=</sp
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2086,7 +1902,7 @@ havespan<span class="token punctuation">:</span>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2446,7 +2262,7 @@ again<span class="token punctuation">:</span>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-03-03 01:05:36" itemprop="dateModified" datetime="2025-03-03T01:05:36+00:00">2025-03-03</time>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2492,6 +2308,583 @@ pprof <span class="token parameter variable">-http</span><span class="token oper
 
 
 <p>TODO</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://yiduoyunq.github.io/2020/05/11/go/sync.pool/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="yiduoyunQ">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="yiduoyunQ">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/11/go/sync.pool/" class="post-title-link" itemprop="url">go sync.pool</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-11 13:39:23" itemprop="dateCreated datePublished" datetime="2020-05-11T13:39:23+00:00">2020-05-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-03-06 08:30:36" itemprop="dateModified" datetime="2025-03-06T08:30:36+00:00">2025-03-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/go/" itemprop="url" rel="index"><span itemprop="name">go</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>sync.pool是用于临时取还对象的池子，对于需要频繁分配和回收的对象使用sync.pool降低GC压力<br>sync.pool是线程安全的，一般设置new函数，在pool中没有对象时创建新对象<br>fmt、encoding/json等都用到sync.pool</p>
+<h2 id="fmt用例"><a href="#fmt用例" class="headerlink" title="fmt用例"></a>fmt用例</h2><p>fmt包print类函数使用sync.pool</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">Printf</span><span class="token punctuation">(</span>format <span class="token builtin">string</span><span class="token punctuation">,</span> a <span class="token operator">...</span><span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>n <span class="token builtin">int</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">Fprintf</span><span class="token punctuation">(</span>os<span class="token punctuation">.</span>Stdout<span class="token punctuation">,</span> format<span class="token punctuation">,</span> a<span class="token operator">...</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token function">Fprintf</span><span class="token punctuation">(</span>w io<span class="token punctuation">.</span>Writer<span class="token punctuation">,</span> format <span class="token builtin">string</span><span class="token punctuation">,</span> a <span class="token operator">...</span><span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token punctuation">(</span>n <span class="token builtin">int</span><span class="token punctuation">,</span> err <span class="token builtin">error</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    p <span class="token operator">:=</span> <span class="token function">newPrinter</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span><span class="token function">doPrintf</span><span class="token punctuation">(</span>format<span class="token punctuation">,</span> a<span class="token punctuation">)</span>
+    n<span class="token punctuation">,</span> err <span class="token operator">=</span> w<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>buf<span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span><span class="token function">free</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token function">newPrinter</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">*</span>pp <span class="token punctuation">{</span>
+    p <span class="token operator">:=</span> ppFree<span class="token punctuation">.</span><span class="token function">Get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token punctuation">(</span><span class="token operator">*</span>pp<span class="token punctuation">)</span>
+    p<span class="token punctuation">.</span>panicking <span class="token operator">=</span> <span class="token boolean">false</span>
+    p<span class="token punctuation">.</span>erroring <span class="token operator">=</span> <span class="token boolean">false</span>
+    p<span class="token punctuation">.</span>wrapErrs <span class="token operator">=</span> <span class="token boolean">false</span>
+    p<span class="token punctuation">.</span>fmt<span class="token punctuation">.</span><span class="token function">init</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>buf<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> p
+<span class="token punctuation">}</span>
+
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>pp<span class="token punctuation">)</span> <span class="token function">free</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 初始put的大对象可能经过多个GC后才被回收，避免放回大对象</span>
+    <span class="token comment">// See https://golang.org/issue/23199</span>
+    <span class="token keyword">if</span> <span class="token function">cap</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>buf<span class="token punctuation">)</span> <span class="token operator">&gt;</span> <span class="token number">64</span><span class="token operator">&lt;&lt;</span><span class="token number">10</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span>
+    <span class="token punctuation">}</span>
+
+    p<span class="token punctuation">.</span>buf <span class="token operator">=</span> p<span class="token punctuation">.</span>buf<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">0</span><span class="token punctuation">]</span>
+    p<span class="token punctuation">.</span>arg <span class="token operator">=</span> <span class="token boolean">nil</span>
+    p<span class="token punctuation">.</span>value <span class="token operator">=</span> reflect<span class="token punctuation">.</span>Value<span class="token punctuation">{</span><span class="token punctuation">}</span>
+    p<span class="token punctuation">.</span>wrappedErr <span class="token operator">=</span> <span class="token boolean">nil</span>
+    ppFree<span class="token punctuation">.</span><span class="token function">Put</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">var</span> ppFree <span class="token operator">=</span> sync<span class="token punctuation">.</span>Pool<span class="token punctuation">{</span>
+    New<span class="token punctuation">:</span> <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> <span class="token function">new</span><span class="token punctuation">(</span>pp<span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="pool-test"><a href="#pool-test" class="headerlink" title="pool test"></a>pool test</h2><p>略</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">defer</span> debug<span class="token punctuation">.</span><span class="token function">SetGCPercent</span><span class="token punctuation">(</span>debug<span class="token punctuation">.</span><span class="token function">SetGCPercent</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go">runtime<span class="token punctuation">.</span><span class="token function">SetFinalizer</span><span class="token punctuation">(</span>v<span class="token punctuation">,</span> <span class="token keyword">func</span><span class="token punctuation">(</span>vv <span class="token operator">*</span><span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    atomic<span class="token punctuation">.</span><span class="token function">AddUint32</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>fin<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="pool结构"><a href="#pool结构" class="headerlink" title="pool结构"></a>pool结构</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// poolDequeue是单生产多消费的ring，方法pushHead/popHead/popTail</span>
+<span class="token keyword">type</span> poolDequeue <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    <span class="token comment">// head = index of next slot to fill</span>
+    <span class="token comment">// tail = index of oldest data in queue</span>
+    headTail <span class="token builtin">uint64</span>
+
+    <span class="token comment">// 固定大小的ring，通过head/tail索引</span>
+    vals <span class="token punctuation">[</span><span class="token punctuation">]</span>eface
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> eface <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    typ<span class="token punctuation">,</span> val unsafe<span class="token punctuation">.</span>Pointer
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// poolChain是双向链表的poolDequeue，方法pushHead/popHead/popTail</span>
+<span class="token comment">// 第一次pushHead创建poolDequeue初始大小8</span>
+<span class="token comment">// 每次pushHead若已用满，新建poolDequeue大小翻倍</span>
+<span class="token comment">// popHead从头到尾遍历链表，对每个poolDequeue执行popHead尝试pop</span>
+<span class="token comment">// popTail从尾到头遍历链表，对每个poolDequeue执行popTail尝试pop</span>
+<span class="token keyword">type</span> poolChain <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    head <span class="token operator">*</span>poolChainElt
+    tail <span class="token operator">*</span>poolChainElt
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> poolChainElt <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    poolDequeue
+    next<span class="token punctuation">,</span> prev <span class="token operator">*</span>poolChainElt
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">type</span> Pool <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    noCopy noCopy
+
+    local     unsafe<span class="token punctuation">.</span>Pointer <span class="token comment">// 每个P的本地队列，实际类型为[P]poolLocal</span>
+    localSize <span class="token builtin">uintptr</span>
+
+    victim     unsafe<span class="token punctuation">.</span>Pointer <span class="token comment">// local from previous cycle</span>
+    victimSize <span class="token builtin">uintptr</span>        <span class="token comment">// size of victims array</span>
+
+    <span class="token comment">// pool无可用对象时调用</span>
+    New <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> poolLocalInternal <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    private <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token comment">// 每个P的私有共享，使用时无需加锁</span>
+    shared  poolChain   <span class="token comment">// poolChain对象，本地P可以pushHead/popHead，其他P仅能popTail</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">type</span> poolLocal <span class="token keyword">struct</span> <span class="token punctuation">{</span>
+    poolLocalInternal
+
+    <span class="token comment">// 伪共享，仅占位用，防止在cache line上分配多个poolLocalInternal</span>
+    pad <span class="token punctuation">[</span><span class="token number">128</span> <span class="token operator">-</span> unsafe<span class="token punctuation">.</span><span class="token function">Sizeof</span><span class="token punctuation">(</span>poolLocalInternal<span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token operator">%</span><span class="token number">128</span><span class="token punctuation">]</span><span class="token builtin">byte</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// 1. 优先放poolLocal.private</span>
+<span class="token comment">// 2. 其次放poolLocal.shared</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>Pool<span class="token punctuation">)</span> <span class="token function">Put</span><span class="token punctuation">(</span>x <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> x <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> race<span class="token punctuation">.</span>Enabled <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token function">fastrand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">%</span><span class="token number">4</span> <span class="token operator">==</span> <span class="token number">0</span> <span class="token punctuation">{</span>
+            <span class="token comment">// Randomly drop x on floor.</span>
+            <span class="token keyword">return</span>
+        <span class="token punctuation">}</span>
+        race<span class="token punctuation">.</span><span class="token function">ReleaseMerge</span><span class="token punctuation">(</span><span class="token function">poolRaceAddr</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        race<span class="token punctuation">.</span><span class="token function">Disable</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    l<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> p<span class="token punctuation">.</span><span class="token function">pin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> l<span class="token punctuation">.</span>private <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        l<span class="token punctuation">.</span>private <span class="token operator">=</span> x
+        x <span class="token operator">=</span> <span class="token boolean">nil</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> x <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        l<span class="token punctuation">.</span>shared<span class="token punctuation">.</span><span class="token function">pushHead</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">runtime_procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> race<span class="token punctuation">.</span>Enabled <span class="token punctuation">{</span>
+        race<span class="token punctuation">.</span><span class="token function">Enable</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// 根据p获取poolLocal和pid</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>Pool<span class="token punctuation">)</span> <span class="token function">pin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>poolLocal<span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    pid <span class="token operator">:=</span> <span class="token function">runtime_procPin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 在runtime_procUnpin前当前G和P不会被抢占，防止下面pid发生改变</span>
+    s <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadUintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>localSize<span class="token punctuation">)</span>
+    l <span class="token operator">:=</span> p<span class="token punctuation">.</span>local
+    <span class="token comment">// pid &lt; p.local数组长度时，在p.local里查找poolLocal对象</span>
+    <span class="token keyword">if</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span> <span class="token operator">&lt;</span> s <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>l<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">,</span> pid
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 否则调用pinSlow创建新poolLocal</span>
+    <span class="token keyword">return</span> p<span class="token punctuation">.</span><span class="token function">pinSlow</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// pid在pool中没有对应poolLocal对象时，创建新对象</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>Pool<span class="token punctuation">)</span> <span class="token function">pinSlow</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token operator">*</span>poolLocal<span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">runtime_procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 先解除抢占再lock</span>
+    allPoolsMu<span class="token punctuation">.</span><span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">defer</span> allPoolsMu<span class="token punctuation">.</span><span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    pid <span class="token operator">:=</span> <span class="token function">runtime_procPin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    s <span class="token operator">:=</span> p<span class="token punctuation">.</span>localSize
+    l <span class="token operator">:=</span> p<span class="token punctuation">.</span>local
+    <span class="token keyword">if</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span> <span class="token operator">&lt;</span> s <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>l<span class="token punctuation">,</span> pid<span class="token punctuation">)</span><span class="token punctuation">,</span> pid <span class="token comment">// 解除抢期间可能p.local已发生变化</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> p<span class="token punctuation">.</span>local <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        allPools <span class="token operator">=</span> <span class="token function">append</span><span class="token punctuation">(</span>allPools<span class="token punctuation">,</span> p<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// 创建新poolLocal数组，旧数组进入gc</span>
+    size <span class="token operator">:=</span> runtime<span class="token punctuation">.</span><span class="token function">GOMAXPROCS</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+    local <span class="token operator">:=</span> <span class="token function">make</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span>poolLocal<span class="token punctuation">,</span> size<span class="token punctuation">)</span>
+    atomic<span class="token punctuation">.</span><span class="token function">StorePointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>local<span class="token punctuation">,</span> unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>local<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    atomic<span class="token punctuation">.</span><span class="token function">StoreUintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>localSize<span class="token punctuation">,</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token operator">&amp;</span>local<span class="token punctuation">[</span>pid<span class="token punctuation">]</span><span class="token punctuation">,</span> pid
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 1。调用pin获取poolLocal和pid</span>
+<span class="token comment">// 2. poolLocal.private为空，依次尝试以下方式</span>
+<span class="token comment">// 2.1 从poolLocal.shared队列中获取对象</span>
+<span class="token comment">// 2.2 调用getSlow从其他P偷取对象</span>
+<span class="token comment">// 2.3 调用new创建对象</span>
+<span class="token comment">// 3. poolLocal.private不为空，直接复用对象返回</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>Pool<span class="token punctuation">)</span> <span class="token function">Get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> race<span class="token punctuation">.</span>Enabled <span class="token punctuation">{</span>
+        race<span class="token punctuation">.</span><span class="token function">Disable</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    l<span class="token punctuation">,</span> pid <span class="token operator">:=</span> p<span class="token punctuation">.</span><span class="token function">pin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    x <span class="token operator">:=</span> l<span class="token punctuation">.</span>private <span class="token comment">// poolLocal.private不为空时，复用对象返回</span>
+    l<span class="token punctuation">.</span>private <span class="token operator">=</span> <span class="token boolean">nil</span>
+    <span class="token keyword">if</span> x <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        <span class="token comment">// poolLocal.private为空，从poolLocal.shared队列中获取对象</span>
+        x<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">=</span> l<span class="token punctuation">.</span>shared<span class="token punctuation">.</span><span class="token function">popHead</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> x <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            x <span class="token operator">=</span> p<span class="token punctuation">.</span><span class="token function">getSlow</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">runtime_procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> race<span class="token punctuation">.</span>Enabled <span class="token punctuation">{</span>
+        race<span class="token punctuation">.</span><span class="token function">Enable</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> x <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            race<span class="token punctuation">.</span><span class="token function">Acquire</span><span class="token punctuation">(</span><span class="token function">poolRaceAddr</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">if</span> x <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token operator">&amp;&amp;</span> p<span class="token punctuation">.</span>New <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        x <span class="token operator">=</span> p<span class="token punctuation">.</span><span class="token function">New</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 用new()函数创建对象</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> x
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 当本地P无可用对象，从其他P偷取对象</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span>p <span class="token operator">*</span>Pool<span class="token punctuation">)</span> <span class="token function">getSlow</span><span class="token punctuation">(</span>pid <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span> <span class="token punctuation">{</span>
+    size <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadUintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>localSize<span class="token punctuation">)</span>
+    locals <span class="token operator">:=</span> p<span class="token punctuation">.</span>local
+    <span class="token comment">// 循环尝试从其他P偷取对象，popTail从链表尾获取</span>
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">int</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        l <span class="token operator">:=</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>locals<span class="token punctuation">,</span> <span class="token punctuation">(</span>pid<span class="token operator">+</span>i<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token operator">%</span><span class="token function">int</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> x<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> l<span class="token punctuation">.</span>shared<span class="token punctuation">.</span><span class="token function">popTail</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> x <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> x
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    size <span class="token operator">=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadUintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>victimSize<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token function">uintptr</span><span class="token punctuation">(</span>pid<span class="token punctuation">)</span> <span class="token operator">&gt;=</span> size <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token boolean">nil</span>
+    <span class="token punctuation">}</span>
+    locals <span class="token operator">=</span> p<span class="token punctuation">.</span>victim
+    l <span class="token operator">:=</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>locals<span class="token punctuation">,</span> pid<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> x <span class="token operator">:=</span> l<span class="token punctuation">.</span>private<span class="token punctuation">;</span> x <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        l<span class="token punctuation">.</span>private <span class="token operator">=</span> <span class="token boolean">nil</span>
+        <span class="token keyword">return</span> x
+    <span class="token punctuation">}</span>
+    <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">int</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+        l <span class="token operator">:=</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>locals<span class="token punctuation">,</span> <span class="token punctuation">(</span>pid<span class="token operator">+</span>i<span class="token punctuation">)</span><span class="token operator">%</span><span class="token function">int</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> x<span class="token punctuation">,</span> <span class="token boolean">_</span> <span class="token operator">:=</span> l<span class="token punctuation">.</span>shared<span class="token punctuation">.</span><span class="token function">popTail</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> x <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> x
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Mark the victim cache as empty for future gets don't bother</span>
+    <span class="token comment">// with it.</span>
+    atomic<span class="token punctuation">.</span><span class="token function">StoreUintptr</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>p<span class="token punctuation">.</span>victimSize<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">return</span> <span class="token boolean">nil</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="nocopy"><a href="#nocopy" class="headerlink" title="nocopy"></a>nocopy</h2><pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// noCopy 用于嵌入一个结构体中来保证其第一次使用后不会被复制</span>
+<span class="token comment">// https://golang.org/issues/8005#issuecomment-190753527</span>
+<span class="token keyword">type</span> noCopy <span class="token keyword">struct</span><span class="token punctuation">{</span><span class="token punctuation">}</span>
+
+<span class="token comment">// Lock 是一个空操作用来给 `go vet` 的 -copylocks 静态分析</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span><span class="token operator">*</span>noCopy<span class="token punctuation">)</span> <span class="token function">Lock</span><span class="token punctuation">(</span><span class="token punctuation">)</span>   <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token keyword">func</span> <span class="token punctuation">(</span><span class="token operator">*</span>noCopy<span class="token punctuation">)</span> <span class="token function">Unlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="pad"><a href="#pad" class="headerlink" title="pad"></a>pad</h2><ul>
+<li><a href="https://www.jianshu.com/p/dc4b5562aad2" title="" target="">什么是cpu cache</a></li>
+</ul>
+<h2 id="pin-x2F-unpin"><a href="#pin-x2F-unpin" class="headerlink" title="pin/unpin"></a>pin/unpin</h2><p><code>sync.runtime_procPin</code>和<code>sync.runtime_procUnpin</code>通过go:linkname关联到<code>runtime.procPin</code>和<code>runtime.procUnpin</code><br>pin/unpin抢占方式为对m的locks增减，实际GPM调度判断M是否能被抢占的判断就包含<code>mp.locks == 0</code></p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">//go:nosplit</span>
+<span class="token keyword">func</span> <span class="token function">procPin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">{</span>
+    _g_ <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    mp <span class="token operator">:=</span> _g_<span class="token punctuation">.</span>m
+
+    mp<span class="token punctuation">.</span>locks<span class="token operator">++</span>
+    <span class="token keyword">return</span> <span class="token function">int</span><span class="token punctuation">(</span>mp<span class="token punctuation">.</span>p<span class="token punctuation">.</span><span class="token function">ptr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>id<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//go:nosplit</span>
+<span class="token keyword">func</span> <span class="token function">procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    _g_ <span class="token operator">:=</span> <span class="token function">getg</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    _g_<span class="token punctuation">.</span>m<span class="token punctuation">.</span>locks<span class="token operator">--</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//go:linkname sync_runtime_procPin sync.runtime_procPin</span>
+<span class="token comment">//go:nosplit</span>
+<span class="token keyword">func</span> <span class="token function">sync_runtime_procPin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token builtin">int</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token function">procPin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//go:linkname sync_runtime_procUnpin sync.runtime_procUnpin</span>
+<span class="token comment">//go:nosplit</span>
+<span class="token keyword">func</span> <span class="token function">sync_runtime_procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">procUnpin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// preempt.go</span>
+<span class="token comment">// canPreemptM reports whether mp is in a state that is safe to preempt.</span>
+<span class="token comment">//</span>
+<span class="token comment">// It is nosplit because it has nosplit callers.</span>
+<span class="token comment">//</span>
+<span class="token comment">//go:nosplit</span>
+<span class="token keyword">func</span> <span class="token function">canPreemptM</span><span class="token punctuation">(</span>mp <span class="token operator">*</span>m<span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">{</span>
+	<span class="token keyword">return</span> mp<span class="token punctuation">.</span>locks <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> mp<span class="token punctuation">.</span>mallocing <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">&amp;&amp;</span> mp<span class="token punctuation">.</span>preemptoff <span class="token operator">==</span> <span class="token string">""</span> <span class="token operator">&amp;&amp;</span> mp<span class="token punctuation">.</span>p<span class="token punctuation">.</span><span class="token function">ptr</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>status <span class="token operator">==</span> _Prunning
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="go-linkname用例"><a href="#go-linkname用例" class="headerlink" title="go:linkname用例"></a>go:linkname用例</h3><p>go:linkname让私有方法可以跨包访问，甚至导出为公开方法</p>
+<p>目录结构：</p>
+<img src="/2020/05/11/go/sync.pool/go_linkname.png" class="">
+
+<p>go build 默认使用<code>-complete</code>检查方法完整性，直接build会报错：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">go build
+<span class="token comment"># github.com/yiduoyunQ/test/b</span>
+b/b.go:10:6: missing <span class="token keyword">function</span> body<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>通过在b包中添加一个汇编文件，让go build编译器突破方法完整性限制，汇编文件名称任意<br>参考： - <a href="http://sitano.github.io/2016/04/28/golang-private/" title="" target="">How to call private functions (bind to hidden symbols) in GoLang</a></p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// a.go</span>
+<span class="token keyword">package</span> a
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"fmt"</span>
+    <span class="token boolean">_</span> <span class="token string">"unsafe"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">func_a</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    fmt<span class="token punctuation">.</span><span class="token function">Println</span><span class="token punctuation">(</span><span class="token string">"private func_a in package a"</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">//go:linkname b_func_a github.com/yiduoyunQ/test/b.Func_b</span>
+<span class="token keyword">func</span> <span class="token function">b_func_a</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">func_a</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// b.go</span>
+<span class="token keyword">package</span> b
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token boolean">_</span> <span class="token string">"unsafe"</span>
+
+    <span class="token boolean">_</span> <span class="token string">"github.com/yiduoyunQ/test/a"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment">// 仅有方法名，方法体通过go:linkname在a包中关联</span>
+<span class="token keyword">func</span> <span class="token function">Func_b</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// test.go</span>
+<span class="token keyword">package</span> main
+
+<span class="token keyword">import</span> <span class="token punctuation">(</span>
+    <span class="token string">"github.com/yiduoyunQ/test/b"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">func</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// 使用b的公开方法，在b中仅有方法名的申明</span>
+    b<span class="token punctuation">.</span><span class="token function">Func_b</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>输出： <code>private func_a in package a</code></p>
+<h2 id="锁竞争"><a href="#锁竞争" class="headerlink" title="锁竞争"></a>锁竞争</h2><p><code>pushHead</code>先取slot再判断是否可插入最后修改</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>d <span class="token operator">*</span>poolDequeue<span class="token punctuation">)</span> <span class="token function">pushHead</span><span class="token punctuation">(</span>val <span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token builtin">bool</span> <span class="token punctuation">{</span>
+    ptrs <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadUint64</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>d<span class="token punctuation">.</span>headTail<span class="token punctuation">)</span>
+    head<span class="token punctuation">,</span> tail <span class="token operator">:=</span> d<span class="token punctuation">.</span><span class="token function">unpack</span><span class="token punctuation">(</span>ptrs<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>tail<span class="token operator">+</span><span class="token function">uint32</span><span class="token punctuation">(</span><span class="token function">len</span><span class="token punctuation">(</span>d<span class="token punctuation">.</span>vals<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token operator">&lt;&lt;</span>dequeueBits<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">==</span> head <span class="token punctuation">{</span>
+        <span class="token comment">// Queue is full.</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span>
+    <span class="token punctuation">}</span>
+    slot <span class="token operator">:=</span> <span class="token operator">&amp;</span>d<span class="token punctuation">.</span>vals<span class="token punctuation">[</span>head<span class="token operator">&amp;</span><span class="token function">uint32</span><span class="token punctuation">(</span><span class="token function">len</span><span class="token punctuation">(</span>d<span class="token punctuation">.</span>vals<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+
+    <span class="token comment">// Check if the head slot has been released by popTail.</span>
+    typ <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadPointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>slot<span class="token punctuation">.</span>typ<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> typ <span class="token operator">!=</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        <span class="token comment">// Another goroutine is still cleaning up the tail, so</span>
+        <span class="token comment">// the queue is actually still full.</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// The head slot is free, so we own it.</span>
+    <span class="token keyword">if</span> val <span class="token operator">==</span> <span class="token boolean">nil</span> <span class="token punctuation">{</span>
+        val <span class="token operator">=</span> <span class="token function">dequeueNil</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token operator">*</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span>slot<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">=</span> val
+
+    <span class="token comment">// Increment head. This passes ownership of slot to popTail</span>
+    <span class="token comment">// and acts as a store barrier for writing the slot.</span>
+    atomic<span class="token punctuation">.</span><span class="token function">AddUint64</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>d<span class="token punctuation">.</span>headTail<span class="token punctuation">,</span> <span class="token number">1</span><span class="token operator">&lt;&lt;</span>dequeueBits<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>popTail</code>先修改headTail再取slot然后重置slot</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token punctuation">(</span>d <span class="token operator">*</span>poolDequeue<span class="token punctuation">)</span> <span class="token function">popTail</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token builtin">bool</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">var</span> slot <span class="token operator">*</span>eface
+    <span class="token keyword">for</span> <span class="token punctuation">{</span>
+        ptrs <span class="token operator">:=</span> atomic<span class="token punctuation">.</span><span class="token function">LoadUint64</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>d<span class="token punctuation">.</span>headTail<span class="token punctuation">)</span>
+        head<span class="token punctuation">,</span> tail <span class="token operator">:=</span> d<span class="token punctuation">.</span><span class="token function">unpack</span><span class="token punctuation">(</span>ptrs<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> tail <span class="token operator">==</span> head <span class="token punctuation">{</span>
+            <span class="token comment">// Queue is empty.</span>
+            <span class="token keyword">return</span> <span class="token boolean">nil</span><span class="token punctuation">,</span> <span class="token boolean">false</span>
+        <span class="token punctuation">}</span>
+
+        <span class="token comment">// Confirm head and tail (for our speculative check</span>
+        <span class="token comment">// above) and increment tail. If this succeeds, then</span>
+        <span class="token comment">// we own the slot at tail.</span>
+        ptrs2 <span class="token operator">:=</span> d<span class="token punctuation">.</span><span class="token function">pack</span><span class="token punctuation">(</span>head<span class="token punctuation">,</span> tail<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> atomic<span class="token punctuation">.</span><span class="token function">CompareAndSwapUint64</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>d<span class="token punctuation">.</span>headTail<span class="token punctuation">,</span> ptrs<span class="token punctuation">,</span> ptrs2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token comment">// Success.</span>
+            slot <span class="token operator">=</span> <span class="token operator">&amp;</span>d<span class="token punctuation">.</span>vals<span class="token punctuation">[</span>tail<span class="token operator">&amp;</span><span class="token function">uint32</span><span class="token punctuation">(</span><span class="token function">len</span><span class="token punctuation">(</span>d<span class="token punctuation">.</span>vals<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+            <span class="token keyword">break</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// We now own slot.</span>
+    val <span class="token operator">:=</span> <span class="token operator">*</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token keyword">interface</span><span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">(</span>unsafe<span class="token punctuation">.</span><span class="token function">Pointer</span><span class="token punctuation">(</span>slot<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> val <span class="token operator">==</span> <span class="token function">dequeueNil</span><span class="token punctuation">(</span><span class="token boolean">nil</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        val <span class="token operator">=</span> <span class="token boolean">nil</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Tell pushHead that we're done with this slot. Zeroing the</span>
+    <span class="token comment">// slot is also important so we don't leave behind references</span>
+    <span class="token comment">// that could keep this object live longer than necessary.</span>
+    <span class="token comment">//</span>
+    <span class="token comment">// We write to val first and then publish that we're done with</span>
+    <span class="token comment">// this slot by atomically writing to typ.</span>
+    slot<span class="token punctuation">.</span>val <span class="token operator">=</span> <span class="token boolean">nil</span>
+    atomic<span class="token punctuation">.</span><span class="token function">StorePointer</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>slot<span class="token punctuation">.</span>typ<span class="token punctuation">,</span> <span class="token boolean">nil</span><span class="token punctuation">)</span>
+    <span class="token comment">// At this point pushHead owns the slot.</span>
+
+    <span class="token keyword">return</span> val<span class="token punctuation">,</span> <span class="token boolean">true</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>考虑正常push/pop情况，head和tail指向slot不会有交集，仅需原子获取修改<strong>headTail</strong></p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_1.png" class="">
+
+<p>考虑当发生写溢出，pop速度跟不上push速度时</p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_2.png" class="">
+
+<ul>
+<li>若<code>pushHead</code>先执行，在第一次计算队列时发现队列满，false退出</li>
+<li>若<code>popTail</code>先执行，tail成功+1<ul>
+<li>此时<code>pushHead</code>执行，在第一次计算队列时发现队列没满，接着原子判断slot.typ<ul>
+<li>若在判断前，<code>popTail</code>先执行原子设置slot.typ为空，则<code>pushHead</code>能获得slot正常插入，pop+push后队列仍满</li>
+<li>若<code>pushHead</code>先执行原子判断slot.typ，此时typ非空，push失败</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>poolChain使用双向链表存储poolDequeue，对poolChain执行<code>popTail</code>如图</p>
+<img src="/2020/05/11/go/sync.pool/poolDequeue_3.png" class="">
+
+<p>若pop速度很快，当前队列已空且无next队列，则保留当前队列用于下一次pushHead<br>若push速度大于pop，pool使用内存会不断扩展，不加入victime和gc机制的话会导致内存溢出</p>
+<h2 id="oldPools-allPools，victim，gc"><a href="#oldPools-allPools，victim，gc" class="headerlink" title="oldPools, allPools，victim，gc"></a>oldPools, allPools，victim，gc</h2><p>victime作为二级缓存，用来降低GC压力并提高命中率。</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// This function is called with the world stopped, at the beginning of a garbage collection.</span>
+<span class="token keyword">func</span> <span class="token function">poolCleanup</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Drop victim caches from all pools.</span>
+    <span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> p <span class="token operator">:=</span> <span class="token keyword">range</span> oldPools <span class="token punctuation">{</span>
+        p<span class="token punctuation">.</span>victim <span class="token operator">=</span> <span class="token boolean">nil</span>
+        p<span class="token punctuation">.</span>victimSize <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Move primary cache to victim cache.</span>
+    <span class="token keyword">for</span> <span class="token boolean">_</span><span class="token punctuation">,</span> p <span class="token operator">:=</span> <span class="token keyword">range</span> allPools <span class="token punctuation">{</span>
+        p<span class="token punctuation">.</span>victim <span class="token operator">=</span> p<span class="token punctuation">.</span>local
+        p<span class="token punctuation">.</span>victimSize <span class="token operator">=</span> p<span class="token punctuation">.</span>localSize
+        p<span class="token punctuation">.</span>local <span class="token operator">=</span> <span class="token boolean">nil</span>
+        p<span class="token punctuation">.</span>localSize <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// The pools with non-empty primary caches now have non-empty</span>
+    <span class="token comment">// victim caches and no pools have primary caches.</span>
+    oldPools<span class="token punctuation">,</span> allPools <span class="token operator">=</span> allPools<span class="token punctuation">,</span> <span class="token boolean">nil</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">// 在pool的init中注册gc时的清理函数</span>
+<span class="token keyword">func</span> <span class="token function">init</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">runtime_registerPoolCleanup</span><span class="token punctuation">(</span>poolCleanup<span class="token punctuation">)</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ol>
+<li>初始状态，oldPools和allPools均为nil</li>
+<li>第1次调用<code>Get</code>，由于p.local为nil，将会在pinSlow中创建p.local，然后将p放入allPools，此时allPools长度为1，oldPools为nil</li>
+<li>对象使用完毕，第1次调用<code>Put</code>放回对象</li>
+<li>第1次GC STW阶段，allPools中所有p.local将值赋值给victim并置为nil，最后allPools为nil，oldPools长度为1</li>
+<li>第2次调用<code>Get</code>，由于p.local为nil，此时会从p.victim里面尝试取对象</li>
+<li>对象使用完毕，第2次调用<code>Put</code>放回对象，但由于p.local为nil，重新创建p.local，并将对象放回，此时allPools长度为1，oldPools长度为1</li>
+<li>第2次GC STW阶段，oldPools中所有p.victim置nil，前一次的cache在本次GC时被回收，allPools所有p.local将值赋值给victim并置为nil，最后allPools为&nbsp;nil，oldPools长度为1</li>
+</ol>
+<p>Go 1.13以前poolCleanup的实现：<br>3层循环清空，时间复杂度为总长度O(n)</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token keyword">func</span> <span class="token function">poolCleanup</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> i<span class="token punctuation">,</span> p <span class="token operator">:=</span> <span class="token keyword">range</span> allPools <span class="token punctuation">{</span>
+        allPools<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">nil</span>
+        <span class="token keyword">for</span> i <span class="token operator">:=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token function">int</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>localSize<span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span> <span class="token punctuation">{</span>
+            l <span class="token operator">:=</span> <span class="token function">indexLocal</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>local<span class="token punctuation">,</span> i<span class="token punctuation">)</span>
+            l<span class="token punctuation">.</span>private <span class="token operator">=</span> <span class="token boolean">nil</span>
+            <span class="token keyword">for</span> j <span class="token operator">:=</span> <span class="token keyword">range</span> l<span class="token punctuation">.</span>shared <span class="token punctuation">{</span>
+                l<span class="token punctuation">.</span>shared<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">nil</span>
+            <span class="token punctuation">}</span>
+            l<span class="token punctuation">.</span>shared <span class="token operator">=</span> <span class="token boolean">nil</span>
+        <span class="token punctuation">}</span>
+        p<span class="token punctuation">.</span>local <span class="token operator">=</span> <span class="token boolean">nil</span>
+        p<span class="token punctuation">.</span>localSize <span class="token operator">=</span> <span class="token number">0</span>
+    <span class="token punctuation">}</span>
+    allPools <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">*</span>Pool<span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Go 1.13以前每次GC遍历allPools清空所有字段，新版相比Go 1.13以前，通过引入<strong>victim</strong>拉大了GC的粒度，且减小了GC的开销。<br><strong>victim</strong>在GC时将当前对象放入其中，在下一次GC前仍可作为二级缓存获取数据，直到下一次GC时回收，即GC的粒度从原来每次GC回收空对象变为2次GC才回收空对象。同时由于从<strong>victim</strong>中获取的数据没有再次放回<strong>victim</strong>中，相应GC的开销也减小了。<br>Go 1.13通过增加缓存方式，每次对allPools对象一次性清空，相比以前使用循环遍历，GC时间复杂度由原来的O(n)变为O(1)</p>
+<p>gc调用链：<br>在runtime包mgc.go中创建函数钩子，通过go:linkname链接到sync包pool.go中，进行注册</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// pool.go</span>
+<span class="token comment">// Implemented in runtime.</span>
+<span class="token keyword">func</span> <span class="token function">runtime_registerPoolCleanup</span><span class="token punctuation">(</span>cleanup <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// mgc.go</span>
+<span class="token comment">// Hooks for other packages</span>
+<span class="token keyword">var</span> poolcleanup <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">//go:linkname sync_runtime_registerPoolCleanup sync.runtime_registerPoolCleanup</span>
+<span class="token keyword">func</span> <span class="token function">sync_runtime_registerPoolCleanup</span><span class="token punctuation">(</span>f <span class="token keyword">func</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+	poolcleanup <span class="token operator">=</span> f
+<span class="token punctuation">}</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="无锁化"><a href="#无锁化" class="headerlink" title="无锁化"></a>无锁化</h2><h3 id="原子操作代替锁"><a href="#原子操作代替锁" class="headerlink" title="原子操作代替锁"></a>原子操作代替锁</h3><p>通过<strong>headTail</strong>和<strong>slot.type</strong>的CAS原子操作代替锁，保证并发的前提下降低开销</p>
+<h3 id="操作行为隔离"><a href="#操作行为隔离" class="headerlink" title="操作行为隔离"></a>操作行为隔离</h3><p>通过双向链表将<code>pushHead</code>和<code>popTail</code>行为尽可能隔离开</p>
+<h3 id="victim"><a href="#victim" class="headerlink" title="victim"></a>victim</h3><p>通过<strong>victim</strong>二级缓存降低GC开销</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/133638023" title="" target="">深度解密Go语言之sync.Pool</a></li>
+<li><a href="https://xargin.com/lock-contention-in-go/" title="" target="">几个Go系统可能遇到的锁问题</a></li>
+</ul>
 
       
     </div>
@@ -2576,7 +2969,7 @@ pprof <span class="token parameter variable">-http</span><span class="token oper
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">51</span>
+          <span class="site-state-item-count">50</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
